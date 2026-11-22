@@ -2,7 +2,7 @@
 
 A personal Windows controller-mapping fork based on [PadForge](https://github.com/hifihedgehog/PadForge).
 
-This fork focuses on making more of a controller's reported inputs available in macro triggers and adding a direct hold-button macro action.
+This fork focuses on making more of a controller's reported inputs Ehancements
 
 ## Macro changes
 
@@ -15,13 +15,11 @@ Available controls depend on the controller and how PadForge reports its inputs.
 
 This is an experimental source fork. The macro changes are committed locally, but the full application build and test suite have not completed in the current environment. No installable release or ready-made .exe is published here yet.
 
-See [BUILD.md](BUILD.md) for the upstream build reference. A Windows SDK installation is required in addition to the .NET 10 SDK for the WPF application build.
+See [BUILD.md](BUILD.md) for the upstream build reference. A Windows SDK installation is required in addition to the .NET 10 SDK for the WPF application build. //must be installed ==> .NET 10 SDK
 
 ## Using the fork
 
 The app and most of its behavior come from PadForge. See the [PadForge project](https://github.com/hifihedgehog/PadForge) and its [documentation](https://padforge.org/docs/) for the inherited features and setup guidance.
-
-To try the macro changes, build this repository on Windows, launch PadForge, assign a controller to a virtual controller, then open that controller's **Macros** section. Add the reported input as a trigger and choose **Hold Button While Active** to select the virtual button output.
 
 ## Build
 
