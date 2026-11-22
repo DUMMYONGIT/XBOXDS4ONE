@@ -4359,6 +4359,9 @@ A copy of the previous version is in this folder: {1}</value></data>
   <data name="Macro_TriggerHoldMs_Label" xml:space="preserve"><value>Hold Time</value></data>
   <data name="MacroAction_Type_RepeatVcButtonWhileHeld" xml:space="preserve"><value>Repeat Button While Held</value></data>
   <data name="MacroAction_RepeatVcButtonWhileHeld_Tooltip" xml:space="preserve"><value>Pulses the controller button on and off at the interval for as long as the trigger is held (autofire / turbo).</value></data>
+  <data name="MacroAction_Type_HoldVcButtonWhileHeld" xml:space="preserve"><value>Hold Button While Active</value></data>
+  <data name="MacroAction_HoldVcButtonWhileHeld_Tooltip" xml:space="preserve"><value>Keeps the selected virtual controller button pressed for as long as this macro is active. The button releases when the trigger is released or the macro stops.</value></data>
+  <data name="MacroAction_HoldVcButtonWhileHeld_Format" xml:space="preserve"><value>Hold {0} while active</value></data>
   <data name="MacroAction_RepeatVcButtonWhileHeld_Format" xml:space="preserve"><value>Repeat {0} every {1} ms</value></data>
   <data name="MacroAction_Type_ToggleVcButton" xml:space="preserve"><value>Toggle Button</value></data>
   <data name="MacroAction_ToggleVcButton_Tooltip" xml:space="preserve"><value>Each fire latches or unlatches the controller button. A latched button stays held until the next fire or until the macro is disabled.</value></data>

@@ -108,6 +108,7 @@ namespace PadForge.ViewModels
                 Add(MacroActionType.ButtonRelease, S.Macro_ButtonRelease, S.Macro_Cat_VcButtons, null);
                 Add(MacroActionType.ToggleVcButton, S.MacroAction_Type_ToggleVcButton, S.Macro_Cat_VcButtons, S.MacroAction_ToggleVcButton_Tooltip);
                 Add(MacroActionType.RepeatVcButtonWhileHeld, S.MacroAction_Type_RepeatVcButtonWhileHeld, S.Macro_Cat_VcButtons, S.MacroAction_RepeatVcButtonWhileHeld_Tooltip);
+                Add(MacroActionType.HoldVcButtonWhileHeld, S.MacroAction_Type_HoldVcButtonWhileHeld, S.Macro_Cat_VcButtons, S.MacroAction_HoldVcButtonWhileHeld_Tooltip);
                 Add(MacroActionType.AxisSet, S.Macro_SetAxis, S.Macro_Cat_VcAxes, null);
                 Add(MacroActionType.AxisHold, S.MacroAction_Type_AxisHold, S.Macro_Cat_VcAxes, S.MacroAction_AxisHold_Tooltip);
                 Add(MacroActionType.AxisAdd, S.MacroAction_Type_AxisAdd, S.Macro_Cat_VcAxes, S.MacroAction_AxisAdd_Tooltip);

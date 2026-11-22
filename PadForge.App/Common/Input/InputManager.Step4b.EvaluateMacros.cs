@@ -2661,6 +2661,7 @@ namespace PadForge.Common.Input
                  or MacroActionType.MouseMove or MacroActionType.MouseScroll
                  or MacroActionType.RepeatKeyWhileHeld
                  or MacroActionType.RepeatVcButtonWhileHeld
+                 or MacroActionType.HoldVcButtonWhileHeld
                  or MacroActionType.RepeatVcAxisWhileHeld
                  or MacroActionType.VoiceListenWhileHeld
                  or MacroActionType.MagnifierWhileHeld;
@@ -2855,6 +2856,13 @@ namespace PadForge.Common.Input
                         gp.Buttons |= action.ButtonFlags;
                         _macroPassOutputButtons |= action.ButtonFlags; // R1 overlay
                     }
+                    break;
+                case MacroActionType.HoldVcButtonWhileHeld:
+                    // Assert selected output buttons for the lifetime of the
+                    // active macro. Output state is rebuilt each frame, so
+                    // the buttons release as soon as the macro stops.
+                    gp.Buttons |= action.ButtonFlags;
+                    _macroPassOutputButtons |= action.ButtonFlags;
                     break;
                 case MacroActionType.RepeatVcAxisWhileHeld:
                     // Axis turbo (v18): the same square wave asserting an
@@ -5872,6 +5880,19 @@ namespace PadForge.Common.Input
                             raw.Buttons[w] |= cw[w];
                             if (w < _macroPassOutputWords.Length)
                                 _macroPassOutputWords[w] |= cw[w]; // R1 overlay
+                        }
+                    }
+                    break;
+                case MacroActionType.HoldVcButtonWhileHeld:
+                    // Extended-controller counterpart of the gamepad path.
+                    if (raw.Buttons != null)
+                    {
+                        var cw = action.CustomButtonWords;
+                        for (int w = 0; w < raw.Buttons.Length && w < cw.Length; w++)
+                        {
+                            raw.Buttons[w] |= cw[w];
+                            if (w < _macroPassOutputWords.Length)
+                                _macroPassOutputWords[w] |= cw[w];
                         }
                     }
                     break;

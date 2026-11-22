@@ -2984,6 +2984,9 @@ public class Strings : INotifyPropertyChanged
     public string MacroAction_RepeatKeyWhileHeld_Format => Get("MacroAction_RepeatKeyWhileHeld_Format");
     public string MacroAction_Type_RepeatVcButtonWhileHeld => Get("MacroAction_Type_RepeatVcButtonWhileHeld");
     public string MacroAction_RepeatVcButtonWhileHeld_Tooltip => Get("MacroAction_RepeatVcButtonWhileHeld_Tooltip");
+    public string MacroAction_Type_HoldVcButtonWhileHeld => Get("MacroAction_Type_HoldVcButtonWhileHeld");
+    public string MacroAction_HoldVcButtonWhileHeld_Tooltip => Get("MacroAction_HoldVcButtonWhileHeld_Tooltip");
+    public string MacroAction_HoldVcButtonWhileHeld_Format => Get("MacroAction_HoldVcButtonWhileHeld_Format");
     public string MacroAction_RepeatVcButtonWhileHeld_Format => Get("MacroAction_RepeatVcButtonWhileHeld_Format");
     public string MacroAction_Type_ToggleVcButton => Get("MacroAction_Type_ToggleVcButton");
     public string MacroAction_ToggleVcButton_Tooltip => Get("MacroAction_ToggleVcButton_Tooltip");

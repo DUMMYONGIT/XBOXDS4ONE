@@ -1072,8 +1072,9 @@ namespace PadForge.ViewModels
         /// <summary>Converts a picker <see cref="InputChoice"/> into a
         /// <see cref="TriggerInputEntry"/> for the macro trigger dropdown
         /// (#177). Returns false for descriptors the trigger engine has
-        /// no entry shape for (finger position axes, sliders, continuous
-        /// gesture axes). Buttons, POV directions, gamepad-layout axes 0-5,
+        /// no entry shape for (finger position axes, continuous gesture axes).
+        /// Buttons, POV directions, gamepad-layout axes 0-5, additional raw
+        /// axes and sliders,
         /// the touchpad click (raw button 16), bool-valued touchpad
         /// gestures, gyro axes, "Finger M Down", MIDI notes, CCs and
         /// encoder detents, and IR Offscreen all convert.
@@ -1138,6 +1139,27 @@ namespace PadForge.ViewModels
                         _ => MacroAxisTarget.RightTrigger,
                     },
                 };
+                return true;
+            }
+
+            // Controllers with auxiliary axes (for example, extra trigger,
+            // paddle or throttle channels) can expose indices beyond the six
+            // standard gamepad axes. Preserve their descriptor and let the
+            // normal source reader evaluate the selected axis and threshold.
+            if (d.StartsWith("Axis ", StringComparison.Ordinal)
+                && int.TryParse(d.Substring(5), out ax) && ax > 5)
+            {
+                entry = new TriggerInputEntry { DeviceGuid = g, SourceDescriptor = d };
+                return true;
+            }
+
+            // Sliders are analog controls too. They use the same descriptor
+            // trigger reader as auxiliary axes, with the usual threshold and
+            // invert controls in the trigger chip.
+            if (d.StartsWith("Slider ", StringComparison.Ordinal)
+                && int.TryParse(d.Substring(7), out int slider) && slider >= 0)
+            {
+                entry = new TriggerInputEntry { DeviceGuid = g, SourceDescriptor = d };
                 return true;
             }
 
@@ -3329,7 +3351,8 @@ namespace PadForge.ViewModels
         [System.Xml.Serialization.XmlIgnore]
         public bool IsAnyVcButtonType => IsButtonType
             || _type == MacroActionType.RepeatVcButtonWhileHeld
-            || _type == MacroActionType.ToggleVcButton;
+            || _type == MacroActionType.ToggleVcButton
+            || _type == MacroActionType.HoldVcButtonWhileHeld;
 
         /// <summary>True when the Interval ms row applies: the turbo
         /// actions (RepeatKeyWhileHeld, RepeatVcButtonWhileHeld, and the
@@ -6553,6 +6576,9 @@ namespace PadForge.ViewModels
                     MacroActionType.RepeatVcButtonWhileHeld => string.Format(
                         Strings.Instance.MacroAction_RepeatVcButtonWhileHeld_Format,
                         btnText, _intervalMs) + pressureMark,
+                    MacroActionType.HoldVcButtonWhileHeld => string.Format(
+                        Strings.Instance.MacroAction_HoldVcButtonWhileHeld_Format,
+                        btnText),
                     MacroActionType.ToggleVcButton => string.Format(
                         Strings.Instance.MacroAction_ToggleVcButton_Format,
                         btnText),
@@ -7581,7 +7607,13 @@ namespace PadForge.ViewModels
         /// lapsing a moment after the last, as
         /// <see cref="VoiceListenWhileHeld"/> does. Continuous. Ordinal
         /// pinned.</summary>
-        MagnifierWhileHeld = 70
+        MagnifierWhileHeld = 70,
+
+        /// <summary>Asserts the selected virtual controller button(s) every
+        /// frame while this macro remains active. Unlike ButtonPress, this
+        /// action has no timer; releasing the macro trigger releases the
+        /// output. Suitable for push-to-hold button mappings.</summary>
+        HoldVcButtonWhileHeld = 71
     }
 
     /// <summary>One parsed part of a <see cref="MacroActionType.CycleTapList"/>
