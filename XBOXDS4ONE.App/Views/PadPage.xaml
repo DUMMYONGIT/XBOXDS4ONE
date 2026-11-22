@@ -15747,6 +15747,31 @@
                                                         <TextBlock Text="{Binding Macro_AddAction, Source={x:Static strings:Strings.Instance}}" VerticalAlignment="Center"/>
                                                     </StackPanel>
                                                 </ui:Button>
+                                                <StackPanel Margin="0,8,0,0">
+                                                    <TextBlock Text="Analog controller controls"
+                                                               FontSize="12" Margin="0,0,0,4"
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                                    <WrapPanel>
+                                                        <ui:Button Style="{StaticResource QuietTextButton}" Content="{Binding Macro_LeftTrigger, Source={x:Static strings:Strings.Instance}}"
+                                                                   Command="{Binding AddControllerAxisHoldCommand}"
+                                                                   CommandParameter="{x:Static vm:MacroAxisTarget.LeftTrigger}" Margin="0,0,8,4"/>
+                                                        <ui:Button Style="{StaticResource QuietTextButton}" Content="{Binding Macro_RightTrigger, Source={x:Static strings:Strings.Instance}}"
+                                                                   Command="{Binding AddControllerAxisHoldCommand}"
+                                                                   CommandParameter="{x:Static vm:MacroAxisTarget.RightTrigger}" Margin="0,0,8,4"/>
+                                                        <ui:Button Style="{StaticResource QuietTextButton}" Content="{Binding Macro_LeftStickX, Source={x:Static strings:Strings.Instance}}"
+                                                                   Command="{Binding AddControllerAxisHoldCommand}"
+                                                                   CommandParameter="{x:Static vm:MacroAxisTarget.LeftStickX}" Margin="0,0,8,4"/>
+                                                        <ui:Button Style="{StaticResource QuietTextButton}" Content="{Binding Macro_LeftStickY, Source={x:Static strings:Strings.Instance}}"
+                                                                   Command="{Binding AddControllerAxisHoldCommand}"
+                                                                   CommandParameter="{x:Static vm:MacroAxisTarget.LeftStickY}" Margin="0,0,8,4"/>
+                                                        <ui:Button Style="{StaticResource QuietTextButton}" Content="{Binding Macro_RightStickX, Source={x:Static strings:Strings.Instance}}"
+                                                                   Command="{Binding AddControllerAxisHoldCommand}"
+                                                                   CommandParameter="{x:Static vm:MacroAxisTarget.RightStickX}" Margin="0,0,8,4"/>
+                                                        <ui:Button Style="{StaticResource QuietTextButton}" Content="{Binding Macro_RightStickY, Source={x:Static strings:Strings.Instance}}"
+                                                                   Command="{Binding AddControllerAxisHoldCommand}"
+                                                                   CommandParameter="{x:Static vm:MacroAxisTarget.RightStickY}" Margin="0,0,8,4"/>
+                                                    </WrapPanel>
+                                                </StackPanel>
                                             </StackPanel>
                                         </Border>
                                         <!-- More, a fold at the card's foot: the settings a macro seldom needs.

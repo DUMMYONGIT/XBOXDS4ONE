@@ -2815,6 +2815,35 @@ namespace XBOXDS4ONE.ViewModels
                 SelectedAction = action;
             });
 
+        private RelayCommand<MacroAxisTarget> _addControllerAxisHoldCommand;
+
+        /// <summary>Adds a timed virtual-controller axis action from the
+        /// macro editor's direct analog-control buttons. This keeps triggers
+        /// and stick directions visible alongside digital button choices
+        /// without encoding analog targets into the button bitmask.</summary>
+        public RelayCommand<MacroAxisTarget> AddControllerAxisHoldCommand =>
+            _addControllerAxisHoldCommand ??= new RelayCommand<MacroAxisTarget>(target =>
+            {
+                if (target is not (MacroAxisTarget.LeftStickX or MacroAxisTarget.LeftStickY
+                    or MacroAxisTarget.RightStickX or MacroAxisTarget.RightStickY
+                    or MacroAxisTarget.LeftTrigger or MacroAxisTarget.RightTrigger))
+                    return;
+
+                var action = new MacroAction
+                {
+                    Type = MacroActionType.AxisHold,
+                    AxisTarget = target,
+                    AxisValue = short.MaxValue,
+                    DurationMs = 50,
+                    ButtonStyle = _buttonStyle,
+                    CustomButtonCount = _customButtonCount,
+                    RawProfileId = _extendedProfileId,
+                    CarriesPressure = _carriesPressure,
+                };
+                Actions.Add(action);
+                SelectedAction = action;
+            });
+
         private RelayCommand<MacroAction> _removeStepCommand;
         /// <summary>Removes one action, by the remove at its own step's end
         /// (#574). The selected action stays selected unless it is the one

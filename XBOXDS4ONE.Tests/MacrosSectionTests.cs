@@ -403,12 +403,15 @@ namespace XBOXDS4ONE.Tests
             Assert.Contains("Macro_AlwaysDesc", whenRows[7].ToString());
 
             // Do: the head, the actions, and Add Action. The picked action's
-            // fields stand in its own step.
+            // fields stand in its own step. The analog shortcuts follow the
+            // action list so triggers and stick axes are directly available.
             var doRows = Assert.Single(act.Elements()).Elements().ToList();
-            Assert.Equal(3, doRows.Count);
+            Assert.Equal(4, doRows.Count);
             Assert.Equal("{Binding Macro_Do_Header" + S, (string)doRows[0].Attribute("Text"));
             Assert.Equal("ActionsList", Name(doRows[1]));
             Assert.Equal("{Binding AddActionCommand}", (string)doRows[2].Attribute("Command"));
+            Assert.Contains("Analog controller controls", doRows[3].ToString());
+            Assert.Equal(6, doRows[3].Descendants().Count(e => (string)e.Attribute("Command") == "{Binding AddControllerAxisHoldCommand}"));
 
             // More: the layer, the rest of the combination under the
             // combination's rule, and Repeat under its own.
@@ -1248,8 +1251,11 @@ namespace XBOXDS4ONE.Tests
             Assert.Equal("{StaticResource QuietResetButton}", (string)buttonLook.Attribute("BasedOn"));
             Assert.Equal("False", SetterOf(buttonLook, "IsTabStop"));
 
-            // Under the steps: Add Action alone, as on the board.
-            var add = Assert.Single(list.ElementsAfterSelf());
+            // Under the steps: Add Action, then the direct analog-control
+            // shortcuts for both triggers and all four stick axes.
+            var afterSteps = list.ElementsAfterSelf().ToList();
+            Assert.Equal(2, afterSteps.Count);
+            var add = afterSteps[0];
             Assert.Equal("{Binding AddActionCommand}", (string)add.Attribute("Command"));
             Assert.Equal("{StaticResource QuietTextButton}", (string)add.Attribute("Style"));
             Assert.Null(add.Attribute("Padding"));
@@ -1259,6 +1265,18 @@ namespace XBOXDS4ONE.Tests
             Assert.Equal("{Binding Macro_AddAction" + S, (string)add.Attribute("AutomationProperties.Name"));
             Assert.Equal(new[] { "Path", "TextBlock" }, Assert.Single(add.Elements()).Elements().Select(e => e.Name.LocalName));
             Assert.Equal("{Binding Macro_AddAction" + S, (string)add.Descendants().Single(e => e.Name.LocalName == "TextBlock").Attribute("Text"));
+            var axisShortcuts = afterSteps[1].Descendants()
+                .Where(e => (string)e.Attribute("Command") == "{Binding AddControllerAxisHoldCommand}")
+                .Select(e => (string)e.Attribute("CommandParameter"));
+            Assert.Equal(new[]
+                {
+                    "{x:Static vm:MacroAxisTarget.LeftTrigger}",
+                    "{x:Static vm:MacroAxisTarget.RightTrigger}",
+                    "{x:Static vm:MacroAxisTarget.LeftStickX}",
+                    "{x:Static vm:MacroAxisTarget.LeftStickY}",
+                    "{x:Static vm:MacroAxisTarget.RightStickX}",
+                    "{x:Static vm:MacroAxisTarget.RightStickY}",
+                }, axisShortcuts);
 
             // The old chips are gone from the steps' heads.
             Assert.DoesNotContain(headTemplate.Descendants(), e => (string)e.Attribute("Style") == "{StaticResource ChipEmber}");
