@@ -1,8 +1,8 @@
-﻿Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Drawing
 # The GitHub wiki was retired 2026-07-30; the live docs source is the
-# padforge.org repo, which is where capture_all.ps1 now writes.
-$srcDir = "C:\Users\sonic\OneDrive\Documents\GitHub\padforge.org\wiki\images"
-$dstDir = "C:\Users\sonic\OneDrive\Documents\GitHub\PadForge\screenshots"
+# XBOXDS4ONE.org repo, which is where capture_all.ps1 now writes.
+$srcDir = "C:\Users\sonic\OneDrive\Documents\GitHub\XBOXDS4ONE.org\wiki\images"
+$dstDir = "C:\Users\sonic\OneDrive\Documents\GitHub\XBOXDS4ONE\screenshots"
 
 $map = @{
     'settings-steamvr'       = 'settings-steamvr'

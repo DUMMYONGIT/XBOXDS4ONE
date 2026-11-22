@@ -32,20 +32,20 @@
 #
 # ASCII only: Windows PowerShell 5.1 reads a file with no byte order mark as
 # ANSI.
-$script:CaptureStateDir = Join-Path $env:TEMP "PadForge_Capture"
+$script:CaptureStateDir = Join-Path $env:TEMP "XBOXDS4ONE_Capture"
 $script:BackupMarkerMaxAgeHours = 12
 $script:SettingsCopied = @()
 # The script that dot-sourced this file, for the marker. Inside a function
 # here, $PSCommandPath names this file instead.
 $script:SettingsGuardCaller = $MyInvocation.PSCommandPath
 
-# PadForge writes its settings as UTF-8 with no byte order mark
+# XBOXDS4ONE writes its settings as UTF-8 with no byte order mark
 # (SettingsService.SaveToFile, XmlSerializer into a stream). Windows PowerShell
 # 5.1 reads such a file through Get-Content as ANSI, so a device or profile
 # name with a letter outside ASCII came back as two or three wrong ones and
 # went into the capture file that way. XmlDocument reads the encoding the file
 # declares. The stream is shared for writing, as Get-Content's is, so a read
-# while PadForge runs cannot make PadForge's own save fail. The path is
+# while XBOXDS4ONE runs cannot make XBOXDS4ONE's own save fail. The path is
 # resolved the way the cmdlets resolve one, from PowerShell's location, where
 # .NET would start from the process's.
 function Read-SettingsXml {
@@ -58,7 +58,7 @@ function Read-SettingsXml {
     return $doc
 }
 
-# Saves a settings document the way PadForge writes one: UTF-8, no byte order
+# Saves a settings document the way XBOXDS4ONE writes one: UTF-8, no byte order
 # mark, two-space indents. XmlDocument.Save(path) adds the mark. The file it
 # replaces is copied aside first, and that copy's path is what comes back,
 # or nothing when no file was there.
@@ -133,10 +133,10 @@ function Remove-BackupMarker {
     Remove-Item -LiteralPath (Get-BackupMarkerPath $BackupPath) -Force -ErrorAction SilentlyContinue
 }
 
-# True when two settings files hold the same bytes. This runs while PadForge
+# True when two settings files hold the same bytes. This runs while XBOXDS4ONE
 # may still be up, so each file is read through a stream shared for writing,
 # as Read-SettingsXml reads. Get-FileHash opens a file for reading alone, and
-# an autosave PadForge made in that moment was refused and not tried again
+# an autosave XBOXDS4ONE made in that moment was refused and not tried again
 # until the next change. A file that cannot be read stops the run.
 function Test-SameSettings {
     param([string]$A, [string]$B)

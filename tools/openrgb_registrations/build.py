@@ -76,7 +76,7 @@ def main():
     # OpenRGB.pro:416-422.
     defines = "/D_MBCS /DWIN32 /D_CRT_SECURE_NO_WARNINGS /D_WINSOCK_DEPRECATED_NO_WARNINGS /DWIN32_LEAN_AND_MEAN " \
               "/DHID_HOTPLUG_ENABLED=1"
-    work = tempfile.mkdtemp(prefix="padforge_registrations_")
+    work = tempfile.mkdtemp(prefix="XBOXDS4ONE_registrations_")
     out = DUMP + ".new"
     if os.path.exists(out):
         os.remove(out)

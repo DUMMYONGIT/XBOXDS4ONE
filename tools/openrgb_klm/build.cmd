@@ -4,7 +4,7 @@ rem writes klm_dump.tsv beside this file (#557).
 rem
 rem   build.cmd [OPENRGB_ROOT]
 rem
-rem OPENRGB_ROOT defaults to the clone beside PadForge. It must be at the commit
+rem OPENRGB_ROOT defaults to the clone beside XBOXDS4ONE. It must be at the commit
 rem klm_harness.cpp names, which tools/gen_openrgb_keyboard_layouts.py --harness
 rem writes. The build checks every vector subscript (_MSVC_STL_HARDENING=1),
 rem so a read past the end of the key list stops the run instead of reading
@@ -13,7 +13,7 @@ setlocal
 set HERE=%~dp0
 set ORGB=%~1
 if "%ORGB%"=="" set ORGB=%HERE%..\..\..\OpenRGB
-set OUT=%TEMP%\padforge_klm_harness
+set OUT=%TEMP%\XBOXDS4ONE_klm_harness
 if not exist "%OUT%" mkdir "%OUT%"
 set VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe
 rem Each check jumps to its message, since a path with "(x86)" in it would

@@ -66,7 +66,7 @@ PublishScripts/
 publish/
 
 # Release archives (uploaded to GitHub Releases, not tracked in repo)
-PadForge-*.zip
+XBOXDS4ONE-*.zip
 
 # Rider / JetBrains
 .idea/
@@ -100,7 +100,7 @@ __pycache__/
 *.pyc
 
 
-# Scratch files dropped in the repo root (not PadForge sources)
+# Scratch files dropped in the repo root (not XBOXDS4ONE sources)
 /tmpworkflow-v1.0.json
 /tmpopenvr_driver.h
 /tmpwmr_controller.c
@@ -108,8 +108,8 @@ __pycache__/
 
 # Wild-corpus sweep download cache (manifest.json is committed, VDFs are not)
 tools/SteamWorkshopSweep/cache/
-PadForge.Tests/TestResults/
-PadForge.SteamWorkshop.Tests/TestResults/
+XBOXDS4ONE.Tests/TestResults/
+XBOXDS4ONE.SteamWorkshop.Tests/TestResults/
 
 # WPF XAML compilation temp project. A generated copy was committed twice before this pattern existed.
 *_wpftmp.csproj

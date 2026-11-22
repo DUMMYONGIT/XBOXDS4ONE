@@ -1,0 +1,150 @@
+using System.Windows;
+
+namespace XBOXDS4ONE.Views
+{
+    public partial class ShiftActivatorDialog
+    {
+        private void ResetSetting_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: string field }) return;
+            switch (field)
+            {
+                case "Kind": KindCombo.SelectedValue = "Button"; break;
+                case "Mode": ModeCombo.SelectedValue = "Hold"; break;
+                case "AxisThreshold": AxisThresholdSlider.Value = 0.5; break;
+                case "HostLayer": HostLayerCombo.SelectedValue = ""; break;
+                case "InheritUnmapped": InheritUnmappedCombo.SelectedIndex = 1; break;
+                case "FireOnRelease": FireOnReleaseBox.IsChecked = false; break;
+                case "PostponeMapping": PostponeMappingBox.IsChecked = false; break;
+                case "CycleWrap": CycleWrapBox.IsChecked = true; break;
+                case "CycleIncludeBase": CycleIncludeBaseBox.IsChecked = false; break;
+                case "CycleLayers": CycleLayersList.SelectedItems.Clear(); break;
+                // A shift layer's flyout stays while the layer is on, and
+                // Base's shows for the flyout's own two seconds (#581).
+                case "Flyout":
+                    FlyoutCombo.SelectedValue = _baseMode
+                        ? XBOXDS4ONE.Engine.Data.LayerFlyout.Brief
+                        : XBOXDS4ONE.Engine.Data.LayerFlyout.Stay;
+                    break;
+            }
+        }
+    }
+
+    public partial class RegisterVoicePhraseDialog
+    {
+        private void ResetSetting_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: string field }) return;
+            switch (field)
+            {
+                case "Enabled": EnabledBox.IsChecked = false; break;
+                case "Mode": ModeBox.SelectedIndex = 0; break;
+                case "Confidence": ConfidenceSlider.Value = 0.80; break;
+            }
+        }
+    }
+
+    public partial class ProfileDialog
+    {
+        private void ResetPollingRate_Click(object sender, RoutedEventArgs e) => PollingRateBox.SelectedIndex = 0;
+    }
+
+    public partial class DreamcastScreenDialog
+    {
+        /// <summary>Back to the adapter's own picture, the default (#469).</summary>
+        private void ResetMode_Click(object sender, RoutedEventArgs e)
+            => ModeBox.SelectedIndex = (int)XBOXDS4ONE.Services.DreamcastScreenMode.Adapter;
+
+        /// <summary>No chosen picture, the default (#469). The mode then shows
+        /// the adapter's own, and the port's entry can empty once the mode
+        /// changes.</summary>
+        private void ResetPicture_Click(object sender, RoutedEventArgs e)
+        {
+            _picture = null;
+            Refresh();
+        }
+    }
+
+    public partial class KeyboardScreenDialog
+    {
+        /// <summary>Back to the lightbar's color, the default (#519).</summary>
+        private void ResetMode_Click(object sender, RoutedEventArgs e)
+            => ModeBox.SelectedIndex = (int)XBOXDS4ONE.Services.KeyboardScreenData.DefaultMode;
+
+        /// <summary>No chosen picture, the default (#519).</summary>
+        private void ResetPicture_Click(object sender, RoutedEventArgs e)
+        {
+            _picture = null;
+            _panX = _panY = 0;
+            Refresh();
+        }
+
+        /// <summary>The window back at the picture's top left corner (#519).</summary>
+        private void ResetPan_Click(object sender, RoutedEventArgs e)
+        {
+            _panX = _panY = 0;
+            Refresh();
+        }
+
+        /// <summary>The lowest slot with a color, the default (#560).</summary>
+        private void ResetLightbarSlot_Click(object sender, RoutedEventArgs e)
+            => LightbarSlotBox.SelectedIndex = XBOXDS4ONE.Services.KeyboardScreenData.LowestSlot + 1;
+
+        /// <summary>All of the picture in the Screen Overlay's window, the default
+        /// (#560).</summary>
+        private void ResetZoom_Click(object sender, RoutedEventArgs e)
+        {
+            _zoom = XBOXDS4ONE.Services.KeyboardScreenData.DefaultZoom;
+            _panX = _panY = 0;
+            Refresh();
+        }
+    }
+
+    public partial class BlissBoxPlayerDialog
+    {
+        /// <summary>Back to the port's own player number (#469).</summary>
+        private void ResetPlayer_Click(object sender, RoutedEventArgs e)
+            => PlayerBox.SelectedIndex = _current - 1;
+    }
+
+    public partial class PairDeviceDialog
+    {
+        private void ResetSetting_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: string field }) return;
+            if (field == "Family" && FamilyCombo.IsEnabled) FamilyCombo.SelectedIndex = 0;
+            if (field == "Temporary" && TemporaryCheck.IsEnabled) TemporaryCheck.IsChecked = false;
+            if (field == "SerialPort" && PortCombo.IsEnabled && PortCombo.Items.Count > 0) PortCombo.SelectedIndex = 0;
+            if (field == "SerialController" && ControllerCombo.IsEnabled) ControllerCombo.SelectedIndex = 0;
+            if (field == "DjiAddress" && DjiAddressBox.IsEnabled) DjiAddressBox.Text = string.Empty;
+        }
+    }
+
+    public partial class RemoteLinkPairDialog
+    {
+        private void ResetSetting_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: string field }) return;
+            if (field == "GamepadOnly") GamepadOnlyCheck.IsChecked = false;
+            if (field == "AllowAssignments") AssignmentsCheck.IsChecked = false;
+        }
+    }
+
+    public partial class TouchpadGestureRecorderDialog
+    {
+        private void ResetSampleCount_Click(object sender, RoutedEventArgs e)
+        {
+            if (SampleCountBox.IsEnabled) SampleCountBox.SelectedIndex = 1;
+        }
+    }
+
+    public partial class ControllerModelView
+    {
+        private void ResetAppearance_Click(object sender, RoutedEventArgs e) => AppearancePicker.SelectedIndex = 0;
+    }
+
+    public partial class ControllerModel2DView
+    {
+        private void ResetAppearance_Click(object sender, RoutedEventArgs e) => AppearancePicker.SelectedIndex = 0;
+    }
+}

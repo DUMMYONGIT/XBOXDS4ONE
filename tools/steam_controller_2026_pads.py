@@ -23,7 +23,7 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-MODELS = os.path.join(os.path.dirname(HERE), "PadForge.App", "3DModels", "SteamController2")
+MODELS = os.path.join(os.path.dirname(HERE), "XBOXDS4ONE.App", "3DModels", "SteamController2")
 
 
 def load(path):

@@ -19,7 +19,7 @@ WHAT IT READS, under OpenRGB's Controllers:
 - RGBController/RGBControllerKeyNames.cpp: the string behind each KEY_ and
   ZONE_ name.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/HidFamilies/CorsairLights.g.cs,
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/CorsairLights.g.cs,
 the tables as OpenRGB holds them. A matrix cell OpenRGB marks NA is -1. The
 V2 keyboards' key layouts are KeyboardLayouts.g.cs's (tools/gen_openrgb_keyboard_layouts.py),
 named here by OpenRGB's variable.
@@ -38,7 +38,7 @@ import openrgb_cpp as oc
 from openrgb_cpp import CppError, Expr, Node
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies", "CorsairLights.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies", "CorsairLights.g.cs")
 
 V1 = "Controllers/CorsairPeripheralController/"
 V2 = "Controllers/CorsairPeripheralV2Controller/"
@@ -241,7 +241,7 @@ def main():
     w("//     with the key names of RGBController/RGBControllerKeyNames.cpp). Do not edit")
     w("//     by hand.")
     w("// </auto-generated>")
-    w("namespace PadForge.Common.Input.Peripherals")
+    w("namespace XBOXDS4ONE.Common.Input.Peripherals")
     w("{")
     w("    internal static partial class CorsairLights")
     w("    {")

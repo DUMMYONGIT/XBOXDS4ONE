@@ -1,0 +1,1712 @@
+[
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_EnableWebController_1488",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "EnableWebController"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_EnableWebControllerPlainHttp_1608",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "EnableWebControllerPlainHttp"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_WebControllerPlainHttpLocalOnly_1615",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "WebControllerPlainHttpLocalOnly"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_EnableRemoteLink_1578",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "EnableRemoteLink"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_AutoReconnect_1581",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "AutoReconnect"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_SettingsViewModel_IdentityProtectionModeIndex_1638",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "IdentityProtectionModeIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_RemoteLinkTrustedPeer_Name_1678",
+    "Owner": "XBOXDS4ONE.ViewModels.RemoteLinkTrustedPeer",
+    "Property": "Name"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_RemoteLinkTrustedPeer_AllowRemoteAssignments_1685",
+    "Owner": "XBOXDS4ONE.ViewModels.RemoteLinkTrustedPeer",
+    "Property": "AllowRemoteAssignments"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_EnableDsuMotionServer_1896",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "EnableDsuMotionServer"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_EnableGameModServer_2230",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "EnableGameModServer"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_GameModDsxStandIn_2246",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "GameModDsxStandIn"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_EnableGameTelemetry_2300",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "EnableGameTelemetry"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_EnableTwitchChat_2245",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "EnableTwitchChat"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_TwitchChatClaimApprovalIndex_2289",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "TwitchChatClaimApprovalIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_EnableMenuOverlay_2023",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "EnableMenuOverlay"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_EnableShiftLayerFlyout_2026",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "EnableShiftLayerFlyout"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_EnableProfileOverlay_2029",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "EnableProfileOverlay"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_DashboardViewModel_EnableTouchpadOverlay_2045",
+    "Owner": "XBOXDS4ONE.ViewModels.DashboardViewModel",
+    "Property": "EnableTouchpadOverlay"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamRapidTriggerDistance_4316",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamRapidTriggerDistance"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamRate_4305",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamRate"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamSticky_4308",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamSticky"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamMin_4311",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamMin"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamMax_4314",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamMax"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamAttackTime_4288",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamAttackTime"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamReleaseTime_4292",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamReleaseTime"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamReverseMultiplier_4296",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamReverseMultiplier"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamAutocenter_4299",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamAutocenter"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingItem_InvertOutput_5776",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingItem",
+    "Property": "InvertOutput"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_Kind_4282",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "Kind"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamUpInputChoice_5577",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamUpInputChoice"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamDownInputChoice_5618",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamDownInputChoice"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_ParamModifierInputChoice_5659",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "ParamModifierInputChoice"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_LineInvert_6001",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "LineInvert"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_LineHalf_6002",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "LineHalf"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingSourceItem_LineBidirectional_6003",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingSourceItem",
+    "Property": "LineBidirectional"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingItem_CombineMode_4340",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingItem",
+    "Property": "CombineMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingItem_NoInherit_5788",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingItem",
+    "Property": "NoInherit"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingItem_MotionResponse_4614",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingItem",
+    "Property": "MotionResponse"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingItem_MotionSpeed_4624",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingItem",
+    "Property": "MotionSpeed"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingItem_MotionMinSpeed_4630",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingItem",
+    "Property": "MotionMinSpeed"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingItem_MotionAngle_4639",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingItem",
+    "Property": "MotionAngle"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingItem_MotionDeadzone_4646",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingItem",
+    "Property": "MotionDeadzone"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MappingItem_CombineExpression_4415",
+    "Owner": "XBOXDS4ONE.ViewModels.MappingItem",
+    "Property": "CombineExpression"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_ProfileId_490",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "ProfileId"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_KbmSurfaces_531",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "KbmSurfaces"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_KbmKeyboardDevice",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "KbmKeyboardDevice"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_KbmMouseDevice",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "KbmMouseDevice"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_SteeringLockLightbarColorSource_6735",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "SteeringLockLightbarColorSource"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_SteeringLockLightbarColor_6775",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "SteeringLockLightbarColor"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_FalconFeel_13111",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "FalconFeel"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_FalconKickButton_13112",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "FalconKickButton"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_FalconBraceButton_13113",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "FalconBraceButton"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_FalconPreloadButton_13114",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "FalconPreloadButton"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_TriggerRumbleFold_7249",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "TriggerRumbleFold"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_SwapMotors_7252",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "SwapMotors"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_ConstantForceEnabled_7429",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "ConstantForceEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_AudioRumbleEnabled_7522",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "AudioRumbleEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_ImpulseSwapTriggers_10319",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "ImpulseSwapTriggers"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_AtVibrationToImpulse_10325",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "AtVibrationToImpulse"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_ConstantTriggerForceEnabled_10404",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "ConstantTriggerForceEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_AudioRumbleTriggersEnabled_10447",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "AudioRumbleTriggersEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_WheelRotationRangeEnabled_12112",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "WheelRotationRangeEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringMode",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringVehicle",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringVehicle"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringSpeedSource",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringSpeedSource"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringWeight",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringWeight"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringWheelRange",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringWheelRange"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringOnCenter",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringOnCenter"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringAssist",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringAssist"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringDamping",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringDamping"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringFriction",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringFriction"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringGrip",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringGrip"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringFixedSpeed",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringFixedSpeed"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_PadViewModel_CenteringWheelTorque",
+    "Owner": "XBOXDS4ONE.ViewModels.PadViewModel",
+    "Property": "CenteringWheelTorque"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_DeviceSlotConfig_MicLedFollowDeviceId_9489",
+    "Owner": "XBOXDS4ONE.ViewModels.DeviceSlotConfig",
+    "Property": "MicLedFollowDeviceId"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_EqBandVm_Enabled_11933",
+    "Owner": "XBOXDS4ONE.ViewModels.EqBandVm",
+    "Property": "Enabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_EqBandVm_Type_11940",
+    "Owner": "XBOXDS4ONE.ViewModels.EqBandVm",
+    "Property": "Type"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_EqBandVm_FrequencyHz_11948",
+    "Owner": "XBOXDS4ONE.ViewModels.EqBandVm",
+    "Property": "FrequencyHz"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_EqBandVm_GainDb_11950",
+    "Owner": "XBOXDS4ONE.ViewModels.EqBandVm",
+    "Property": "GainDb"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_EqBandVm_Q_11952",
+    "Owner": "XBOXDS4ONE.ViewModels.EqBandVm",
+    "Property": "Q"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroItem_IsEnabled_1284",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem",
+    "Property": "IsEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_TriggerInputEntry_Invert_1825",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem+TriggerInputEntry",
+    "Property": "Invert"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_TriggerInputEntry_HalfAxis_1828",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem+TriggerInputEntry",
+    "Property": "HalfAxis"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_TriggerInputEntry_Bidirectional_1833",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem+TriggerInputEntry",
+    "Property": "Bidirectional"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroItem_TriggerMode_1297",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem",
+    "Property": "TriggerMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroItem_TriggerExpression_1419",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem",
+    "Property": "TriggerExpression"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroExpressionVariable_Source_1644",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroExpressionVariable",
+    "Property": "Source"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroExpressionVariable_TelemetryChannel_1648",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroExpressionVariable",
+    "Property": "TelemetryChannel"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroExpressionVariable_OutputChannel_1658",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroExpressionVariable",
+    "Property": "OutputChannel"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_DisconnectTarget_2024",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "DisconnectTarget"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_DisconnectDeviceGuid_2038",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "DisconnectDeviceGuid"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ProgramPath_2054",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ProgramPath"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ProgramArgs_2062",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ProgramArgs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ProgramWorkingDir_2070",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ProgramWorkingDir"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_TextContent_2091",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "TextContent"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_TextPerCharDelayMs_2103",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "TextPerCharDelayMs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SetGyroEngagedMode_2116",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SetGyroEngagedMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_CursorRecenterMode_2159",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "CursorRecenterMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_CursorPinMode_2175",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "CursorPinMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_CursorPinX_2185",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "CursorPinX"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_CursorPinY_2191",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "CursorPinY"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_CursorClampMode_2207",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "CursorClampMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_MouseX_2239",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "MouseX"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_MouseY_2245",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "MouseY"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_NudgeDx_2264",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "NudgeDx"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_NudgeDy_2270",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "NudgeDy"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_CycleStepsCsv_2286",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "CycleStepsCsv"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_CycleWrap_2289",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "CycleWrap"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_PulseWhileLatched_2301",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "PulseWhileLatched"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_PressureScaledRate_2326",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "PressureScaledRate"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_TurboRateCurve_2344",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "TurboRateCurve"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SourceDeviceGuid_2373",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SourceDeviceGuid"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SourceDeviceAxisIndex_2383",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SourceDeviceAxisIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_KeyString_2436",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "KeyString"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_DurationMs_2459",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "DurationMs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_KeyColorTargets_55701",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "KeyColorTargets"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_KeyColorStyle_55702",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "KeyColorStyle"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_KeyColorHold_55703",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "KeyColorHold"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_KeyColorMs_55704",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "KeyColorMs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_KeyColorRest_55705",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "KeyColorRest"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_KeyRestColor_55706",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "KeyRestColor"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_KeyColorTargets_55707",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "KeyColorTargets"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_DreamcastFrames_3301",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "DreamcastFrames"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_DreamcastFrameMs_3302",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "DreamcastFrameMs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_DreamcastRepeat_3303",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "DreamcastRepeat"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ScreenKind_13101",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ScreenKind"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ProfileShortcutMode_2980",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ProfileShortcutMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ScreenOverlayNumber_55709",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ScreenOverlayNumber"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_CrosshairNumber_14090",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "CrosshairNumber"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ScreenFrames_13102",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ScreenFrames"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ScreenFrameMs_13103",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ScreenFrameMs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ScreenRepeat_13104",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ScreenRepeat"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ScreenMode_13105",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ScreenMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_StopwatchAction_13106",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "StopwatchAction"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_PanDirection_13107",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "PanDirection"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_PanStep_13108",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "PanStep"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_LightbarHoldMode_2473",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "LightbarHoldMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_LightbarColorSource_2484",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "LightbarColorSource"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_LightbarHoldMs_2559",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "LightbarHoldMs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_LightbarFadeMs_2570",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "LightbarFadeMs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_LightbarTargetMode_2599",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "LightbarTargetMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_PointerSetMode_2687",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "PointerSetMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SwitchLayerMask_2712",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SwitchLayerMask"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_GuideLedPercent_2729",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "GuideLedPercent"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_RumbleHoldMode_2749",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "RumbleHoldMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_RumbleStrengthLeft_2760",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "RumbleStrengthLeft"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_RumbleStrengthRight_2770",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "RumbleStrengthRight"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_RumbleHoldMs_2781",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "RumbleHoldMs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_RumbleFadeMs_2792",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "RumbleFadeMs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_TriggerEffectSide_3300",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "TriggerEffectSide"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_TriggerEffectMode_3312",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "TriggerEffectMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_TriggerEffectHold_3349",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "TriggerEffectHold"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_TriggerEffectMs_3362",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "TriggerEffectMs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_TriggerEffectSide_3384",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "TriggerEffectSide"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SoundFilePath_2824",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SoundFilePath"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SoundVolume_2834",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SoundVolume"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SoundLoop_2841",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SoundLoop"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_AxisTarget_2866",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "AxisTarget"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_AxisValuePercent_2882",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "AxisValuePercent"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_AxisTarget_2915",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "AxisTarget"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_AxisYieldToPhysical_2933",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "AxisYieldToPhysical"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_AxisValue_2943",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "AxisValue"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_WheelHorizontal_2946",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "WheelHorizontal"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_AxisSource_2957",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "AxisSource"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_AxisTarget_2968",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "AxisTarget"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SourceDeviceGuid_2988",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SourceDeviceGuid"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SourceDeviceAxisIndex_2998",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SourceDeviceAxisIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_VolumeLimit_3024",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "VolumeLimit"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_InvertAxis_3031",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "InvertAxis"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ShowVolumeOsd_3033",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ShowVolumeOsd"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_ProcessName_3051",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "ProcessName"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_AxisSource_3058",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "AxisSource"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_AxisTarget_3069",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "AxisTarget"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SourceDeviceGuid_3089",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SourceDeviceGuid"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SourceDeviceAxisIndex_3099",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SourceDeviceAxisIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_VolumeLimit_3125",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "VolumeLimit"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_InvertAxis_3132",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "InvertAxis"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_AxisSource_3146",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "AxisSource"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_AxisTarget_3157",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "AxisTarget"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SourceDeviceGuid_3177",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SourceDeviceGuid"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_SourceDeviceAxisIndex_3187",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "SourceDeviceAxisIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_MouseSensitivity_3214",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "MouseSensitivity"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_InvertAxis_3219",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "InvertAxis"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_MouseButton_3233",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "MouseButton"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroAction_Type_1980",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroAction",
+    "Property": "Type"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroItem_LayerMask_1350",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem",
+    "Property": "LayerMask"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroItem_TriggerSource_1724",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem",
+    "Property": "TriggerSource"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroItem_TriggerAxisThreshold_1873",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem",
+    "Property": "TriggerAxisThreshold"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroItem_TriggerAxisDirectionIndex_1884",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem",
+    "Property": "TriggerAxisDirectionIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroItem_ConsumeTriggerButtons_1894",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem",
+    "Property": "ConsumeTriggerButtons"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroItem_RepeatMode_3262",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem",
+    "Property": "RepeatMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MacroItem_RepeatCount_3273",
+    "Owner": "XBOXDS4ONE.ViewModels.MacroItem",
+    "Property": "RepeatCount"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_Enabled_12483",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "Enabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_OpenOnTextFocus",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "OpenOnTextFocus"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_HotbarWrap",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "HotbarWrap"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_HotbarDismissOnFire",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "HotbarDismissOnFire"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_HotbarRecenter",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "HotbarRecenter"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuCellItem_Label",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuCellItem",
+    "Property": "Label"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuCellItem_BindingKind",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuCellItem",
+    "Property": "BindingKind"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuCellItem_IconName",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuCellItem",
+    "Property": "IconName"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuCellItem_IconScalePercent_13029",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuCellItem",
+    "Property": "IconScalePercent"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_CellCount",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "CellCount"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_FunctionRow",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "FunctionRow"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_Suggestions",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "Suggestions"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_ShowOnWebController",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "ShowOnWebController"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_HasCenter",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "HasCenter"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_ShowLabels_12924",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "ShowLabels"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_PosXPercent_12937",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "PosXPercent"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_PosYPercent_12939",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "PosYPercent"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_ScalePercent_12954",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "ScalePercent"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/PadPage.xaml",
+    "Id": "Reset_MenuEditorItem_OpacityPercent_12971",
+    "Owner": "XBOXDS4ONE.ViewModels.MenuEditorItem",
+    "Property": "OpacityPercent"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ProfilesPage.xaml",
+    "Id": "Reset_SettingsViewModel_EnableAutoProfileSwitching_75",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "EnableAutoProfileSwitching"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ProfilesPage.xaml",
+    "Id": "Reset_ProfileShortcutViewModel_SwitchMode_808",
+    "Owner": "XBOXDS4ONE.ViewModels.ProfileShortcutViewModel",
+    "Property": "SwitchMode"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ProfilesPage.xaml",
+    "Id": "Reset_ProfileShortcutViewModel_TargetProfileId_826",
+    "Owner": "XBOXDS4ONE.ViewModels.ProfileShortcutViewModel",
+    "Property": "TargetProfileId"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ProfilesPage.xaml",
+    "Id": "Reset_ProfileShortcutViewModel_TriggerDeviceGuid_835",
+    "Owner": "XBOXDS4ONE.ViewModels.ProfileShortcutViewModel",
+    "Property": "TriggerDeviceGuid"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ProfilesPage.xaml",
+    "Id": "Reset_SettingsViewModel_EnableExternalControl_133",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "EnableExternalControl"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_SelectedLanguage_80",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "SelectedLanguage"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_SelectedThemeIndex_96",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "SelectedThemeIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_MinimizeToTray_118",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "MinimizeToTray"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_AlwaysShowTrayIcon_139",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "AlwaysShowTrayIcon"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_CheckForUpdatesAutomatically_4571",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "CheckForUpdatesAutomatically"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_InstallUpdatesAutomatically_4572",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "InstallUpdatesAutomatically"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_IncludePreReleaseUpdates_4573",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "IncludePreReleaseUpdates"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_StartMinimized_132",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "StartMinimized"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_StartAtLogin_135",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "StartAtLogin"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_AutoStartEngine_151",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "AutoStartEngine"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_EnablePollingOnFocusLoss_154",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "EnablePollingOnFocusLoss"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_FlydigiEnhancedProtocol_158",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "FlydigiEnhancedProtocol"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_GKeysEnabled_186",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "GKeysEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_AnalogKeyboardsEnabled_188",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "AnalogKeyboardsEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_BlissBoxEnabled_189",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "BlissBoxEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_PollingRateHz_179",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "PollingRateHz"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_HmInactivityDestroyTimeoutSeconds_197",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "HmInactivityDestroyTimeoutSeconds"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_AssignOfferNewDevice_221",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "AssignOfferNewDevice"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_AssignOfferEmptySlot_225",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "AssignOfferEmptySlot"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_AssignOfferHome",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "AssignOfferHome"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_HandheldButtonsEnabled_245",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "HandheldButtonsEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_BatteryNotifyEnabled_261",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "BatteryNotifyEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_BatteryNotifyThreshold_269",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "BatteryNotifyThreshold"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_BatteryNotifyVibrate_276",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "BatteryNotifyVibrate"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_BatteryNotifyRepeatMinutes_277",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "BatteryNotifyRepeatMinutes"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_BatteryNotifyFull_278",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "BatteryNotifyFull"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_EnableInputHiding_348",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "EnableInputHiding"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_KeepHidHideCloaksBetweenLaunches_355",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "KeepHidHideCloaksBetweenLaunches"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_SteamVrInstallDir_535",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "SteamVrInstallDir"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_EnableCommunityConfigLookup_573",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "EnableCommunityConfigLookup"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_ShowLegacyWorkshopConfigs_581",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "ShowLegacyWorkshopConfigs"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_DiagnosticsLoggingEnabled_674",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "DiagnosticsLoggingEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_KeyboardScreensEnabled_13109",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "KeyboardScreensEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/SettingsPage.xaml",
+    "Id": "Reset_SettingsViewModel_NovintFalconEnabled_13110",
+    "Owner": "XBOXDS4ONE.ViewModels.SettingsViewModel",
+    "Property": "NovintFalconEnabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_Enabled_58501",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "Enabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_StyleIndex_58502",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "StyleIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_Display_58503",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "Display"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_OffsetX_58504",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "OffsetX"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_Length_58505",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "Length"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_Radius_58510",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "Radius"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_Sides_58511",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "Sides"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_Thickness_58506",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "Thickness"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_Gap_58507",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "Gap"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_CenterDot_58508",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "CenterDot"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_TShape_58509",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "TShape"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_DotSize_58512",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "DotSize"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_ImagePath_58513",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "ImagePath"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_ImageWidth_58514",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "ImageWidth"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_KeepProportions_58515",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "KeepProportions"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_ColorHex_58516",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "ColorHex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_OpacityPercent_58517",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "OpacityPercent"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_Outline_58518",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "Outline"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_OutlineThickness_58519",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "OutlineThickness"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_OutlineHex_58520",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "OutlineHex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_Rotation_58521",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "Rotation"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_CrosshairItem_SmoothEdges_58522",
+    "Owner": "XBOXDS4ONE.ViewModels.CrosshairItem",
+    "Property": "SmoothEdges"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_Enabled_58530",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "Enabled"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_ModeIndex_58531",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "ModeIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_FollowIndex_58532",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "FollowIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_Display_58533",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "Display"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_ZoomPercent_58534",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "ZoomPercent"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_LensShapeIndex_58535",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "LensShapeIndex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_LensWidth_58536",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "LensWidth"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_LensHeight_58538",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "LensHeight"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_Border_58539",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "Border"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_BorderThickness_58540",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "BorderThickness"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_BorderHex_58541",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "BorderHex"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_SpotlightSize_58542",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "SpotlightSize"
+  },
+  {
+    "File": "XBOXDS4ONE.App/Views/ExtrasPage.xaml",
+    "Id": "Reset_MagnifierItem_SpotlightDimPercent_58543",
+    "Owner": "XBOXDS4ONE.ViewModels.MagnifierItem",
+    "Property": "SpotlightDimPercent"
+  }
+]

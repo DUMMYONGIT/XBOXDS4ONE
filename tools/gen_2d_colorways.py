@@ -26,7 +26,7 @@ app already renders, before it is trusted on any other colorway.
 
 OUTPUT. Variant files land beside the stock ones as
 ``<stem>_<AppearanceId>.png``; the registry is emitted as the generated
-``PadForge.App/Models2D/Controller2DColorways.cs``. Appearance ids reuse
+``XBOXDS4ONE.App/Models2D/Controller2DColorways.cs``. Appearance ids reuse
 the 3D model families' ids wherever the same physical colorway exists
 (one persisted selection drives both views); 2D-only colorways add new
 ids in the same PascalCase style.
@@ -40,9 +40,9 @@ import numpy as np
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-APP2D = os.path.join(ROOT, "PadForge.App", "2DModels")
-LAYOUT_CS = os.path.join(ROOT, "PadForge.App", "Models2D", "ControllerOverlayLayout.cs")
-REGISTRY_CS = os.path.join(ROOT, "PadForge.App", "Models2D", "Controller2DColorways.cs")
+APP2D = os.path.join(ROOT, "XBOXDS4ONE.App", "2DModels")
+LAYOUT_CS = os.path.join(ROOT, "XBOXDS4ONE.App", "Models2D", "ControllerOverlayLayout.cs")
+REGISTRY_CS = os.path.join(ROOT, "XBOXDS4ONE.App", "Models2D", "Controller2DColorways.cs")
 PACK = os.path.join(os.path.dirname(ROOT), "Gamepad-Asset-Pack", "Controller Asset Pack")
 
 # RMSE (0..255 scale, judged pixels) thresholds. VALIDATE: the
@@ -513,7 +513,7 @@ def emit_registry(fam_results):
     w("")
     w("using System.Collections.Generic;")
     w("")
-    w("namespace PadForge.Models2D")
+    w("namespace XBOXDS4ONE.Models2D")
     w("{")
     w("    /// <summary>One 2D colorway: the appearance id it answers to")
     w("    /// (shared with the 3D model families where the same physical")

@@ -6,9 +6,9 @@
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="..\..\PadForge.App\Common\Input\AcpiWmi.cs" Link="AcpiWmi.cs" />
-    <Compile Include="..\..\PadForge.App\Common\Input\WmiEventRuntime.cs" Link="WmiEventRuntime.cs" />
+    <Compile Include="..\..\XBOXDS4ONE.App\Common\Input\AcpiWmi.cs" Link="AcpiWmi.cs" />
+    <Compile Include="..\..\XBOXDS4ONE.App\Common\Input\WmiEventRuntime.cs" Link="WmiEventRuntime.cs" />
     <PackageReference Include="System.Management" Version="10.0.13" />
-    <ProjectReference Include="..\..\PadForge.Engine\PadForge.Engine.csproj" />
+    <ProjectReference Include="..\..\XBOXDS4ONE.Engine\XBOXDS4ONE.Engine.csproj" />
   </ItemGroup>
 </Project>

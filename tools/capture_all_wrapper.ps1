@@ -4,9 +4,9 @@
 # when it ran clean. It used to end with 0 whatever the capture did, a fatal
 # error included.
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-# Logs never go beside the exe. Only PadForge.xml and crash.log may live
+# Logs never go beside the exe. Only XBOXDS4ONE.xml and crash.log may live
 # in the deploy directory, and these transcripts were breaking that bar.
-$pfLogDir = Join-Path $env:TEMP "PadForge_Capture"
+$pfLogDir = Join-Path $env:TEMP "XBOXDS4ONE_Capture"
 if (-not (Test-Path $pfLogDir)) { New-Item -ItemType Directory -Path $pfLogDir | Out-Null }
 $logFile = Join-Path $pfLogDir "capture_all_log.txt"
 $code = 1

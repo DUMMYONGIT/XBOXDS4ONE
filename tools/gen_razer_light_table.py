@@ -13,7 +13,7 @@ WHAT IT READS.
   wide (RazerController.cpp:207-258), so a light's cell is its place in that
   list.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/RazerLightTable.g.cs, one
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/RazerLightTable.g.cs, one
 row for each product with more than one light:
 - A product painted by frame (standard matrix, one-row extended frame,
   extended matrix frame) keeps the frame RazerDirectTable gives it, and its
@@ -63,7 +63,7 @@ import gen_razer_direct_table as table  # noqa: E402
 import razer_key_sources as key_sources  # noqa: E402
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "RazerLightTable.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "RazerLightTable.g.cs")
 PIN = "6b681e3c"
 DEVICES_CPP = "Controllers/RazerController/RazerDevices.cpp"
 DEVICES_H = "Controllers/RazerController/RazerDevices.h"
@@ -347,7 +347,7 @@ def emit(rows, commit):
     add("//     %d of them have keys, %d laid out by OpenRGB's KeyboardLayoutManager." % (
         keyed, sum(1 for _, r in rows if r["keys"] and r["keys"][0])))
     add("// </auto-generated>")
-    add("namespace PadForge.Common.Input.Peripherals")
+    add("namespace XBOXDS4ONE.Common.Input.Peripherals")
     add("{")
     add("    internal static partial class RazerLightTable")
     add("    {")

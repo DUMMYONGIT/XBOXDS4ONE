@@ -20,7 +20,7 @@ WHAT IT READS, under OpenRGB's Controllers:
 - RGBController/RGBControllerKeyNames.cpp for the strings the KEY_ names
   stand for.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/HidFamilies/MatrixKeyboardLayouts.g.cs,
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/MatrixKeyboardLayouts.g.cs,
 with CRLF line endings.
 
 Usage:
@@ -36,7 +36,7 @@ import openrgb_cpp as oc
 from openrgb_cpp import CppError
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies",
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies",
                       "MatrixKeyboardLayouts.g.cs")
 
 C = "Controllers/"
@@ -158,7 +158,7 @@ def main():
     out.append("//     %s (the key grids and LED names of the Cherry, EVision and Das" % commit[:10])
     out.append("//     Keyboard families). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     out.append("{")
     out.append("    internal static partial class MatrixKeyboardLayouts")
     out.append("    {")

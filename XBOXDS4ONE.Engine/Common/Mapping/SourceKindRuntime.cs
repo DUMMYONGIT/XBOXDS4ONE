@@ -1,0 +1,1496 @@
+using System;
+using System.Collections.Generic;
+using XBOXDS4ONE.Engine.Data;
+
+namespace XBOXDS4ONE.Engine.Common.Mapping
+{
+    /// <summary>
+    /// Per-VC runtime state for stateful source kinds (Incremental, Ramp,
+    /// Toggle, Rapid Trigger, and the steering and flick kinds).
+    /// Lives on the polling-thread side of Step 3; cleared on profile
+    /// switch and on app restart.
+    ///
+    /// <para>
+    /// Stateless source kinds (Direct, InvertOnHold) do not allocate
+    /// state here — their per-frame value is a pure function of the
+    /// inputs and the modifier descriptor.
+    /// </para>
+    /// </summary>
+    public sealed class SourceKindRuntime
+    {
+        // Keyed by (slotIndex, target, sourceIndex). MappingRow is a DTO
+        // with no stable identity, so we key by row position. On row
+        // reorder the user's Incremental accumulator survives because
+        // Target+sourceIndex is what most users edit incrementally; on
+        // wholesale row removal the state lingers harmlessly until the
+        // dictionary is cleared (profile switch).
+        private Dictionary<(int slot, string target, int srcIdx), KeyAccumulator> _incrementalAccum
+            = new();
+
+        // Ramped axis envelope accumulator (v3.5 #111), bipolar [-1, +1], same
+        // (slot, target, srcIdx) key as Incremental so two ramped sources on one
+        // row keep independent state.
+        private Dictionary<(int slot, string target, int srcIdx), KeyAccumulator> _rampedAccum
+            = new();
+
+        /// <summary>One Incremental or Ramp value with the frame it is being
+        /// stepped in. Every row that has a key source at the same place of
+        /// the same target reads the one value, so more than one reader can
+        /// tick it in a frame (<see cref="UseCommitLayer"/>). The value is
+        /// stepped once a frame all the same: each reader's first tick adds
+        /// the keys it reads to the frame's and steps from where the frame
+        /// started with all of them. Made once, when the value is first
+        /// read, so no tick after that allocates.</summary>
+        private sealed class KeyAccumulator
+        {
+            public double Value;        // where the last tick left it
+            public long Seq = -1;       // the frame the fields below belong to
+            public double Start;        // the value when that frame began
+            public bool Up, Down;       // the keys read so far in that frame, by any reader
+        }
+
+        // Toggle latch (#461), keyed by (slot, target, layer, srcIdx): two
+        // toggles on one row keep their own state, and so do a Base row and a
+        // shift layer's row on the same target. With the layer left out the
+        // layer's row took over the Base row's state in the very frame the
+        // layer engaged, so no frame without a read ever released it, the
+        // reset the latch's own contract promises (TickToggle). StickTrim
+        // keys on the layer for the same reason (MappingSetEval).
+        private sealed class ToggleState
+        {
+            public long Seq = -1;            // frame of the last read
+            public bool PrevPressed;         // previous frame's press, the OR of its reads
+            public bool CurPressed;          // this frame's press so far
+            public bool FlippedThisFrame;    // one flip per frame, however many devices read
+            public bool Latched;
+            public double Level;             // output while latched, signed on an axis
+        }
+        private Dictionary<(int slot, string target, string layer, int srcIdx), ToggleState> _toggleState
+            = new();
+
+        // Rapid Trigger (#482), the Toggle latch's (slot, target, layer,
+        // srcIdx) key, for the same reason. The three modes are libhmk's
+        // key_dir: outside the zone (INACTIVE), pressed (DOWN), and released
+        // inside the zone (UP).
+        private const byte RapidOutside = 0, RapidPressed = 1, RapidReleased = 2;
+        private sealed class RapidTriggerState
+        {
+            public long Seq = -1;            // frame of the last read
+            public byte BaseMode;            // where the previous frame ended, this frame's starting point
+            public double BaseExtremum;
+            public bool FramePast;           // this frame's reads so far: past the deadzone on any device
+            public double FrameDepth;        // and the deepest of them
+            public byte Mode;                // the step from the base on this frame's reads so far
+            public double Extremum;          // deepest point while pressed, shallowest while released
+        }
+        private Dictionary<(int slot, string target, string layer, int srcIdx), RapidTriggerState> _rapidTriggerState
+            = new();
+
+        /// <summary>The layer part of a per-row state key: the row's shift
+        /// layer, with an unset one read as Base, the way the evaluator reads
+        /// a row's layer.</summary>
+        private static string LayerKey(string layer) => string.IsNullOrEmpty(layer) ? "Base" : layer;
+
+        // ── Steering kinds (v3.4 #94) ──
+        /// <summary>Lock-edge transition reported to the lock-feedback layer.</summary>
+        public enum LockEdge : byte { None, Enter, Exit }
+        private enum LockSide : byte { None, Left, Right }
+        private struct WindingState { public double AngleDeg; public double LastX, LastY; }
+        private struct LockState { public LockSide Side; public LockEdge PendingEdge; public bool PendingLeft; public double LastAbs; }
+
+        // Signed winding accumulator per row (deg, NOT clamped — overshoot is intentional).
+        private Dictionary<(int slot, string target, int srcIdx), WindingState> _windingState = new();
+        // At-lock edge tracking per row, drives the haptic feedback layer.
+        private Dictionary<(int slot, string target, int srcIdx), LockState> _lockState = new();
+
+        // Per-device captured neutral orientation (down-convention unit vector) for
+        // MotionLean. The resting grip is a few degrees off true level, so without
+        // this the center reads non-zero and the off-axis tilt bleeds into steering.
+        // Faithful to JSM's neutralQuat (main.cpp:421-435, 891): captured once when
+        // the steering source first sees real gravity for a device, held until profile
+        // switch (Clear). Keyed by device GUID. The resting pose is physical, not per-slot.
+        // The grip tag records the hold the vector was captured under (#392), so a
+        // hold change drops the stale-frame latch on the next read.
+        private Dictionary<string, (double x, double y, double z, string grip)> _motionNeutral = new();
+
+        // The second sensor's latch key for each device. Joined on every
+        // tick, it was a new string a poll for as long as the row was read.
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> s_auxLeanKeys = new();
+
+        // ── Flick stick (#225) ──
+        // Per-row flick stick state, JSM's Stick flick fields (Stick.h:75-90)
+        // plus the frame-sequence guards the StickTrim state uses (the KBM
+        // evaluator runs once per assigned DEVICE per frame, and a shift
+        // layer's row simply stops being evaluated while its layer is off).
+        // Keyed by the row's layer as the Toggle latch is, so the gap that
+        // re-arms a layer's flick is not skipped by a Base row on the same
+        // target handing it a different stick's flick in progress.
+        private sealed class FlickState
+        {
+            public bool IsFlicking;                     // JSM Stick.is_flicking
+            public double LastX, LastY;                 // JSM Stick.lastX/lastY (raw normalized, SDL frame)
+            public double DeltaFlick;                   // JSM Stick.delta_flick (rad)
+            public double FlickProgressSeconds;         // JSM time-since-started_flick, dt-accumulated
+            public double FlickPercentDone = 1.0;       // JSM Stick.flick_percent_done; 1 = no easing pending
+            public double CountRemainder;               // sub-count residual (KBM VC accumulator idiom)
+            public long LastSeq = -1;                   // frame idempotence + layer-suppression gap detection
+            public int LastOutput;                      // replay for the 2nd+ device pass in one frame
+            public readonly float[] Samples = new float[FlickNumSamples]; // JSM _flickSamples
+            public int FrontSample;                     // JSM _frontSample
+        }
+
+        /// <summary>The smoothing window, JSM's 64 ms (JoyShock.cpp:926).</summary>
+        internal const int FlickWindowMs = 64;
+
+        /// <summary>The window's samples at the fastest polling rate, 10000
+        /// passes a second. JSM's NUM_SAMPLES is 256 (JoyShock.h:123), four
+        /// times what its window holds at its shortest tick of a
+        /// millisecond (main.cpp filterTickTime). At 256 the window here
+        /// was 64 ms up to 4000 passes a second and 25.6 ms at
+        /// 10000.</summary>
+        internal const int FlickNumSamples = 640;
+
+        /// <summary>How many samples the smoothing window holds. JSM sizes
+        /// it from its configured tick (JoyShock.cpp:925-926), and so does
+        /// this when the app names its polling rate
+        /// (<see cref="SourceCoercion.PollHzProvider"/>): every pass then
+        /// averages the same count, whatever its own length, and what goes
+        /// in comes out. Sized from each pass's measured length, the count
+        /// changed from pass to pass. Above 2000 passes a second several
+        /// passes run at one wake, the first long and the rest short, and
+        /// each sized a window of its own. With no rate named, the pass's
+        /// own length stands for the tick.</summary>
+        internal static int FlickWindowSamples(double deltaSeconds)
+        {
+            var pollHz = SourceCoercion.PollHzProvider;
+            int samples = pollHz != null
+                ? (FlickWindowMs * Math.Max(1, (int)MathF.Round(pollHz())) + 999) / 1000
+                : (int)Math.Ceiling(FlickWindowMs / 1000.0 / Math.Max(deltaSeconds, 0.0001));
+            return Math.Min(FlickNumSamples, samples);
+        }
+
+        private Dictionary<(int slot, string target, string layer, int srcIdx), FlickState> _flickState = new();
+
+        /// <summary>Frame counter, stamped by the caller once per polling
+        /// frame. The Extended/KBM/MIDI evaluators run once per assigned
+        /// DEVICE per frame, and a source with an empty device GUID matches
+        /// every device, so a two-device slot reaches the same accumulator
+        /// twice in one frame. FlickStick and StickTrim already gate on a
+        /// frame sequence for exactly this; Incremental and Ramped did not,
+        /// and advanced by the full frame dt on each pass (a 2 s sweep ran
+        /// in 1 s on two devices, 0.66 s on three).</summary>
+        public long FrameSeq;
+
+        // The frame stamps are keyed by the accumulator's key and by who
+        // reads: "" for the row the engaged layer reads, and the departed
+        // layer for a menu commit made by leaving it (UseCommitLayer). Such
+        // a commit is read on the departed layer's row in the same frame as
+        // the engaged layer's row for the target, and the two share the
+        // accumulator. Under one stamp the engaged row ticked first and the
+        // commit's tick replayed its value, so a key the commit held never
+        // stepped it, and a Base row two departed layers' commits both reach
+        // took the first one's key alone. So each reader ticks once a frame,
+        // and a second pass of the same reader, another device's, replays
+        // its first.
+        //
+        // The value is still stepped once a frame, whoever reads it
+        // (KeyAccumulator). With a full tick of its own, the engaged row's
+        // rest tick undid the commit's step every frame (a Ramp gave back
+        // one release step, and a row that is not sticky went back to its
+        // floor), and a key both rows held stepped the value twice. A
+        // reader's first tick steps from where the frame started with the
+        // keys of every reader so far: a key any of them holds counts once,
+        // and opposite keys on two of them read as both held, as they do on
+        // one row. What a reader's own tick returns is that step with the
+        // keys read up to it, so the reader that ticks last returns the
+        // value the frame ends on.
+        private sealed class TickReplay { public long Seq = -1; public double Output; }
+        private Dictionary<(int slot, string target, string layer, int srcIdx), TickReplay> _incrementalReplay = new();
+        private Dictionary<(int slot, string target, string layer, int srcIdx), TickReplay> _rampedReplay = new();
+
+        [ThreadStatic] private static string t_commitLayer;
+
+        /// <summary>Until the scope is disposed, an Incremental or Ramp tick
+        /// on this thread is a read of the menu commit made by leaving
+        /// <paramref name="layer"/>: a reader of its own in the frame, apart
+        /// from the engaged layer's row and from another layer's commit, so
+        /// the keys it reads are read though one of those ticked first. The
+        /// value is stepped once a frame for all of them
+        /// (<see cref="KeyAccumulator"/>). Disposing restores the scope
+        /// before it.</summary>
+        public static CommitScope UseCommitLayer(string layer)
+        {
+            var previous = t_commitLayer;
+            t_commitLayer = layer;
+            return new CommitScope(previous);
+        }
+
+        /// <summary>Restores the commit layer that was in force when the
+        /// scope began.</summary>
+        public readonly struct CommitScope : IDisposable
+        {
+            private readonly string _previous;
+            internal CommitScope(string previous) => _previous = previous;
+            public void Dispose() => t_commitLayer = _previous;
+        }
+
+        // Saturation band for the lock state machine — avoids float-edge thrash at ±1.
+        private const double LockEpsilon = 1e-3;
+
+        /// <summary>Drops all state. Called on profile switch. Cruise
+        /// control snaps to neutral on next read.</summary>
+        public void Clear()
+        {
+            // SWAP, never Clear-in-place. These dictionaries are mutated by
+            // the 1 kHz polling thread while this runs on the UI thread
+            // (profile switch), and clearing a plain Dictionary
+            // under a concurrent writer can corrupt its buckets and hang a
+            // subsequent lookup in an infinite loop -- the exact failure the
+            // XboxImpulseHidWriter fix chased (audit round 24). Publishing a
+            // fresh instance means no two threads ever mutate the SAME
+            // dictionary: a poll tick still holding the old reference writes
+            // into an orphan that is about to be collected, which is
+            // precisely the state this method wanted dropped. Costs one
+            // field read on the hot path, versus ConcurrentDictionary's
+            // per-access overhead on a 1 kHz loop (round 34).
+            _incrementalAccum = new();
+            _rampedAccum = new();
+            _windingState = new();
+            _lockState = new();
+            _motionNeutral = new();
+            _flickState = new();
+            _incrementalReplay = new();
+            _rampedReplay = new();
+            _toggleState = new();
+            _rapidTriggerState = new();
+        }
+
+        /// <summary>Drops all steering + flick state for a slot. Called on profile switch.</summary>
+        public void ResetForSlot(int slot)
+        {
+            _windingState = Without(_windingState, slot, null);
+            _lockState = Without(_lockState, slot, null);
+            _flickState = Without(_flickState, slot, null);
+            // The accumulators, not only their frame-replay stamps. Every
+            // dictionary here keys on the slot and the row's target, so a
+            // wholesale row replacement invalidates every one of them:
+            // dropping the stamp while leaving the value just meant the
+            // re-authored row resumed the previous occupant's cruise
+            // position on the next tick.
+            _incrementalAccum = Without(_incrementalAccum, slot, null);
+            _rampedAccum = Without(_rampedAccum, slot, null);
+            _incrementalReplay = Without(_incrementalReplay, slot, null);
+            _rampedReplay = Without(_rampedReplay, slot, null);
+            _toggleState = Without(_toggleState, slot, null);
+            _rapidTriggerState = Without(_rapidTriggerState, slot, null);
+        }
+
+        /// <summary>Drops steering state for one (slot, target). The
+        /// finer-grained twin of <see cref="ResetForSlot"/>, which is what
+        /// the row-replacement path actually calls: XBOXDS4ONE replaces a
+        /// slot's rows wholesale rather than editing one in place, so there
+        /// is no single-row structural change to hook. Kept for a caller
+        /// that edits one row without rebuilding the set.</summary>
+        public void ResetForRow(int slot, string target)
+        {
+            _windingState = Without(_windingState, slot, target ?? "");
+            _lockState = Without(_lockState, slot, target ?? "");
+            _incrementalAccum = Without(_incrementalAccum, slot, target ?? "");
+            _rampedAccum = Without(_rampedAccum, slot, target ?? "");
+            _incrementalReplay = Without(_incrementalReplay, slot, target ?? "");
+            _rampedReplay = Without(_rampedReplay, slot, target ?? "");
+            _toggleState = Without(_toggleState, slot, target ?? "");
+            _rapidTriggerState = Without(_rapidTriggerState, slot, target ?? "");
+        }
+
+        /// <summary>Drops the captured MotionLean neutral orientations (the
+        /// GyroRecenter macro action, issue #9 wave 1b) so the next real
+        /// gravity sample re-captures the controller's CURRENT grip as
+        /// neutral, the same re-reference a profile switch's Clear() causes.
+        /// Covers the aux ("|L") captures too; they live in the same dict.
+        /// Instance state, so the per-slot runtime scopes this to its slot.</summary>
+        public void ResetMotionNeutral() => _motionNeutral.Clear();
+
+        /// <summary>Returns a COPY with the matching entries dropped, for the
+        /// caller to publish. Swap, never remove-in-place: this runs on the UI
+        /// thread (paste, row replacement) while the 1 kHz poll thread mutates
+        /// the same dictionaries, and mutating a plain Dictionary under a
+        /// concurrent writer can corrupt its buckets and hang a later lookup in
+        /// an infinite loop. Clear() states this rule verbatim and these two
+        /// reset paths were the ones that broke it. Returns the original
+        /// instance when nothing matched, so the common no-op costs no
+        /// allocation and no publish.</summary>
+        private static Dictionary<(int slot, string target, int srcIdx), TVal> Without<TVal>(
+            Dictionary<(int slot, string target, int srcIdx), TVal> dict, int slot, string target)
+        {
+            if (dict == null || dict.Count == 0) return dict;
+            bool any = false;
+            foreach (var k in dict.Keys)
+                if (k.slot == slot && (target == null || k.target == target)) { any = true; break; }
+            if (!any) return dict;
+
+            var copy = new Dictionary<(int slot, string target, int srcIdx), TVal>(dict.Count);
+            foreach (var kv in dict)
+                if (!(kv.Key.slot == slot && (target == null || kv.Key.target == target)))
+                    copy.Add(kv.Key, kv.Value);
+            return copy;
+        }
+
+        /// <summary>The overload above for the stores keyed by the row's layer
+        /// too: a target's entries go on every layer.</summary>
+        private static Dictionary<(int slot, string target, string layer, int srcIdx), TVal> Without<TVal>(
+            Dictionary<(int slot, string target, string layer, int srcIdx), TVal> dict, int slot, string target)
+        {
+            if (dict == null || dict.Count == 0) return dict;
+            bool any = false;
+            foreach (var k in dict.Keys)
+                if (k.slot == slot && (target == null || k.target == target)) { any = true; break; }
+            if (!any) return dict;
+
+            var copy = new Dictionary<(int slot, string target, string layer, int srcIdx), TVal>(dict.Count);
+            foreach (var kv in dict)
+                if (!(kv.Key.slot == slot && (target == null || kv.Key.target == target)))
+                    copy.Add(kv.Key, kv.Value);
+            return copy;
+        }
+
+        /// <summary>
+        /// Updates the Incremental accumulator for this source and returns
+        /// the per-frame contribution (already in the source kind's
+        /// configured range, unipolar [ParamMin, ParamMax]). Each key reads
+        /// the controller it names (<see cref="ReadKey"/>).
+        /// <paramref name="evaluatedDeviceGuid"/> is the device the evaluator
+        /// reads <paramref name="state"/> from when the source names none,
+        /// which keys the grip of a hat-named key read there (#392).
+        /// </summary>
+        public double TickIncremental(
+            int slotIndex,
+            string target,
+            int sourceIndex,
+            MappingSource src,
+            CustomInputState state,
+            double frameDeltaSeconds,
+            string evaluatedDeviceGuid = null)
+        {
+            if (src == null || state == null) return 0;
+            var key = (slotIndex, target ?? "", sourceIndex);
+            var stamp = (slotIndex, target ?? "", t_commitLayer ?? "", sourceIndex);
+            var replays = _incrementalReplay;
+            if (!replays.TryGetValue(stamp, out var replay))
+                replays[stamp] = replay = new TickReplay();
+            // A second pass of this reader in the same frame, another
+            // device's: replay its first instead of ticking again.
+            if (replay.Seq == FrameSeq) return replay.Output;
+            replay.Seq = FrameSeq;
+
+            // The reader's keys join the frame's, and the value steps once
+            // from where the frame started with all of them.
+            var acc = FrameAccumulator(_incrementalAccum, key);
+            acc.Up |= ReadKey(state, src.ParamUp, src.ParamUpDeviceGuid,
+                src, evaluatedDeviceGuid, slotIndex);
+            acc.Down |= ReadKey(state, src.ParamDown, src.ParamDownDeviceGuid,
+                src, evaluatedDeviceGuid, slotIndex);
+
+            double current = StepIncremental(acc.Start, src, acc.Up, acc.Down, frameDeltaSeconds);
+            acc.Value = current;
+            replay.Output = current;
+            return current;
+        }
+
+        /// <summary>The accumulator for <paramref name="key"/> with its frame
+        /// begun: on its first read in a frame it notes the value the frame
+        /// starts from and forgets the last frame's keys. It is made on its
+        /// first read ever, the one allocation it costs.</summary>
+        private KeyAccumulator FrameAccumulator(
+            Dictionary<(int slot, string target, int srcIdx), KeyAccumulator> store,
+            (int slot, string target, int srcIdx) key)
+        {
+            if (!store.TryGetValue(key, out var acc))
+                store[key] = acc = new KeyAccumulator();
+            if (acc.Seq != FrameSeq)
+            {
+                acc.Seq = FrameSeq;
+                acc.Start = acc.Value;
+                acc.Up = false;
+                acc.Down = false;
+            }
+            return acc;
+        }
+
+        /// <summary>One Incremental step of <paramref name="current"/> with
+        /// the keys given.</summary>
+        private static double StepIncremental(double current, MappingSource src, bool up, bool down,
+            double frameDeltaSeconds)
+        {
+            // Clamp to declared range (handles user re-narrowing the range
+            // mid-session).
+            if (current < src.ParamMin) current = src.ParamMin;
+            if (current > src.ParamMax) current = src.ParamMax;
+
+            double rate = src.ParamRate;
+            if (rate < 0) rate = 0;
+
+            double range = src.ParamMax - src.ParamMin;
+            if (range <= 0) range = 1.0;
+
+            // Step in units-of-output-range per second; e.g. rate=0.5
+            // sweeps the full range in 2 s.
+            double step = rate * range * frameDeltaSeconds;
+
+            if (up && !down)
+            {
+                current += step;
+                if (current > src.ParamMax) current = src.ParamMax;
+            }
+            else if (down && !up)
+            {
+                current -= step;
+                if (current < src.ParamMin) current = src.ParamMin;
+            }
+            else if (!up && !down && !src.ParamSticky)
+            {
+                // Non-sticky: snap to ParamMin when neither held.
+                current = src.ParamMin;
+            }
+            // else: held opposite or both held / both released sticky →
+            // hold last value.
+
+            return current;
+        }
+
+        /// <summary>
+        /// Updates the Ramped axis envelope for this source and returns the
+        /// per-frame bipolar value in [-1, +1] (issue #111). The positive key
+        /// (<see cref="MappingSource.ParamUp"/>) attacks toward +1, the negative key
+        /// (<see cref="MappingSource.ParamDown"/>) toward -1, each over
+        /// <see cref="MappingSource.ParamAttackTime"/>. Releasing both ramps back to 0
+        /// over <see cref="MappingSource.ParamReleaseTime"/> when autocenter is on, or
+        /// holds (cruise) when off. Pressing the opposite key while still on the
+        /// original side first returns toward zero at the release rate, multiplied by
+        /// <see cref="MappingSource.ParamReverseMultiplier"/> when autocenter is on,
+        /// then attacks the new side once it crosses zero. Linear ramps only. The
+        /// FreePIE center_reduction shaping is out of scope per the recipe.
+        /// Each key reads the controller it names (<see cref="ReadKey"/>), and
+        /// <paramref name="evaluatedDeviceGuid"/> keys the grip of a hat-named
+        /// key read on the evaluated device (#392).
+        /// </summary>
+        public double TickRamped(
+            int slotIndex,
+            string target,
+            int sourceIndex,
+            MappingSource src,
+            CustomInputState state,
+            double frameDeltaSeconds,
+            string evaluatedDeviceGuid = null)
+        {
+            if (src == null || state == null) return 0;
+            var key = (slotIndex, target ?? "", sourceIndex);
+            var stamp = (slotIndex, target ?? "", t_commitLayer ?? "", sourceIndex);
+            var replays = _rampedReplay;
+            if (!replays.TryGetValue(stamp, out var replay))
+                replays[stamp] = replay = new TickReplay();
+            // A second pass of this reader in the same frame, another
+            // device's: replay, don't re-ramp.
+            if (replay.Seq == FrameSeq) return replay.Output;
+            replay.Seq = FrameSeq;
+
+            // The reader's keys join the frame's, and the value steps once
+            // from where the frame started with all of them.
+            var acc = FrameAccumulator(_rampedAccum, key);
+            acc.Up |= ReadKey(state, src.ParamUp, src.ParamUpDeviceGuid,
+                src, evaluatedDeviceGuid, slotIndex);     // positive direction
+            acc.Down |= ReadKey(state, src.ParamDown, src.ParamDownDeviceGuid,
+                src, evaluatedDeviceGuid, slotIndex);     // negative direction
+
+            double v = StepRamped(acc.Start, src, acc.Up, acc.Down, frameDeltaSeconds);
+            acc.Value = v;
+            replay.Output = v;
+            return v;
+        }
+
+        /// <summary>One Ramp step of <paramref name="v"/> with the keys
+        /// given.</summary>
+        private static double StepRamped(double v, MappingSource src, bool up, bool down,
+            double frameDeltaSeconds)
+        {
+            double attack = src.ParamAttackTime;   if (attack < 0) attack = 0;
+            double release = src.ParamReleaseTime; if (release < 0) release = 0;
+            double rev = src.ParamReverseMultiplier; if (rev < 1) rev = 1;
+
+            // Per-tick fraction of the full 0..1 travel. Time 0 means instant.
+            double attackStep  = attack  > 0 ? frameDeltaSeconds / attack  : 1.0;
+            double releaseStep = release > 0 ? frameDeltaSeconds / release : 1.0;
+
+            if (up && !down)
+            {
+                if (v < 0)
+                {
+                    // Still on the negative side while pressing positive: return toward
+                    // zero at the release rate (4x faster when autocenter is on), then
+                    // attack the positive side once it crosses zero.
+                    v += releaseStep * (src.ParamAutocenter ? rev : 1.0);
+                    if (v > 0) v = 0;
+                }
+                else
+                {
+                    v += attackStep;
+                    if (v > 1) v = 1;
+                }
+            }
+            else if (down && !up)
+            {
+                if (v > 0)
+                {
+                    v -= releaseStep * (src.ParamAutocenter ? rev : 1.0);
+                    if (v < 0) v = 0;
+                }
+                else
+                {
+                    v -= attackStep;
+                    if (v < -1) v = -1;
+                }
+            }
+            else if (src.ParamAutocenter)
+            {
+                // Neither (or both) held: ramp back toward zero at the release rate.
+                if (v > 0) { v -= releaseStep; if (v < 0) v = 0; }
+                else if (v < 0) { v += releaseStep; if (v > 0) v = 0; }
+            }
+            // else: autocenter off and not driving → cruise, hold last value.
+
+            if (v < -1) v = -1; else if (v > 1) v = 1;
+            return v;
+        }
+
+        /// <summary>
+        /// Advances the Toggle latch (#461) with one read of its input and
+        /// returns the output: the <paramref name="level"/> captured by the
+        /// press that latched it, or 0 while released. A press flips the
+        /// latch on its rising edge. The press is the OR of every read in one
+        /// frame, because an any-device source is read once per device on the
+        /// slot: the first device's read must not hide a press on the second,
+        /// and two devices pressing together flip it once. A frame with no
+        /// read at all (the row's shift layer closed, its input suppressed,
+        /// its device offline) releases the latch, the way a macro Toggle
+        /// releases when its layer closes, and a press already down when
+        /// reads resume does not flip it back on. <paramref name="layer"/> is
+        /// the row's shift layer, so another layer's row on the same target
+        /// never continues this one's latch.
+        /// </summary>
+        public double TickToggle(int slotIndex, string target, int sourceIndex,
+            bool pressed, double level, string layer = null)
+        {
+            var key = (slotIndex, target ?? "", LayerKey(layer), sourceIndex);
+            if (!_toggleState.TryGetValue(key, out var st))
+                _toggleState[key] = st = new ToggleState();
+            if (st.Seq != FrameSeq)
+            {
+                bool resumed = st.Seq < 0 || FrameSeq - st.Seq > 1;
+                if (resumed) st.Latched = false;
+                st.PrevPressed = resumed || st.CurPressed;
+                st.CurPressed = false;
+                st.FlippedThisFrame = false;
+                st.Seq = FrameSeq;
+            }
+            if (pressed)
+            {
+                if (!st.PrevPressed && !st.FlippedThisFrame)
+                {
+                    st.Latched = !st.Latched;
+                    st.FlippedThisFrame = true;
+                    st.Level = level;
+                }
+                st.CurPressed = true;
+            }
+            return st.Latched ? st.Level : 0;
+        }
+
+        /// <summary>
+        /// Advances Rapid Trigger (#482) with one read of its input and
+        /// returns whether it is pressed. <paramref name="pastActuation"/> is
+        /// the row's Direct read, so the first press lands where a Direct row
+        /// presses. <paramref name="depth"/> is the input's travel, 0 to 1,
+        /// and <paramref name="distance"/> the share of it that releases or
+        /// presses again. The steps are libhmk's matrix_scan (src/matrix.c,
+        /// the non-continuous mode, where the actuation point is also the
+        /// reset point): past the actuation point the input presses and the
+        /// depth is recorded. While pressed, a deeper read moves that point
+        /// down and a rise of more than the distance releases. While released,
+        /// a shallower read moves it up and a push of more than the distance
+        /// presses again. Leaving the zone releases from either side.
+        /// <para>An any-device source is read once per device on the slot.
+        /// Each read folds into the frame's deepest read, and the frame steps
+        /// from where the previous frame ended, so it steps once whatever
+        /// order the devices are read in. The pressed result only grows with
+        /// depth, so no read in a frame returns more than the frame's last
+        /// one, and the OR and max combines across devices agree with it. A
+        /// frame with no read (the row's shift layer closed, its gate input
+        /// released, its input suppressed, its device offline) puts the input back
+        /// outside the zone, the way Toggle's latch releases, and the first
+        /// read afterward presses at once if the input is past the deadzone,
+        /// as a Direct row would. <paramref name="layer"/> is the row's shift
+        /// layer, so another layer's row on the same target never steps from
+        /// this one's zone.</para>
+        /// </summary>
+        public bool TickRapidTrigger(int slotIndex, string target, int sourceIndex,
+            bool pastActuation, double depth, double distance, string layer = null)
+        {
+            var key = (slotIndex, target ?? "", LayerKey(layer), sourceIndex);
+            if (!_rapidTriggerState.TryGetValue(key, out var st))
+                _rapidTriggerState[key] = st = new RapidTriggerState();
+            if (st.Seq != FrameSeq)
+            {
+                if (st.Seq < 0 || FrameSeq - st.Seq > 1) st.Mode = RapidOutside;
+                st.BaseMode = st.Mode;
+                st.BaseExtremum = st.Extremum;
+                st.FramePast = pastActuation;
+                st.FrameDepth = depth;
+                st.Seq = FrameSeq;
+            }
+            else
+            {
+                // A second device's read of the same source this frame. Only
+                // a deeper read can change the step.
+                if ((!pastActuation || st.FramePast) && depth <= st.FrameDepth)
+                    return st.Mode == RapidPressed;
+                st.FramePast |= pastActuation;
+                if (depth > st.FrameDepth) st.FrameDepth = depth;
+            }
+            StepRapidTrigger(st, distance);
+            return st.Mode == RapidPressed;
+        }
+
+        private static void StepRapidTrigger(RapidTriggerState st, double distance)
+        {
+            byte mode = st.BaseMode;
+            double extremum = st.BaseExtremum;
+            double depth = st.FrameDepth;
+            if (!st.FramePast)
+            {
+                // Short of the deadzone: outside the zone, released.
+                mode = RapidOutside;
+                extremum = depth;
+            }
+            else
+            {
+                switch (mode)
+                {
+                    case RapidOutside:
+                        mode = RapidPressed;
+                        extremum = depth;
+                        break;
+                    case RapidPressed:
+                        if (depth + distance < extremum) { mode = RapidReleased; extremum = depth; }
+                        else if (depth > extremum) extremum = depth;
+                        break;
+                    default:
+                        if (extremum + distance < depth) { mode = RapidPressed; extremum = depth; }
+                        else if (depth < extremum) extremum = depth;
+                        break;
+                }
+            }
+            st.Mode = mode;
+            st.Extremum = extremum;
+        }
+
+        // ── Steering kind ticks (v3.4 #94) ──
+        // Math sourced from JoyShockMapper src/JoyShock.cpp:1179-1323 (winding,
+        // angle-to-axis) and src/main.cpp:939-986 (motion lean), Electronicks fork
+        // bb69784: read for the geometry, written original here. The per-stick
+        // output-undeadzone / unpower terms JSM applies all default to identity, so
+        // they are omitted. STICK_POWER defaults to 1, so its pow() collapses too
+        // (the angle-to-axis magnitude keeps its linear-in-deflection factor).
+
+        /// <summary>Accumulating winding-stick steering. Stick rotation winds a
+        /// virtual wheel; full lock at <c>ParamWindRangeDeg</c> of accrued travel.
+        /// Returns the X-channel value in [-1, +1].</summary>
+        public double TickWindingStick(int slotIndex, string target, int sourceIndex,
+            MappingSource src, CustomInputState state, double deltaSeconds)
+        {
+            if (src == null || state == null) return 0;
+            var key = (slotIndex, target ?? "", sourceIndex);
+            var (x, y, len) = ReadStick2D(state, src.Descriptor, src.ParamYDescriptor, Clamp01(src.ParamStickDeadzone));
+
+            _windingState.TryGetValue(key, out var ws);
+
+            // Accrue the signed angular travel since last frame, scaled by deflection.
+            // atan2 is scale-invariant, so the deadzone-scaled stick gives the true angle.
+            // XBOXDS4ONE stick Y is SDL down-positive, but the JSM winding math this is
+            // ported from (JoyShock.cpp:1250) assumes up-positive Y, so negate Y to match
+            // its frame. The X channel has no write-side flip (only the Y axis targets
+            // negate in WriteBipolarAxisTarget), so winding must emit the correct sign
+            // here. Without the negation, winding runs backwards: a clockwise turn drives
+            // the stick left when a wheel turns right. (Angle-to-axis modes don't get this
+            // treatment: AngleToAxisX uses Abs(y), and AngleToAxisY's down-positive Y
+            // cancels against the Y-target write negation, so both are already correct.)
+            // Deliberate divergence from JoyShock.cpp:1247, which reads
+            // `stickLength > 0.f && stick.lastX != 0.f && stick.lastY != 0.f`.
+            // JSM only ever sees a physical analog stick, where landing
+            // exactly on an axis is a measure-zero event. XBOXDS4ONE also
+            // drives winding from digital sources (keys and buttons mapped
+            // onto a stick axis) and from radial deadzones that can emit an
+            // exact zero on one channel, and there the AND form skipped
+            // accrual on every pure cardinal hold: winding accumulated on
+            // diagonals only. OR is equivalent for analog input, since it
+            // differs only when exactly one channel is exactly zero, and
+            // atan2 is well defined with one zero component. The only case
+            // still skipped is a previous sample at dead center, where no
+            // angle exists to difference against.
+            if (len > 0 && (ws.LastX != 0 || ws.LastY != 0))
+            {
+                double cur = Math.Atan2(-x, -y);
+                double last = Math.Atan2(-ws.LastX, -ws.LastY);
+                double delta = ((cur - last) + Math.PI) % (2.0 * Math.PI);
+                if (delta < 0) delta += 2.0 * Math.PI;
+                delta -= Math.PI;                                   // wrap to (-PI, PI]
+                ws.AngleDeg -= delta * len * (180.0 / Math.PI);
+            }
+
+            // Unwind whenever below full deflection, proportional to how far released.
+            if (len < 1.0)
+            {
+                double unwind = (src.ParamWindUnwindRate <= 0 ? 0 : src.ParamWindUnwindRate) * (1.0 - len) * deltaSeconds;
+                double absA = Math.Abs(ws.AngleDeg);
+                if (absA <= unwind) ws.AngleDeg = 0;
+                else ws.AngleDeg -= unwind * Math.Sign(ws.AngleDeg);
+            }
+
+            ws.LastX = x; ws.LastY = y;
+            _windingState[key] = ws;
+
+            // Remap accrued angle to output. The accumulator is NOT clamped at the
+            // range; only the output saturates, so an overwind holds lock until it
+            // unwinds back through the overshoot (intentional, matches JSM).
+            double range = src.ParamWindRangeDeg <= 0 ? 900 : src.ParamWindRangeDeg;
+            double power = src.ParamWindPower == 0 ? 1 : src.ParamWindPower;
+            double remapped = Math.Min(Math.Pow(Math.Abs(ws.AngleDeg) / range * 2.0, power), 1.0);
+            double output = Math.Sign(ws.AngleDeg) * remapped;
+            UpdateLock(key, output);
+            return output;
+        }
+
+        /// <summary>Positional 2D-steering: the stick's angle relative to one axis
+        /// maps to that axis, magnitude scaled by deflection. No accumulator.
+        /// <paramref name="isX"/> picks the X half-plane projection, else Y.</summary>
+        public double TickAngleToAxis(int slotIndex, string target, int sourceIndex,
+            MappingSource src, CustomInputState state, bool isX)
+        {
+            if (src == null || state == null) return 0;
+            var key = (slotIndex, target ?? "", sourceIndex);
+            var (x, y, len) = ReadStick2D(state, src.Descriptor, src.ParamYDescriptor, Clamp01(src.ParamStickDeadzone));
+            if (len <= 0) { UpdateLock(key, 0); return 0; }
+
+            // Force the off-axis component positive: the mode is a half-plane
+            // projection, so up-and-right and down-and-right report the same angle.
+            double angle = isX ? Math.Atan2(x, Math.Abs(y)) : Math.Atan2(y, Math.Abs(x));
+            double absDeg = Math.Abs(angle * 180.0 / Math.PI);     // [0, 90]
+            double sign = angle < 0 ? -1 : 1;
+
+            double denom = 90.0 - src.ParamAngleOuterDz - src.ParamAngleInnerDz;
+            double remapped = denom > 0
+                ? Clamp01((absDeg - src.ParamAngleInnerDz) / denom)
+                : (absDeg >= src.ParamAngleInnerDz ? 1 : 0);
+            remapped *= len;                                       // pow(deflection, STICK_POWER=1)
+            double output = sign * remapped;
+            UpdateLock(key, output);
+            return output;
+        }
+
+        /// <summary>Gravity-derived lean steering. Tilt the controller like a wheel;
+        /// tilt angle maps to the X channel. Routed-channel stick deflection is
+        /// ignored. Returns 0 when no gravity is available.</summary>
+        public double TickMotionLean(int slotIndex, string target, int sourceIndex,
+            MappingSource src, CustomInputState state, string deviceGuid, bool aux = false)
+        {
+            if (src == null) return 0;
+            var key = (slotIndex, target ?? "", sourceIndex);
+            // aux (#199): read the Nunchuk / left Joy-Con gravity twin instead
+            // of the body's. Same math, independent sensor.
+            // Grip-rotated for the body sensor (#392), the aux half untouched.
+            var grav = SourceCoercion.ReadGravity(deviceGuid, slotIndex, aux);
+            // The provider returns the raw accelerometer = the reaction force, which reads
+            // +1g UP at rest. The JSM-derived lean math below expects the gravity-DOWN vector
+            // (JoyShockMapper negates accel into gravity, so its grav.y is -1g at rest and its
+            // "grav.y > 0 -> 180 - angle" fold only fires when the pad is actually upside down).
+            // Negate to that same convention; otherwise the fold fires at rest and pins the
+            // output to full lock, flipping sign with the tiny side component — the observed
+            // hard left/right jump with no proportional middle. (JSM main.cpp:393, 916-948.)
+            double gx = -grav.gx, gy = -grav.gy, gz = -grav.gz;
+            double gLen = Math.Sqrt(gx * gx + gy * gy + gz * gz);
+            if (gLen <= 0) { UpdateLock(key, 0); return 0; }
+
+            // Neutral-orientation realignment (JSM main.cpp:421-435, 891). Capture the
+            // resting grip the first time real gravity arrives for this device, then rotate
+            // every later sample so that grip reads as flat (0,-1,0). This zeroes the
+            // few-degree resting offset and stops the off-axis tilt from leaking into the
+            // steering channel. The unit-length fallback sentinel (no accel yet) carries a
+            // gLen near 1; real gravity is ~9.8 m/s², so gate capture above that to avoid
+            // latching a neutral from "no data". Re-captured on profile switch via Clear().
+            // The aux channel gets its OWN neutral key. Remote body and Nunchuk
+            // share one device GUID but hold two independent orientations;
+            // keying both captures on the bare gid would let whichever sensor
+            // crosses the capture gate first latch its grip as the shared
+            // neutral, and the other would realign against the wrong
+            // orientation. Same dict so Clear() covers both on profile switch.
+            // The latch carries the hold it was captured under (#392): the
+            // body gravity above is grip-rotated, so a neutral from the old
+            // hold is a vector in the old frame. A grip change drops it and
+            // the next real sample re-latches.
+            string gid = aux ? s_auxLeanKeys.GetOrAdd(deviceGuid ?? "", static device => device + "|L") : (deviceGuid ?? "");
+            string grip = SourceCoercion.LatchGrip(deviceGuid, slotIndex, aux);
+            if (_motionNeutral.TryGetValue(gid, out var had)
+                && !string.Equals(had.grip, grip, StringComparison.Ordinal))
+                _motionNeutral.Remove(gid);
+            if (gLen > 4.0 && !_motionNeutral.ContainsKey(gid))
+                _motionNeutral[gid] = (gx / gLen, gy / gLen, gz / gLen, grip);
+            if (_motionNeutral.TryGetValue(gid, out var n))
+            {
+                (gx, gy, gz) = RealignToDown(gx, gy, gz, n.x, n.y, n.z);
+                gLen = Math.Sqrt(gx * gx + gy * gy + gz * gz);
+                if (gLen <= 0) { UpdateLock(key, 0); return 0; }
+            }
+
+            double side = (src.ParamControllerOrientation ?? "Forward") switch
+            {
+                "Left"     => gz,
+                "Right"    => -gz,
+                "Backward" => -gx,
+                _          => gx,   // Forward
+            };
+            double gravDirX = side / gLen;
+            double leanDeg = Math.Asin(Math.Clamp(gravDirX, -1.0, 1.0)) * 180.0 / Math.PI;
+            double sign = leanDeg < 0 ? -1 : 1;
+            double absLean = Math.Abs(leanDeg);
+            if (gy > 0) absLean = 180.0 - absLean;                 // past upright — keep mapping to the same side
+
+            double denom = 180.0 - src.ParamMotionOuterDz - src.ParamMotionInnerDz;
+            double remapped = denom > 0
+                ? Clamp01((absLean - src.ParamMotionInnerDz) / denom)
+                : (absLean >= src.ParamMotionInnerDz ? 1 : 0);     // pow(., STICK_POWER=1)
+            double output = sign * remapped;
+            UpdateLock(key, output);
+            return output;
+        }
+
+        // ── Flick stick tick (#225) ──
+        // Ported from JoyShockMapper JoyShock.cpp handleFlickStick
+        // (:852-1017, mouse output path) and getSmoothedStickRotation
+        // (:353-392), read then written original. Differences from JSM are
+        // named inline. Output is relative mouse X counts for this tick
+        // (positive = rightward turn), already integer-quantized with the
+        // fractional residual carried in state, so the caller feeds it to
+        // the injector unscaled.
+
+        /// <summary>True while a flick stick source's stick sits past its
+        /// flick threshold (JSM's is_flicking), whether or not this frame
+        /// turned: the stick is held, as a touchpad finger resting in place
+        /// is down. <paramref name="layer"/> is the row's shift layer, the
+        /// key <see cref="TickFlickStick"/> keeps the state under.</summary>
+        public bool IsFlickEngaged(int slotIndex, string target, int sourceIndex, string layer = null)
+            => _flickState.TryGetValue((slotIndex, target ?? "", LayerKey(layer), sourceIndex), out var st)
+               && st.IsFlicking;
+
+        /// <summary>
+        /// Advances one flick stick source and returns the mouse X counts to
+        /// emit this tick. <paramref name="frameSeq"/> is the caller's
+        /// monotonic once-per-polling-frame sequence: a repeated value
+        /// replays this frame's output (the KBM evaluator runs once per
+        /// assigned device per frame), and a skipped value re-arms the state
+        /// (the row was suppressed, i.e. its shift layer was off, or is
+        /// new). Re-arming with the stick already past the threshold follows
+        /// <see cref="MappingSource.ParamFlickOnEngage"/>: fire the flick
+        /// (JSM's behavior, JoyShock.cpp:873-876; Steam "Allow Flick on
+        /// Awake" ON) or arm at the current angle with no flick and track
+        /// rotation from there (default; #225's layer-host requirement).
+        /// Layer EXIT needs no call: an unevaluated row emits nothing, and
+        /// the next engage re-arms, so a mid-flight easing tail dies with
+        /// the layer. That is a named divergence from JSM, which forces
+        /// FLICK_ONLY until an in-flight flick completes on a chord change
+        /// (JoyShock.h:168-190); #225 requires no residual camera motion
+        /// after layer exit. <paramref name="layer"/> is the row's shift
+        /// layer, so a Base row's flick on the same target is never the
+        /// engaging layer row's starting state.
+        /// </summary>
+        public int TickFlickStick(int slotIndex, string target, int sourceIndex,
+            MappingSource src, CustomInputState state, double deltaSeconds, long frameSeq,
+            string layer = null)
+        {
+            if (src == null || state == null) return 0;
+            // Touch-surface flick (v26): the finger's centered vector plays
+            // the stick pair's role (same frame, +Y down); lifting the
+            // finger reads (0,0), which is the below-threshold release.
+            bool isPadFlick = SourceCoercion.TryGetFlickStickTouchpad(
+                src.Descriptor, out int fsPad, out int fsHalf);
+            string xDesc = null, yDesc = null;
+            if (!isPadFlick
+                && !SourceCoercion.TryGetFlickStickAxes(src.Descriptor, out xDesc, out yDesc))
+                return 0;
+
+            var key = (slotIndex, target ?? "", LayerKey(layer), sourceIndex);
+            if (!_flickState.TryGetValue(key, out var st))
+                _flickState[key] = st = new FlickState();
+
+            // Second per-device pass in the same frame: replay, never re-advance.
+            if (st.LastSeq == frameSeq) return st.LastOutput;
+            bool rearm = st.LastSeq < 0 || frameSeq - st.LastSeq > 1;
+            st.LastSeq = frameSeq;
+
+            // Raw normalized stick, SDL frame (+Y down). The flick threshold
+            // is checked on the RAW magnitude: JSM tests length >= 1.0 after
+            // an inner+outer deadzone remap whose outer default 0.1 makes
+            // that raw >= 0.9 (JoyShock.cpp:864-869, processStick:1048-1057,
+            // main.cpp:2334); ParamFlickThreshold folds the remap into the
+            // knob. atan2 is scale-invariant, so no deadzone shaping is
+            // needed for the angle.
+            double rx, ry;
+            if (isPadFlick)
+                (rx, ry) = SourceCoercion.ReadTouchpadFlickVector(state, fsPad, fsHalf);
+            else
+            {
+                rx = ReadNormAxis(state, xDesc);
+                ry = ReadNormAxis(state, yDesc);
+            }
+            double len = Math.Sqrt(rx * rx + ry * ry);
+
+            double threshold = src.ParamFlickThreshold > 0 && src.ParamFlickThreshold <= 1
+                ? src.ParamFlickThreshold : 0.9;
+            double countsPer360 = src.ParamFlickCountsPer360 > 0 ? src.ParamFlickCountsPer360 : 14400;
+            double countsPerRad = countsPer360 / (2.0 * Math.PI);
+            double flickTime = src.ParamFlickTime > 0 ? src.ParamFlickTime : 0.1;
+
+            if (rearm)
+            {
+                ResetFlickSmoothing(st);
+                st.CountRemainder = 0;
+                st.FlickPercentDone = 1.0; // kill any pre-suppression easing tail
+                st.DeltaFlick = 0;
+                st.FlickProgressSeconds = 0;
+                st.LastX = rx; st.LastY = ry;
+                if (len >= threshold && !src.ParamFlickOnEngage)
+                {
+                    // Arm as already-flicking with the current angle as the
+                    // rotation baseline; no flick fires. Rotation tracking is
+                    // live from the next tick.
+                    st.IsFlicking = true;
+                    st.LastOutput = 0;
+                    return 0;
+                }
+                // Below threshold, or ParamFlickOnEngage: arm idle and fall
+                // through. With the stick already past the threshold the
+                // block below sees !IsFlicking and fires the flick, which is
+                // exactly JSM's toggle-mid-deflection behavior.
+                st.IsFlicking = false;
+            }
+
+            // 0.9x release hysteresis while flicking (JoyShock.cpp:864-868).
+            double effThreshold = st.IsFlicking ? threshold * 0.9 : threshold;
+
+            double rotationCounts = 0;
+            bool justFlicked = false;
+
+            if (len >= effThreshold)
+            {
+                // JSM stickAngle = atan2f(-x, y) in its up-positive stick
+                // frame (JoyShock.cpp:871) == Atan2(-x, -y) in the SDL
+                // down-positive frame, the same fold the winding port uses
+                // (TickWindingStick above, JoyShock.cpp:1250). Forward = 0,
+                // right = -PI/2.
+                double stickAngle = Math.Atan2(-rx, -ry);
+                if (!st.IsFlicking)
+                {
+                    // "bam! new flick!" (JoyShock.cpp:873-908)
+                    st.IsFlicking = true;
+                    // Constant rotation offset (v26, Steam's flickstick
+                    // "rotation" setting): the whole input map rotates, so
+                    // the offset lands on the FLICK angle only. Rim
+                    // rotation deltas are invariant under a constant
+                    // offset, and the tracking branch below compares raw
+                    // angles, so the offset must not leak there or the
+                    // first tracked tick would see a spurious delta.
+                    // Positive = clockwise/right; the JSM angle frame is
+                    // counterclockwise-positive with right = -PI/2, so the
+                    // offset lands negated, then re-wraps to (-PI, PI].
+                    if (src.ParamFlickRotationOffsetDeg != 0)
+                    {
+                        stickAngle -= src.ParamFlickRotationOffsetDeg * (Math.PI / 180.0);
+                        stickAngle = (stickAngle + Math.PI) % (2.0 * Math.PI);
+                        if (stickAngle < 0) stickAngle += 2.0 * Math.PI;
+                        stickAngle -= Math.PI;
+                    }
+                    double snapInterval = FlickSnapIntervalRad(src.ParamFlickSnapMode);
+                    if (snapInterval > 0)
+                    {
+                        // C round() rounds halves away from zero; match it
+                        // (Math.Round defaults to banker's rounding). The
+                        // Forward interval (2 PI) folds to 0 explicitly: a
+                        // back flick sits exactly on the round(0.5) boundary
+                        // and would otherwise snap to a full 360-degree spin
+                        // instead of "no turn".
+                        double snapped = snapInterval >= 2.0 * Math.PI
+                            ? 0.0
+                            : Math.Round(stickAngle / snapInterval,
+                                MidpointRounding.AwayFromZero) * snapInterval;
+                        double strength = Math.Clamp(src.ParamFlickSnapStrength, 0.0, 1.0);
+                        stickAngle = stickAngle * (1.0 - strength) + snapped * strength;
+                    }
+                    if (Math.Abs(stickAngle) * (180.0 / Math.PI) < src.ParamFlickDeadzoneAngle)
+                        stickAngle = 0.0; // forward deadzone (JoyShock.cpp:897-900)
+
+                    st.DeltaFlick = stickAngle;
+                    st.FlickProgressSeconds = 0;
+                    st.FlickPercentDone = 0;
+                    ResetFlickSmoothing(st); // JSM resetSmoothSample (JoyShock.cpp:905)
+                    justFlicked = true;
+                }
+                else
+                {
+                    // Rotation tracking at the rim (JoyShock.cpp:910-944).
+                    double lastAngle = Math.Atan2(-st.LastX, -st.LastY);
+                    double angleChange = stickAngle - lastAngle;
+                    // Wrap to the shortest arc in (-PI, PI] (JoyShock.cpp:916-921).
+                    angleChange = (angleChange + Math.PI) % (2.0 * Math.PI);
+                    if (angleChange < 0) angleChange += 2.0 * Math.PI;
+                    angleChange -= Math.PI;
+                    double flickSpeed = -(angleChange * countsPerRad); // JoyShock.cpp:923-924
+                    int maxSamples = FlickWindowSamples(deltaSeconds);
+                    const double stepSize = 0.01; // rad, ~minimum stick resolution (JoyShock.cpp:927)
+                    double smooth = src.ParamFlickSmooth;
+                    rotationCounts = smooth < 0
+                        ? GetFlickSmoothedRotation(st, flickSpeed,
+                            countsPerRad * stepSize * 2.0, countsPerRad * stepSize * 4.0, maxSamples)  // JoyShock.cpp:932
+                        : GetFlickSmoothedRotation(st, flickSpeed,
+                            countsPerRad * smooth, countsPerRad * smooth * 2.0, maxSamples);           // JoyShock.cpp:936
+                }
+            }
+            else if (st.IsFlicking)
+            {
+                // Released below threshold: rotation stops; a running flick
+                // easing still completes below (JoyShock.cpp:947-955; the
+                // flick_rotation_counter calibration helper is not ported).
+                st.IsFlicking = false;
+            }
+
+            // Flick easing, every tick regardless of rim state
+            // (JoyShock.cpp:957-982): ease-out x -> 1-(1-x)^2, emitting the
+            // per-tick difference of the shaped percent. FLICK_TIME_EXPONENT
+            // is omitted (JSM default 0 disables its pow() scaling,
+            // main.cpp:2268, JoyShock.cpp:963-966).
+            if (!justFlicked) st.FlickProgressSeconds += deltaSeconds;
+            double flickCounts = 0;
+            if (st.FlickPercentDone < 1.0)
+            {
+                double newPercent = st.FlickProgressSeconds / flickTime;
+                if (newPercent > 1.0) newPercent = 1.0;
+                double oldShaped = 1.0 - st.FlickPercentDone;
+                oldShaped *= oldShaped;
+                oldShaped = 1.0 - oldShaped;
+                st.FlickPercentDone = newPercent;
+                double newShaped = 1.0 - newPercent;
+                newShaped *= newShaped;
+                newShaped = 1.0 - newShaped;
+                // Sign seam (grounded JoyShock.cpp:979 and :923-924): a
+                // rightward flick has angle -PI/2, and the negated
+                // counts-per-radian scale makes that POSITIVE mouse X =
+                // rightward turn, matching SendInput's +dx = right. This is
+                // the ONLY place flick output sign is set; the KBM VC and
+                // injector pass counts through unflipped.
+                flickCounts = (newShaped - oldShaped) * st.DeltaFlick * -countsPerRad;
+            }
+
+            st.LastX = rx; st.LastY = ry;
+
+            double total = rotationCounts + flickCounts + st.CountRemainder;
+            int emit = (int)total; // truncate; residual carries (KBM VC _mxAccumulator idiom)
+            st.CountRemainder = total - emit;
+            st.LastOutput = emit;
+            return emit;
+        }
+
+        /// <summary>Snap-mode name to snap interval in radians; 0 = no
+        /// snapping. NONE/FOUR/EIGHT and the 180-degree fallback interval are
+        /// JSM's (JoyShockMapper.h:300-306, JoyShock.cpp:883-891);
+        /// Forward/Half/Sixths complete Steam's snap vocabulary
+        /// (NoSnap/ForwardOnly/Half/Quarter/Sixths/Eighths) through the same
+        /// round-to-interval math. Unknown values read as None so a newer
+        /// profile degrades gracefully.</summary>
+        internal static double FlickSnapIntervalRad(string mode) => mode switch
+        {
+            "Forward" => 2.0 * Math.PI,
+            "Half"    => Math.PI,
+            "Four"    => Math.PI / 2.0,
+            "Sixths"  => Math.PI / 3.0,
+            "Eight"   => Math.PI / 4.0,
+            _         => 0.0,
+        };
+
+        private static void ResetFlickSmoothing(FlickState st)
+        {
+            st.FrontSample = 0;
+            Array.Clear(st.Samples, 0, st.Samples.Length);
+        }
+
+        // JSM getSmoothedStickRotation (JoyShock.cpp:353-392) on the per-row
+        // circular buffer: input above topThreshold passes through
+        // immediately, below bottomThreshold it is fully averaged over the
+        // window, and the band between blends linearly.
+        private static double GetFlickSmoothedRotation(FlickState st, double value,
+            double bottomThreshold, double topThreshold, int maxSamples)
+        {
+            st.FrontSample--;
+            if (st.FrontSample < 0) st.FrontSample = FlickNumSamples - 1;
+
+            double length = Math.Abs(value);
+            double immediateFactor;
+            if (topThreshold <= bottomThreshold)
+                immediateFactor = 1.0;
+            else
+                immediateFactor = (length - bottomThreshold) / (topThreshold - bottomThreshold);
+            if (immediateFactor < 0.0) immediateFactor = 0.0;
+            else if (immediateFactor > 1.0) immediateFactor = 1.0;
+            double smoothFactor = 1.0 - immediateFactor;
+
+            if (maxSamples < 1) maxSamples = 1;
+            double frontSample = st.Samples[st.FrontSample] = (float)(value * smoothFactor);
+            double result = frontSample / maxSamples;
+            for (int i = 1; i < maxSamples; i++)
+            {
+                int rotatedIndex = (st.FrontSample + i) % FlickNumSamples;
+                result += st.Samples[rotatedIndex] / (double)maxSamples;
+            }
+            return result + value * immediateFactor;
+        }
+
+        /// <summary>Returns and clears any pending at-lock edge for this row, for the
+        /// lock-feedback layer. <paramref name="isLeft"/> is set on an Enter edge.</summary>
+        public LockEdge TryGetLockEdgeTransition(int slotIndex, string target, int sourceIndex, out bool isLeft)
+        {
+            isLeft = false;
+            var key = (slotIndex, target ?? "", sourceIndex);
+            if (_lockState.TryGetValue(key, out var ls) && ls.PendingEdge != LockEdge.None)
+            {
+                LockEdge edge = ls.PendingEdge;
+                isLeft = ls.PendingLeft;
+                ls.PendingEdge = LockEdge.None;
+                _lockState[key] = ls;
+                return edge;
+            }
+            return LockEdge.None;
+        }
+
+        // Saturation → lock state machine. Fires Enter on leaving neutral, Exit on
+        // returning to it. A direct side-flip (left lock straight to right lock in one
+        // frame) records no edge, matching the JSM-derived recipe's machine.
+        private void UpdateLock((int slot, string target, int srcIdx) key, double output)
+        {
+            LockSide cur = output >= 1.0 - LockEpsilon ? LockSide.Right
+                         : output <= -1.0 + LockEpsilon ? LockSide.Left
+                         : LockSide.None;
+            _lockState.TryGetValue(key, out var ls);
+            ls.LastAbs = Math.Abs(output);                         // for the AT-resistance ramp
+            if (cur != ls.Side)
+            {
+                if (ls.Side == LockSide.None) { ls.PendingEdge = LockEdge.Enter; ls.PendingLeft = cur == LockSide.Left; }
+                else if (cur == LockSide.None) { ls.PendingEdge = LockEdge.Exit; }
+                ls.Side = cur;
+            }
+            _lockState[key] = ls;
+        }
+
+        /// <summary>The current saturation magnitude (0..1) of this row's steering
+        /// output — how close to lock — for the continuous AT-resistance ramp.</summary>
+        public double GetLockApproach(int slotIndex, string target, int sourceIndex)
+        {
+            var key = (slotIndex, target ?? "", sourceIndex);
+            return _lockState.TryGetValue(key, out var ls) ? ls.LastAbs : 0;
+        }
+
+        private static double Clamp01(double v) => v < 0 ? 0 : (v > 1 ? 1 : v);
+
+        // Rotates gravity (vx,vy,vz) by the rotation that maps the captured neutral
+        // direction (nx,ny,nz, unit) onto canonical down (0,-1,0). At rest the sample
+        // equals the neutral, so it rotates to exactly (0,-1,0) — zero lean. A lean of
+        // angle phi away from neutral lands phi away from down, so the downstream math
+        // measures lean relative to the grip rather than to absolute level. This is the
+        // numerically-exact form of JSM's neutralQuat.Inverse() application (main.cpp:891).
+        // Internal so SourceCoercion's "Gyro Lean X/Y" pair read shares the
+        // exact realignment math instead of duplicating it.
+        internal static (double x, double y, double z) RealignToDown(
+            double vx, double vy, double vz, double nx, double ny, double nz)
+        {
+            // a = neutral (unit), b = (0,-1,0). axis k = a×b = (nz, 0, -nx); cos = a·b = -ny.
+            double cos = -ny;
+            double kx = nz, ky = 0.0, kz = -nx;
+            double sin = Math.Sqrt(kx * kx + ky * ky + kz * kz);   // |a×b| = sin(theta)
+            if (sin < 1e-6)                                        // a parallel to b
+                return cos >= 0 ? (vx, vy, vz) : (vx, -vy, vz);    // aligned, or flipped upside down
+            kx /= sin; ky /= sin; kz /= sin;
+            // Rodrigues: vrot = v*cos + (k×v)*sin + k*(k·v)*(1-cos)
+            double kv = kx * vx + ky * vy + kz * vz;
+            double cxx = ky * vz - kz * vy;
+            double cxy = kz * vx - kx * vz;
+            double cxz = kx * vy - ky * vx;
+            return (vx * cos + cxx * sin + kx * kv * (1 - cos),
+                    vy * cos + cxy * sin + ky * kv * (1 - cos),
+                    vz * cos + cxz * sin + kz * kv * (1 - cos));
+        }
+
+        // Deadzone-processed 2D stick read: raw normalized X/Y, radial inner deadzone,
+        // direction preserved, magnitude rescaled to [0, 1]. Inside the deadzone the
+        // stick reads fully centered (0, 0, 0).
+        private static (double x, double y, double len) ReadStick2D(
+            CustomInputState state, string xDesc, string yDesc, double innerDz)
+        {
+            double rx = ReadNormAxis(state, xDesc);
+            double ry = ReadNormAxis(state, yDesc);
+            double rawLen = Math.Sqrt(rx * rx + ry * ry);
+            if (rawLen <= innerDz || rawLen <= 0) return (0, 0, 0);
+            double denom = 1.0 - innerDz;
+            double scaled = denom > 0 ? Math.Min((rawLen - innerDz) / denom, 1.0) : Math.Min(rawLen, 1.0);
+            return (rx / rawLen * scaled, ry / rawLen * scaled, scaled);
+        }
+
+        // Reads an "Axis N" descriptor to a bipolar [-1, +1] value (center 32768),
+        // matching SourceCoercion's axis normalization. Non-axis descriptors read 0.
+        private static double ReadNormAxis(CustomInputState state, string descriptor)
+        {
+            if (state == null) return 0;
+            int idx = SteeringAxisRead(descriptor);
+            if (idx < 0) return 0;
+            double v = (state.Axis[idx] - 32768) / 32767.0;
+            return v < -1 ? -1 : (v > 1 ? 1 : v);
+        }
+
+        /// <summary>The axis a steering read takes from
+        /// <paramref name="descriptor"/>: "Axis N" below the slider range, or
+        /// a Gamepad alias that folds to it, so the Param pickers' abstract
+        /// entries (#9) read the axis the raw entry would. -1 for anything
+        /// else, which the read takes as centered: a ring, a slider or a
+        /// flick stick.</summary>
+        public static int SteeringAxisRead(string descriptor)
+        {
+            if (string.IsNullOrWhiteSpace(descriptor)) return -1;
+            // A family member under a device's own placement reads that
+            // device's axis, so it bypasses the memo of the SDL layout's.
+            if (SourceCoercion.ActivePlacement != null && SourceCoercion.IsGamepadAliasDescriptor(descriptor))
+                return SteeringAxisReadUncached(descriptor);
+            // Memoized, as SourceCoercion.NumberedAxesRead is: the alias fold
+            // and the parse ran on every steering read of every frame.
+            if (s_steeringAxisCache.TryGetValue(descriptor, out int hit)) return hit;
+            int idx = SteeringAxisReadUncached(descriptor);
+            if (s_steeringAxisCache.Count < SteeringAxisCacheCap) s_steeringAxisCache[descriptor] = idx;
+            return idx;
+        }
+
+        private const int SteeringAxisCacheCap = 1024;
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, int> s_steeringAxisCache =
+            new(StringComparer.Ordinal);
+
+        private static int SteeringAxisReadUncached(string descriptor)
+        {
+            string s = SourceCoercion.CanonicalDescriptor(descriptor);
+            if (!s.StartsWith("Axis", StringComparison.Ordinal)) return -1;
+            var parts = s.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length < 2 || !int.TryParse(parts[1], out int idx)) return -1;
+            return idx >= 0 && idx < CustomInputState.MaxAxis ? idx : -1;
+        }
+
+        /// <summary>True when <see cref="ReadButtonLikeBool"/> can read
+        /// <paramref name="descriptor"/> as held: a button, a hat direction,
+        /// a slot event (a touchpad gesture, a mouse gesture or a menu cell),
+        /// IR Offscreen, or a plain hardware-bool family, MIDI notes, CCs and
+        /// encoder detents and the stick and touchpad rings among them. Every
+        /// on/off input is one of these, and no analog input is. The branches
+        /// are the reader's own, in its order. The Up and Down pickers of an
+        /// Incremental or Ramped source list only these, so a stick, a trigger
+        /// or another axis is never offered as a key that reads released
+        /// forever.</summary>
+        public static bool ReadsAsKey(string descriptor)
+        {
+            if (string.IsNullOrWhiteSpace(descriptor)) return false;
+            string s = SourceCoercion.CanonicalDescriptor(descriptor);
+
+            if (s.StartsWith("Button ", StringComparison.Ordinal))
+                return int.TryParse(s.AsSpan(7), out int idx)
+                    && idx >= 0 && idx < CustomInputState.MaxButtons;
+
+            if (s.StartsWith("POV ", StringComparison.Ordinal))
+                return TryParseHatKey(s, out int povIdx, out int direction)
+                    && povIdx >= 0 && povIdx < CustomInputState.MaxPovs
+                    && direction >= 0;
+
+            return SourceCoercion.IsSlotEventDescriptor(s)
+                || SourceCoercion.IsIrOffscreenDescriptor(s)
+                || SourceCoercion.IsHardwareBoolDescriptor(s);
+        }
+
+        // The directions of a hat key (TryParseHatKey).
+        private const int HatUp = 0, HatRight = 1, HatDown = 2, HatLeft = 3;
+
+        /// <summary>The index and direction of a "POV N Dir" key, parsed as
+        /// the key reader has always parsed it: <paramref name="s"/> split on
+        /// spaces with the empty pieces dropped, at least three pieces, N read
+        /// by int.TryParse in the current culture and Dir lowercased by the
+        /// invariant culture. The pieces are spans of the descriptor, so the
+        /// parse allocates nothing: a key is read on every frame, and the
+        /// split cost two arrays and three strings a read, and a fourth
+        /// string to lowercase a capitalized direction.
+        /// <paramref name="direction"/> is -1 for a word no hat direction
+        /// is.</summary>
+        private static bool TryParseHatKey(string s, out int index, out int direction)
+        {
+            index = 0;
+            direction = -1;
+            ReadOnlySpan<char> rest = s;
+            NextPiece(ref rest);                            // "POV"
+            ReadOnlySpan<char> number = NextPiece(ref rest);
+            ReadOnlySpan<char> word = NextPiece(ref rest);
+            if (word.IsEmpty || !int.TryParse(number, out index)) return false;
+            direction = HatDirection(word);
+            return true;
+        }
+
+        /// <summary>The next piece of <paramref name="rest"/> between
+        /// spaces, empty when none is left, with <paramref name="rest"/>
+        /// moved past it.</summary>
+        private static ReadOnlySpan<char> NextPiece(ref ReadOnlySpan<char> rest)
+        {
+            int start = 0;
+            while (start < rest.Length && rest[start] == ' ') start++;
+            int end = start;
+            while (end < rest.Length && rest[end] != ' ') end++;
+            var piece = rest.Slice(start, end - start);
+            rest = rest.Slice(end);
+            return piece;
+        }
+
+        /// <summary>The hat direction <paramref name="word"/> names once
+        /// lowercased by the invariant culture, or -1. Lowercasing keeps a
+        /// word's length, so only two to five letters can name one.</summary>
+        private static int HatDirection(ReadOnlySpan<char> word)
+        {
+            if (word.Length < 2 || word.Length > 5) return -1;
+            Span<char> buffer = stackalloc char[5];
+            ReadOnlySpan<char> lower = buffer.Slice(0, word.ToLowerInvariant(buffer));
+            if (lower.SequenceEqual("up".AsSpan())) return HatUp;
+            if (lower.SequenceEqual("right".AsSpan())) return HatRight;
+            if (lower.SequenceEqual("down".AsSpan())) return HatDown;
+            if (lower.SequenceEqual("left".AsSpan())) return HatLeft;
+            return -1;
+        }
+
+        /// <summary>The controller a key of <paramref name="src"/> reads: the
+        /// one it carries (<see cref="MappingSource.ParamUpDeviceGuid"/> and
+        /// its siblings), or empty for any controller on the slot. A key saved
+        /// before keys carried a controller has none (null) and reads where it
+        /// always did, on the source's own controller, or on any controller
+        /// when the source names none.</summary>
+        public static string KeyDevice(string keyDeviceGuid, MappingSource src)
+            => keyDeviceGuid ?? src?.DeviceGuid ?? "";
+
+        /// <summary>Reads an Up or Down key of <paramref name="src"/> on the
+        /// controller it names (<see cref="KeyDevice"/>). <paramref name="state"/>
+        /// belongs to the device the evaluator reads the source on, the one
+        /// SourceCoercion.EffectiveDeviceGuid names, so a key on that device
+        /// reads it straight. A key on another controller reads through
+        /// SourceCoercion.KeyHeldProvider, and so does an "(Any Device)" key:
+        /// a key is read once a frame (the replay guard), so it has to see
+        /// every controller on the slot, not the one whose pass came first.
+        /// Without the provider, an engine-only caller, every key reads the
+        /// state in hand.</summary>
+        internal static bool ReadKey(CustomInputState state, string descriptor, string keyDeviceGuid,
+            MappingSource src, string evaluatedDeviceGuid, int slotIndex)
+        {
+            if (string.IsNullOrWhiteSpace(descriptor)) return false;
+            string hand = SourceCoercion.EffectiveDeviceGuid(src, evaluatedDeviceGuid);
+            string key = KeyDevice(keyDeviceGuid, src);
+            bool inHand = key.Length != 0
+                && string.Equals(key, hand, StringComparison.OrdinalIgnoreCase);
+            var provider = SourceCoercion.KeyHeldProvider;
+            // A caller with no slot (slotIndex below zero) has no controllers
+            // to span, so an "(Any Device)" key reads the state in hand there.
+            return inHand || provider == null || (key.Length == 0 && slotIndex < 0)
+                ? ReadKeyOn(state, descriptor, hand, slotIndex)
+                : provider(key, descriptor, slotIndex);
+        }
+
+        /// <summary>A key read on one device's own state: every key read in
+        /// hand, and the read behind the app's SourceCoercion.KeyHeldProvider.
+        /// <paramref name="deviceGuid"/> owns <paramref name="state"/> and keys
+        /// the grip of a hat and the per-device families. A key on an input
+        /// the rows hold back on that device reads released
+        /// (SourceCoercion.KeyHeldBackProvider): an input an activator reads
+        /// while "Also Fire Activator's Own Mapping" is off, or a trigger a
+        /// consuming macro eats, as a Direct source and an Invert on Hold
+        /// modifier on that input read. The input is read first, so a family
+        /// that keeps state as it reads, IR Offscreen's debounce, keeps it
+        /// whether or not the key is held back.</summary>
+        public static bool ReadKeyOn(CustomInputState state, string descriptor, string deviceGuid, int slotIndex)
+            => ReadButtonLikeBool(state, descriptor, deviceGuid, slotIndex)
+               && !(SourceCoercion.KeyHeldBackProvider?.Invoke(slotIndex, deviceGuid ?? "", descriptor) ?? false);
+
+        // Reads a button-like descriptor (Button N or POV N Dir) from a
+        // CustomInputState. No deadzone handling here. Incremental's up
+        // and down inputs are bool intent buttons: every on/off input
+        // reads, and analog inputs aren't a sensible up/down trigger for
+        // an accumulator. The hat reads in
+        // the held frame (#392): deviceGuid and slotIndex select the grip,
+        // the same rotation the Direct path and Step 3 apply, so an
+        // Incremental or Ramped param naming "POV 0 Up" counts the press
+        // that points up on a sideways remote.
+        private static bool ReadButtonLikeBool(CustomInputState state, string descriptor,
+            string deviceGuid, int slotIndex)
+        {
+            if (state == null || string.IsNullOrWhiteSpace(descriptor)) return false;
+            // Fold "Gamepad ButtonA" / "Gamepad DPadUp" aliases (#9) to
+            // their canonical "Button N" / "POV 0 Dir" form.
+            string s = SourceCoercion.CanonicalDescriptor(descriptor);
+
+            // The index parses where it stands: a Substring cost a string
+            // on every read.
+            if (s.StartsWith("Button ", StringComparison.Ordinal))
+            {
+                if (int.TryParse(s.AsSpan(7), out int idx) &&
+                    idx >= 0 && idx < state.Buttons.Length)
+                    return state.Buttons[idx];
+                return false;
+            }
+
+            if (s.StartsWith("POV ", StringComparison.Ordinal))
+            {
+                if (TryParseHatKey(s, out int povIdx, out int direction) &&
+                    povIdx >= 0 && povIdx < state.Povs.Length)
+                {
+                    int v = SourceCoercion.GripPov(deviceGuid, slotIndex, state.Povs[povIdx]);
+                    if (v < 0) return false;
+                    int n = ((v % 36000) + 36000) % 36000;
+                    return direction switch
+                    {
+                        HatUp    => n >= 31500 || n <= 4500,
+                        HatRight => n >= 4500 && n <= 13500,
+                        HatDown  => n >= 13500 && n <= 22500,
+                        HatLeft  => n >= 22500 && n <= 31500,
+                        _        => false,
+                    };
+                }
+                return false;
+            }
+
+            // A touchpad gesture, a mouse gesture or a menu cell answers for
+            // one slot and one device, and IR Offscreen keeps a debounce per
+            // device, so each reads as a Button row reads it. The
+            // hardware-bool read below takes the descriptor alone, and a
+            // gesture picked as the Up or Down key read nothing.
+            if (SourceCoercion.IsSlotEventDescriptor(s) || SourceCoercion.IsIrOffscreenDescriptor(s))
+                return SourceCoercion.ReadSlotEventBool(state, s, slotIndex, deviceGuid);
+
+            // Not Button/POV: a gate or an Incremental/Ramped param can
+            // name a hardware-bool family (capsense, NFC tag, MIDI, touchpad
+            // contact, a stick or touchpad ring), and the Up and Down pickers
+            // list them (ReadsAsKey). Route those through the shared
+            // descriptor read. Path A NFC tags never hit this (the PC/SC
+            // reader exposes them as raw buttons), which is how the gap
+            // shipped unnoticed (#248 audit).
+            return SourceCoercion.ReadHardwareBoolDescriptor(state, s);
+        }
+    }
+}

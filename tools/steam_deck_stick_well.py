@@ -25,7 +25,7 @@ SEG = 64
 CENTERS = ((-102.83, 34.50), (102.83, 34.50))
 
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                   "PadForge.App", "3DModels", "SteamDeck")
+                   "XBOXDS4ONE.App", "3DModels", "SteamDeck")
 
 
 def cup(cx, cz):

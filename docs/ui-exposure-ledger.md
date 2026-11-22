@@ -111,7 +111,7 @@ any of its buttons, so it folds into the same field.
 
 ## The rule
 
-A setting PadForge does not expose is not imported. Not parked, not applied
+A setting XBOXDS4ONE does not expose is not imported. Not parked, not applied
 invisibly, not reported. An imported profile must be reachable through the
 same cards as a hand-built one, or the two feel different with nothing on
 screen to explain why.
@@ -138,7 +138,7 @@ collapse into one `deadzone` call, `ParamCurveExponent` is `pow`,
 ## The pattern
 
 A Steam config assumes one controller, so its tuning is per physical input.
-PadForge already owns settings for those things, with cards. The import
+XBOXDS4ONE already owns settings for those things, with cards. The import
 cannot write them because it runs before a device is assigned and they are
 keyed by device guid. Parking them somewhere else and reading the parking
 spot at run time is what creates a second, invisible settings system.

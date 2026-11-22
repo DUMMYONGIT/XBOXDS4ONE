@@ -1,0 +1,297 @@
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using XBOXDS4ONE.Common.Input.Peripherals.HidFamilies;
+
+namespace XBOXDS4ONE.Common.Input.Peripherals
+{
+    /// <summary>
+    /// OpenRGB's AsusAuraUSBController family (#557): every ASUS Aura device
+    /// OpenRGB lights over USB HID, each through the sub-controller its
+    /// detector names. The collection is the first of OpenRGB's candidates
+    /// for it (<see cref="OpenRgbRegistrations.Match(string, HidCollectionInfo, int)"/>),
+    /// since RunHIDDetector stops at the first detector that returns a
+    /// controller (DetectionManager.cpp:1602-1624) and every detector of this
+    /// family returns one for a collection it opens. The sub-controllers and
+    /// their sources, all under Controllers/AsusAuraUSBController at the
+    /// pinned commit:
+    ///
+    /// <para>Keyboards (AsusAuraKeyboardController, <see cref="Keyboard"/>),
+    /// mice (AsusAuraMouseController, <see cref="Mouse"/>), the first ROG
+    /// mice (AsusAuraMouseGen1Controller, <see cref="StrixEvolve"/> and
+    /// <see cref="Spatha"/>), mousemats (AsusAuraMousematController), headset
+    /// stands (AsusAuraHeadsetStandController), monitors
+    /// (AsusAuraMonitorController), mainboards, addressable controllers, the
+    /// AURA Terminal and the Strix LC III (AsusAuraUSBController), the Ryuo
+    /// and Ryujin coolers (AsusAuraRyuoAIOController), the Strix LC cooler
+    /// (AsusROGStrixLCController) and the ROG Ally (AsusROGAllyController).
+    /// The keyboards no OpenRGB file names that only G-Helper lights go as
+    /// G-Helper's AsusKeyboard sends them (<see cref="GHelperKeyboardModel"/>).</para>
+    ///
+    /// <para>What each write does to the device's stored state. Every frame
+    /// XBOXDS4ONE sends is one of OpenRGB's Direct modes, or for a device with
+    /// none, the mode OpenRGB lights per LED with, or G-Helper's C0 81 for a
+    /// keyboard only G-Helper lights, and none of them is followed by the save
+    /// frame OpenRGB sends only from DeviceSaveMode and G-Helper only behind a
+    /// change in its settings window or a mode it copies from the laptop's
+    /// keyboard (50 55 for keyboards and headset stands, 50 03 for mice
+    /// and mousemats, EC 3F 55 for mainboards, 5A B4 for the Ally, UpdateProfile
+    /// for the first ROG mice). So nothing is written to the device's memory, and a
+    /// replug brings back what the device stored. A device goes back while it
+    /// stays plugged in where a reference reads what it shows or it has a
+    /// command for that: the mice and the Balteus answer 12 03 in G-Helper
+    /// (<see cref="MouseHandBack"/>, <see cref="MousematHandBack"/>), the first
+    /// ROG mice take ResetToSavedLighting
+    /// (AsusAuraMouseGen1Controller.cpp:171-181), and the Claymore takes
+    /// AllowRemoteControl(0), the frame OpenRGB ends every mode change of the
+    /// Claymore with (RGBController_AsusAuraKeyboard.cpp:657-662). Every other
+    /// device keeps the last colors XBOXDS4ONE sent until it is replugged or
+    /// Armoury Crate lights it, since no reference reads its mode, or more of
+    /// it than which effect a keyboard renders (G-Helper's ReadProfile,
+    /// AsusKeyboard.cs:815-835). SignalRGB's plugins for these devices end on a
+    /// shutdown color or a rainbow mode they save
+    /// (signal-plugins Plugins/Asus/ASUS_ROG_Strix_Scope.js:41-45), and
+    /// return none of them to its own lighting either. The devices with such
+    /// a command are recorded as owed before their first write, as a Corsair
+    /// session does (<see cref="CorsairSession"/>), and the next run sends it
+    /// for a device a forced kill left. No reference says their firmwares give
+    /// up host control on their own.</para>
+    ///
+    /// <para>Timing. No reference keeps these devices alive or bounds their
+    /// rate. A picture goes out at most every <see cref="HidppBackend.PaintMs"/>,
+    /// the effects dispatcher's own tick, and each frame waits for the
+    /// device's answer where OpenRGB waits for it.</para>
+    ///
+    /// <para>Armoury Crate lights every one of these devices, and while it
+    /// runs each is left to it (<see cref="VendorPrograms.ArmouryCrate"/>).</para>
+    /// </summary>
+    internal sealed partial class AsusAuraUsbLighting : IHidLightingFamily
+    {
+        public static readonly AsusAuraUsbLighting Instance = new();
+
+        /// <summary>The family's folder name in OpenRGB's Controllers.</summary>
+        internal const string OpenRgbFamily = "AsusAuraUSBController";
+
+        /// <summary>AURA_USB_VID (AsusAuraUSBControllerDetect.cpp:21).</summary>
+        internal const ushort VendorId = 0x0B05;
+
+        /// <summary>The length every output frame of the family goes out at,
+        /// the report ID included (hid_write(dev, buf, 65) throughout).</summary>
+        internal const int PacketSize = 65;
+
+        /// <summary>How long a read waits for an answer OpenRGB waits for
+        /// with no bound (hid_read): AsusAuraKeyboardController.cpp:170 and
+        /// AsusAuraUSBController.cpp:89.</summary>
+        internal const int AnswerMs = 1000;
+
+        /// <summary>How many queued answers a read of what came in drops at
+        /// most. OpenRGB's ClearResponses reads until nothing comes
+        /// (AsusAuraKeyboardController.cpp:724-732). The bound keeps a device
+        /// that answers without end from holding the worker.</summary>
+        internal const int ClearLimit = 64;
+
+        public string Name => "ASUS Aura USB";
+
+        private readonly ConcurrentDictionary<string, HidLightingModel> _models = new(StringComparer.Ordinal);
+
+        /// <summary>Products OpenRGB has no row for that G-Helper treats as a model it does
+        /// have: the same class of keyboard with the same layout
+        /// (app/Peripherals/Keyboard/Models/Azoth.cs:162-230, StrixScopeRX.cs:3-38 and
+        /// TUFK3.cs:141-165), and the Keris Wireless's EVA edition
+        /// (Mouse/Models/KerisWireless.cs).</summary>
+        internal static readonly IReadOnlyDictionary<ushort, (ushort Product, string Name)> GHelperProducts =
+            new Dictionary<ushort, (ushort, string)>
+            {
+                [0x1B3F] = (0x1A83, "ASUS ROG Azoth Extreme"),
+                [0x1CEF] = (0x1A83, "ASUS ROG Azoth Extreme SE"),
+                [0x1C24] = (0x1A83, "ASUS ROG Azoth X"),
+                [0x1C25] = (0x1A85, "ASUS ROG Azoth X"),
+                [0x1A07] = (0x1A05, "ASUS ROG Strix Scope RX TKL Wireless Deluxe"),
+                [0x1C60] = (0x1B30, "ASUS TUF Gaming K3 GEN II Miku"),
+                [0x1B3A] = (0x1B30, "ASUS TX 98"),
+                [0x1A57] = (0x195E, "ASUS ROG Keris Wireless EVA"),
+            };
+
+        public HidLightingModel Match(HidCollectionInfo collection)
+        {
+            if (collection == null || collection.VendorId != VendorId) return null;
+            var keyboard = GHelperKeyboardOf(collection.ProductId);
+            if (keyboard != null) return GHelperKeyboardModel(collection, keyboard);
+            bool other = GHelperProducts.TryGetValue(collection.ProductId, out var same);
+            ushort product = other ? same.Product : collection.ProductId;
+            var found = OpenRgbRegistrations.Match(OpenRgbFamily, other ? collection with { ProductId = product } : collection);
+            if (found.Count == 0) return null;
+            var registration = found[0];
+            if (!Carries(registration, collection)) return null;
+            if (other) registration = registration with { Name = same.Name };
+            // A Claymore's region is its release number's, so its models
+            // are one per release number.
+            int release = product == Claymore ? collection.ReleaseNumber : 0;
+            return _models.GetOrAdd(registration.Source + ":" + collection.ProductId.ToString("X4") + ":" + release.ToString("X4"),
+                _ => ModelFor(registration, product, release));
+        }
+
+        /// <summary>Whether the collection has the reports the
+        /// sub-controller writes, for a registration that names no usage
+        /// page: a mainboard's or addressable controller's every collection
+        /// answers its detector (AsusAuraUSBControllerDetect.cpp:149-163), and
+        /// a collection with no 65-byte output report cannot carry the EC
+        /// frames, so OpenRGB's controller on it reads no config table and
+        /// lights nothing (AsusAuraUSBController.cpp:70-116). The walk reads
+        /// every collection's report lengths from its descriptor, so 0 is a
+        /// collection with no output report.</summary>
+        internal static bool Carries(OpenRgbRegistration registration, HidCollectionInfo collection)
+        {
+            if (registration.UsagePage != OpenRgbRegistration.Any) return true;
+            return collection.OutputReportLength >= PacketSize;
+        }
+
+        /// <summary>The model a registration's detector builds for a
+        /// product, or null for a detector this family does not port. The
+        /// release number is the device's, which only the Claymore's model
+        /// reads.</summary>
+        internal HidLightingModel ModelFor(OpenRgbRegistration registration, int productId, int release = 0)
+            => registration.Detector switch
+            {
+                "DetectAsusAuraUSBKeyboard" => Keyboard(registration.Name, productId, release),
+                "DetectAsusAuraUSBMice" => Mouse(registration.Name, productId),
+                "DetectAsusAuraUSBStrixEvolve" => StrixEvolve(registration.Name, productId),
+                "DetectAsusAuraUSBSpatha" => Spatha(registration.Name, productId),
+                "DetectAsusAuraUSBMousemats" => Mousemat(registration.Name, productId),
+                "DetectAsusAuraUSBHeadsetStand" => HeadsetStand(registration.Name, productId),
+                "DetectAsusAuraUSBMonitor" => Monitor(registration.Name, productId),
+                "DetectAsusAuraUSBAddressable" or "DetectAsusAuraUSBTerminal"
+                    => AuraUsb(registration.Name, productId, mainboard: false),
+                "DetectAsusAuraUSBMotherboards" or "DetectAsusAuraUSBLiquidCoolers"
+                    => AuraUsb(registration.Name, productId, mainboard: true),
+                "DetectAsusAuraUSBRyuoAIO" => Ryuo(registration.Name, productId),
+                "DetectAsusAuraUSBROGStrixLC" => StrixLc(registration.Name, productId),
+                "DetectAsusROGAlly" => Ally(registration.Name, productId),
+                _ => null,
+            };
+
+        /// <summary>A model with the family's programs and the stream's
+        /// repaint interval.</summary>
+        private HidLightingModel Model(string name, int productId, LightMap map,
+            Func<IHidReportChannel, Action<int>, HidLightingSession> begin,
+            Func<IHidReportChannel, bool> handBack = null,
+            Func<HidCollectionInfo, HidCollectionInfo, bool> outranks = null)
+            => new()
+            {
+                Family = this,
+                Name = name,
+                Map = map,
+                Programs = new[] { VendorPrograms.ArmouryCrate },
+                RepaintMs = HidppBackend.PaintMs,
+                Begin = begin,
+                Outranks = outranks,
+                Owed = handBack == null ? null : path => OwedHandBack(KeyboardProfileBackups.DeviceKey(ProductKey(productId), path)),
+                Repair = handBack == null ? null : (io, _) => RepairHandBack(KeyboardProfileBackups.DeviceKey(ProductKey(productId), io?.Path), io, handBack),
+            };
+
+        /// <summary>How many times in a row a run tries to hand back a device
+        /// a forced kill left.</summary>
+        internal const int RepairTries = LenovoLegionLighting.RepairTries;
+
+        /// <summary>How often a picture that waits for its record to reach the
+        /// settings file looks again.</summary>
+        internal const int SavingMs = LenovoLegionLighting.SavingMs;
+
+        /// <summary>The record of a device's hand-back, the frame as its
+        /// contents, on disk before the first write. False while it is on its
+        /// way, and the picture then comes back later.</summary>
+        internal static bool Recorded(string key, byte[] handBack)
+        {
+            if (KeyboardProfileBackups.Get(key) == null) KeyboardProfileBackups.Take(key, 0, handBack);
+            return KeyboardProfileBackups.IsPersisted(key);
+        }
+
+        private static bool OwedHandBack(string key)
+            => KeyboardProfileBackups.Get(key) != null && KeyboardProfileBackups.Failures(key) < RepairTries;
+
+        /// <summary>Hands back a device an earlier run left, with no claim on
+        /// it. True when nothing is owed any more.</summary>
+        private static bool RepairHandBack(string key, IHidReportChannel io, Func<IHidReportChannel, bool> handBack)
+        {
+            if (KeyboardProfileBackups.Get(key) == null) return true;
+            if (handBack(io))
+            {
+                KeyboardProfileBackups.Drop(key);
+                return true;
+            }
+            KeyboardProfileBackups.NoteFailure(key);
+            return false;
+        }
+
+        /// <summary>The key Map Key Lights stores a model's names under.</summary>
+        internal static string ProductKey(int productId, string detail = null)
+            => detail == null ? $"asus:{VendorId:X4}:{productId:X4}" : $"asus:{VendorId:X4}:{productId:X4}:{detail}";
+
+        private static LightInfo Zone(int address, int zone)
+            => new(address, LightKind.Zone, 0, LightKeySource.None) { Zone = zone };
+
+        private static LightInfo Edge(int address) => new(address, LightKind.Edge, 0, LightKeySource.None);
+
+        private static LightInfo Logo(int address) => new(address, LightKind.Logo, 0, LightKeySource.None);
+
+        private static LightInfo Other(int address) => new(address, LightKind.Other, 0, LightKeySource.None);
+
+        private static LightInfo[] Edges(int count)
+        {
+            var lights = new LightInfo[count];
+            for (int i = 0; i < count; i++) lights[i] = Edge(i);
+            return lights;
+        }
+
+        // ─────────────────────────────────────────────
+        //  The exchanges every sub-controller shares
+        // ─────────────────────────────────────────────
+
+        /// <summary>A zeroed frame of <paramref name="length"/> bytes with the
+        /// bytes given from byte 0.</summary>
+        internal static byte[] Frame(int length, params byte[] head)
+        {
+            var frame = new byte[length];
+            head.CopyTo(frame, 0);
+            return frame;
+        }
+
+        /// <summary>The R, G and B bytes of a color.</summary>
+        internal static void Put(byte[] frame, int at, int rgb)
+        {
+            frame[at] = (byte)(rgb >> 16);
+            frame[at + 1] = (byte)(rgb >> 8);
+            frame[at + 2] = (byte)rgb;
+        }
+
+        /// <summary>Drops the answers that came in, OpenRGB's ClearResponses
+        /// (AsusAuraKeyboardController.cpp:724-732).</summary>
+        internal static void Clear(IHidReportChannel io, byte[] scratch)
+        {
+            for (int i = 0; i < ClearLimit && io.ReadInput(scratch, 0) > 0; i++) { }
+        }
+
+        /// <summary>Waits up to <paramref name="ms"/> for one answer,
+        /// OpenRGB's AwaitResponse (AsusAuraKeyboardController.cpp:718-722).</summary>
+        internal static void Await(IHidReportChannel io, byte[] scratch, int ms) => io.ReadInput(scratch, ms);
+
+        /// <summary>Writes a frame and reads its answer, the hid_write then
+        /// hid_read OpenRGB's reads make, laid out as hidapi hands it over
+        /// (<see cref="AsHidapiRead"/>). Null when the write failed or no
+        /// answer came.</summary>
+        internal static byte[] Ask(IHidReportChannel io, byte[] frame)
+        {
+            if (!io.WriteOutput(frame)) return null;
+            var answer = new byte[Math.Max(PacketSize, io.InputReportLength)];
+            return io.ReadInput(answer, AnswerMs) > 0 ? AsHidapiRead(answer) : null;
+        }
+
+        /// <summary>An input report as hidapi's hid_read hands it to OpenRGB
+        /// on Windows: a report of a collection without report IDs comes
+        /// with the 0 Windows puts ahead of it dropped, and any other report
+        /// with its ID in byte 0 (hidapi windows/hid.c:1221-1234). OpenRGB's
+        /// answer offsets count from there.</summary>
+        internal static byte[] AsHidapiRead(byte[] report)
+            => report.Length > 0 && report[0] == 0x00 ? report.AsSpan(1).ToArray() : report;
+    }
+}

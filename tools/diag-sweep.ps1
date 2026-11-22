@@ -1,6 +1,6 @@
-﻿# Runtime self-diagnostics harvest (code-audit lens 1o). Elevated.
+# Runtime self-diagnostics harvest (code-audit lens 1o). Elevated.
 # Deploys the freshly published build, launches it with PADFORGE_DIAG
-# armed (the SdlDiagLog ring mirrors to a file), and walks the PadForge 6
+# armed (the SdlDiagLog ring mirrors to a file), and walks the XBOXDS4ONE 6
 # interface via UIA so lazily realized templates evaluate their bindings:
 # every sidebar page, a controller's six sections and their parts, each
 # extra's page with its More row, Search, Add a Controller, Get Profiles'
@@ -31,11 +31,11 @@ function Note($m) { Add-Content $out $m -Encoding utf8 }
 
 # The framework folder comes from the project file, so a .NET upgrade moves
 # this path with it instead of leaving it on the last build's exe.
-$appDir = Join-Path (Split-Path -Parent $PSScriptRoot) 'PadForge.App'
-$tfm = (Read-SettingsXml -Path (Join-Path $appDir 'PadForge.App.csproj')).Project.PropertyGroup |
+$appDir = Join-Path (Split-Path -Parent $PSScriptRoot) 'XBOXDS4ONE.App'
+$tfm = (Read-SettingsXml -Path (Join-Path $appDir 'XBOXDS4ONE.App.csproj')).Project.PropertyGroup |
     ForEach-Object { $_.TargetFramework } | Where-Object { $_ } | Select-Object -First 1
-$src = Join-Path $appDir "bin\Release\$tfm\win-x64\publish\PadForge.exe"
-$dst = 'C:\PadForge\PadForge.exe'
+$src = Join-Path $appDir "bin\Release\$tfm\win-x64\publish\XBOXDS4ONE.exe"
+$dst = 'C:\XBOXDS4ONE\XBOXDS4ONE.exe'
 $diag = 'C:\tmp\pfdiag-verify.log'
 Remove-Item $diag -Force -ErrorAction SilentlyContinue
 
@@ -43,7 +43,7 @@ Remove-Item $diag -Force -ErrorAction SilentlyContinue
 # This sweep drives the real app through UIA, and on 2026-08-09 its page walk
 # flipped a slot from Nintendo to Xbox and rewrote that slot's profile id
 # (Type 5 to 0, switch-pro to xbox-series-xs-bt) in the owner's live
-# PadForge.xml. The harness had no backup and no restore, so the damage was
+# XBOXDS4ONE.xml. The harness had no backup and no restore, so the damage was
 # caught only by diffing against an external snapshot afterwards. Back the
 # file up before touching anything, and put it back on every exit path.
 #
@@ -55,8 +55,8 @@ Remove-Item $diag -Force -ErrorAction SilentlyContinue
 # without its word the run stops and the owner decides. The sweep runs with
 # ErrorActionPreference Continue, and this part does not: a backup that could
 # not be taken ends the run before the sweep writes anything.
-$pfXml = 'C:\PadForge\PadForge.xml'
-$pfBak = Join-Path $env:TEMP 'PadForge.xml.diagsweep.bak'
+$pfXml = 'C:\XBOXDS4ONE\XBOXDS4ONE.xml'
+$pfBak = Join-Path $env:TEMP 'XBOXDS4ONE.xml.diagsweep.bak'
 $ErrorActionPreference = 'Stop'
 $doubt = Get-BackupDoubt $pfXml $pfBak 'Ask'
 $stop = @()
@@ -69,13 +69,13 @@ if ($stop.Count -gt 0) {
     foreach ($line in $stop) { Note $line; Write-Host $line -ForegroundColor Red }
     exit 1
 }
-# STOP THE APP FIRST. A leftover backup put back under a live PadForge would
+# STOP THE APP FIRST. A leftover backup put back under a live XBOXDS4ONE would
 # be saved over by the app's own state.
-Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
+Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
 Start-Sleep -Seconds 3
 # Asked again now that the app is down. A save it made after the question
 # above can make two files that were the same differ. The run stops with
-# neither file touched and starts PadForge again.
+# neither file touched and starts XBOXDS4ONE again.
 $doubt = Get-BackupDoubt $pfXml $pfBak $KeepSettingsFrom
 if ($doubt) {
     foreach ($line in (Get-BackupStopLines $pfXml $pfBak $doubt)) { Note $line; Write-Host $line -ForegroundColor Red }
@@ -106,7 +106,7 @@ try {
 # Deploy
 $copied = $false
 for ($i = 1; $i -le 5; $i++) {
-    taskkill /F /IM PadForge.exe 2>$null | Out-Null
+    taskkill /F /IM XBOXDS4ONE.exe 2>$null | Out-Null
     Start-Sleep 3
     try { Copy-Item $src $dst -Force -ErrorAction Stop; $copied = $true; break }
     catch { Note "copy attempt ${i}: $($_.Exception.Message)" }
@@ -143,9 +143,9 @@ $root = $ae::RootElement
 $TS = [System.Windows.Automation.TreeScope]
 $TC = [System.Windows.Automation.Condition]::TrueCondition
 $CT = [System.Windows.Automation.ControlType]
-$cond = New-Object System.Windows.Automation.PropertyCondition($ae::NameProperty, 'PadForge')
+$cond = New-Object System.Windows.Automation.PropertyCondition($ae::NameProperty, 'XBOXDS4ONE')
 # The window with the most elements, once it has any. On 2026-09-30 the first
-# top-level element named PadForge had none while the app's window was up
+# top-level element named XBOXDS4ONE had none while the app's window was up
 # (an elevated probe minutes later counted 376), and the walk that followed
 # clicked nothing and still passed.
 $win = $null
@@ -221,7 +221,7 @@ public static class W {
         return $false
     }
 
-    # PadForge's window or a dialog of its own holds the focus.
+    # XBOXDS4ONE's window or a dialog of its own holds the focus.
     function InFront {
         $owner = [uint32]0
         [W]::GetWindowThreadProcessId([W]::GetForegroundWindow(), [ref]$owner) | Out-Null
@@ -310,7 +310,7 @@ public static class W {
     Note "descendants=$walkSaw"
 
     # ---- Every page of the sidebar (#574). Devices opens its fold, so the
-    # rows of the devices PadForge remembers realize too. ----
+    # rows of the devices XBOXDS4ONE remembers realize too. ----
     foreach ($p in @('Dashboard:Home', 'Devices:Devices', 'Profiles:Profiles', 'Settings:Settings', 'About:About')) {
         $tag, $label = $p.Split(':')
         if ((Go $tag $label) -and $tag -eq 'Devices') {
@@ -415,7 +415,7 @@ public static class W {
     if ($browse) {
         Note "get profiles: $(Invoke-El $browse)"
         # The window is UIA-shy from the root: discover its HWND via Win32
-        # EnumWindows (visible PadForge-PID window that is not the main
+        # EnumWindows (visible XBOXDS4ONE-PID window that is not the main
         # HWND, larger than 400x400), then attach with FromHandle.
         $dlgHwnd = [IntPtr]::Zero
         for ($t = 0; $t -lt 8 -and $dlgHwnd -eq [IntPtr]::Zero; $t++) {
@@ -573,7 +573,7 @@ if ($notReached.Count -gt 0) {
 Write-Host "diag-sweep acceptance: $verdict"
 
 # Relaunch clean (no mirror)
-taskkill /F /IM PadForge.exe 2>$null | Out-Null
+taskkill /F /IM XBOXDS4ONE.exe 2>$null | Out-Null
 Start-Sleep 3
 Remove-Item Env:PADFORGE_DIAG -ErrorAction SilentlyContinue
 Start-Process -FilePath $dst
@@ -586,7 +586,7 @@ finally {
     # ends here, and the backup and its marker stay for the next run.
     if (Test-Path $pfBak) {
         $ErrorActionPreference = 'Stop'
-        Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
+        Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
         Start-Sleep -Seconds 3
         # The file about to be replaced holds nothing but what the backup holds
         # and what this run wrote, so its copy is a courtesy and a failed one

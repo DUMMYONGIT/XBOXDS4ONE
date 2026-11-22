@@ -24,7 +24,7 @@
 #                                           Either the effect is latched in
 #                                           the pad's firmware (expected: DS5
 #                                           trigger state persists until
-#                                           overwritten), or PadForge's own
+#                                           overwritten), or XBOXDS4ONE's own
 #                                           30 Hz effect pass is the writer.
 #   no lines at all                         the dispatcher never started, so
 #                                           this slot is not passthrough at all.
@@ -32,19 +32,19 @@
 # Usage: right-click, Run with PowerShell.
 
 param(
-    [string]$Exe = 'C:\PadForge\PadForge.exe',
-    [string]$Log = "C:\tmp\padforge-effects-$(Get-Date -Format yyyyMMdd-HHmmss).log"
+    [string]$Exe = 'C:\XBOXDS4ONE\XBOXDS4ONE.exe',
+    [string]$Log = "C:\tmp\XBOXDS4ONE-effects-$(Get-Date -Format yyyyMMdd-HHmmss).log"
 )
 
 $ErrorActionPreference = 'Stop'
-if (-not (Test-Path $Exe)) { throw "PadForge not found at $Exe" }
+if (-not (Test-Path $Exe)) { throw "XBOXDS4ONE not found at $Exe" }
 $dir = Split-Path $Log
 if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }
 
-Write-Host "Stopping any running PadForge..."
+Write-Host "Stopping any running XBOXDS4ONE..."
 $n = 0
-while ((Get-Process PadForge -ErrorAction SilentlyContinue) -and $n -lt 20) {
-    taskkill /F /IM PadForge.exe 2>$null | Out-Null
+while ((Get-Process XBOXDS4ONE -ErrorAction SilentlyContinue) -and $n -lt 20) {
+    taskkill /F /IM XBOXDS4ONE.exe 2>$null | Out-Null
     Start-Sleep -Milliseconds 400
     $n++
 }
@@ -72,7 +72,7 @@ Write-Host ""
 $deadline = (Get-Date).AddSeconds(60)
 while (-not (Test-Path $Log) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 500 }
 if (-not (Test-Path $Log)) {
-    Write-Warning "No log file appeared. PadForge may not have started, or the elevation prompt was declined."
+    Write-Warning "No log file appeared. XBOXDS4ONE may not have started, or the elevation prompt was declined."
     return
 }
 Get-Content $Log -Wait -Tail 0 | Where-Object { $_ -match 'DS5EFFECT|BTAUDIO' }

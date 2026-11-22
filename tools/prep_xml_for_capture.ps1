@@ -1,5 +1,5 @@
-﻿# Prep PadForge.xml: 5 slot types (Xbox/PS/Extended/KBM/MIDI) + sample macros.
-# Stops PadForge, edits the XML, restarts. Backup at PadForge.xml.bak-capture.
+# Prep XBOXDS4ONE.xml: 5 slot types (Xbox/PS/Extended/KBM/MIDI) + sample macros.
+# Stops XBOXDS4ONE, edits the XML, restarts. Backup at XBOXDS4ONE.xml.bak-capture.
 # The owner's settings stay in that backup, marked as this run's, until
 # add_slots_via_ui.ps1 or the next run of this script puts them back on the
 # marker's word (settings_guard.ps1).
@@ -13,8 +13,8 @@ param(
     [string]$KeepSettingsFrom = 'Ask'
 )
 
-$XmlPath = "C:\PadForge\PadForge.xml"
-$ExePath = "C:\PadForge\PadForge.exe"
+$XmlPath = "C:\XBOXDS4ONE\XBOXDS4ONE.xml"
+$ExePath = "C:\XBOXDS4ONE\XBOXDS4ONE.exe"
 $BakPath = "$XmlPath.bak-capture"
 
 # --- The owner's settings file ------------------------------------------------
@@ -39,14 +39,14 @@ if ($stop.Count -gt 0) {
     exit 1
 }
 
-Write-Host "Stopping PadForge..."
-$proc = Get-Process PadForge -EA SilentlyContinue
+Write-Host "Stopping XBOXDS4ONE..."
+$proc = Get-Process XBOXDS4ONE -EA SilentlyContinue
 if ($proc) {
     foreach ($p in $proc) {
         try { $p.CloseMainWindow() | Out-Null } catch {}
     }
     Start-Sleep -Seconds 3
-    Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
+    Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
     Start-Sleep -Seconds 2
 }
 
@@ -64,7 +64,7 @@ if (-not (Test-Path $XmlPath)) { Write-Host "!! Missing $XmlPath" -ForegroundCol
 #
 # Asked again now that the app is down. A save it made after the question
 # above can make two files that were the same differ. The run stops with
-# neither file touched and starts PadForge again.
+# neither file touched and starts XBOXDS4ONE again.
 $doubt = Get-BackupDoubt $XmlPath $BakPath $KeepSettingsFrom
 if ($doubt) {
     foreach ($line in (Get-BackupStopLines $XmlPath $BakPath $doubt)) { Write-Host $line -ForegroundColor Red }
@@ -92,7 +92,7 @@ Write-Host "Backed up real settings to $BakPath"
 $ErrorActionPreference = $prevPreference
 
 $xml = Read-SettingsXml $XmlPath
-$ns = $xml.PadForgeSettings
+$ns = $xml.XBOXDS4ONESettings
 
 # All slot arrays + SlotProfileIds live inside <AppSettings>, not at the root.
 $app = $ns.AppSettings
@@ -109,7 +109,7 @@ Write-Host "Profile children: $($profileChildren.Count)"
 function Set-IdNode { param($node, [string]$value); $node.RemoveAllAttributes() | Out-Null; $node.InnerText = $value }
 function Set-IdNil  { param($node); $node.InnerText = ""; $a = $xml.CreateAttribute("xsi","nil","http://www.w3.org/2001/XMLSchema-instance"); $a.Value = "true"; $node.Attributes.Append($a) | Out-Null }
 Set-IdNode $profileChildren[1] "dualsense-bt"
-Set-IdNode $profileChildren[2] "padforge-custom"
+Set-IdNode $profileChildren[2] "XBOXDS4ONE-custom"
 Set-IdNil  $profileChildren[3]
 Set-IdNil  $profileChildren[4]
 
@@ -143,9 +143,9 @@ $f = $xml.CreateDocumentFragment(); $f.InnerXml = $m2; $macrosNode.AppendChild($
 if ($app -and $app.StartMinimized) { $app.StartMinimized = "false" }
 
 $kept = Save-SettingsXml $xml $XmlPath
-Write-Host "Saved PadForge.xml with 5 slot types + 2 sample macros (the file before it is kept as $kept)" -ForegroundColor Green
+Write-Host "Saved XBOXDS4ONE.xml with 5 slot types + 2 sample macros (the file before it is kept as $kept)" -ForegroundColor Green
 
 Start-Process $ExePath
-Write-Host "Launched PadForge; waiting 18s for HM to bring up 5 slots..."
+Write-Host "Launched XBOXDS4ONE; waiting 18s for HM to bring up 5 slots..."
 Start-Sleep -Seconds 18
 Write-Host "Ready." -ForegroundColor Green

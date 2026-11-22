@@ -63,13 +63,13 @@ jobs:
           echo "commit_count=$count" >> "$GITHUB_OUTPUT"
 
       - name: Publish
-        run: dotnet publish PadForge.App/PadForge.App.csproj -c Release ${{ matrix.publish_args }}
+        run: dotnet publish XBOXDS4ONE.App/XBOXDS4ONE.App.csproj -c Release ${{ matrix.publish_args }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: PadForge_r${{ steps.info.outputs.commit_count }}@${{ steps.info.outputs.commit_short }}${{ matrix.suffix }}
-          path: PadForge.App/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish/
+          name: XBOXDS4ONE_r${{ steps.info.outputs.commit_count }}@${{ steps.info.outputs.commit_short }}${{ matrix.suffix }}
+          path: XBOXDS4ONE.App/bin/Release/net10.0-windows10.0.26100.0/${{ matrix.rid }}/publish/
 
   # The dev feed is two jobs, because the two halves need opposite things
   # when pushes land close together.
@@ -105,7 +105,7 @@ jobs:
       - name: Download x64 build
         uses: actions/download-artifact@v8
         with:
-          name: PadForge_r${{ env.COMMIT_COUNT }}@${{ env.COMMIT_SHORT }}
+          name: XBOXDS4ONE_r${{ env.COMMIT_COUNT }}@${{ env.COMMIT_SHORT }}
           path: publish/win-x64
 
       - name: Download ARM64 build
@@ -113,7 +113,7 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v8
         with:
-          name: PadForge_r${{ env.COMMIT_COUNT }}@${{ env.COMMIT_SHORT }}-arm64
+          name: XBOXDS4ONE_r${{ env.COMMIT_COUNT }}@${{ env.COMMIT_SHORT }}-arm64
           path: publish/win-arm64
 
       - name: Package release zips
@@ -122,12 +122,12 @@ jobs:
           mkdir -p release
           cd "$GITHUB_WORKSPACE/publish/win-x64"
           rm -f *.pdb
-          7z a -mx=9 "$GITHUB_WORKSPACE/release/PadForge_r${COMMIT_COUNT}@${COMMIT_SHORT}.zip" ./*
+          7z a -mx=9 "$GITHUB_WORKSPACE/release/XBOXDS4ONE_r${COMMIT_COUNT}@${COMMIT_SHORT}.zip" ./*
 
-          if [ -s "$GITHUB_WORKSPACE/publish/win-arm64/PadForge.exe" ]; then
+          if [ -s "$GITHUB_WORKSPACE/publish/win-arm64/XBOXDS4ONE.exe" ]; then
             cd "$GITHUB_WORKSPACE/publish/win-arm64"
             rm -f *.pdb
-            7z a -mx=9 "$GITHUB_WORKSPACE/release/PadForge_r${COMMIT_COUNT}@${COMMIT_SHORT}-arm64.zip" ./*
+            7z a -mx=9 "$GITHUB_WORKSPACE/release/XBOXDS4ONE_r${COMMIT_COUNT}@${COMMIT_SHORT}-arm64.zip" ./*
           else
             echo "No ARM64 build to package. The x64 dev build is released alone."
           fi
@@ -143,8 +143,8 @@ jobs:
         run: |
           set -o pipefail
           base="archive-${REF}"
-          assets=("release/PadForge_r${COMMIT_COUNT}@${COMMIT_SHORT}.zip")
-          arm="release/PadForge_r${COMMIT_COUNT}@${COMMIT_SHORT}-arm64.zip"
+          assets=("release/XBOXDS4ONE_r${COMMIT_COUNT}@${COMMIT_SHORT}.zip")
+          arm="release/XBOXDS4ONE_r${COMMIT_COUNT}@${COMMIT_SHORT}-arm64.zip"
           has_arm64=false
           if [ -s "$arm" ]; then assets+=("$arm"); has_arm64=true; fi
           # GitHub caps a release at 1000 assets and a push adds up to two.
@@ -174,7 +174,7 @@ jobs:
             active="${base}-${part}"
             echo "Archive full, rolling to $active"
             gh release create "$active" --repo "$REPO" --target "$SHA" --prerelease \
-              --title "PadForge dev build archive (part ${part})" \
+              --title "XBOXDS4ONE dev build archive (part ${part})" \
               --notes "Older dev builds are in the previous archive: https://github.com/${REPO}/releases/tag/${prev}" \
               || echo "(part may already exist)"
           fi
@@ -182,7 +182,7 @@ jobs:
           # First-ever run for this part: make sure it exists.
           gh release view "$active" --repo "$REPO" >/dev/null 2>&1 || \
             gh release create "$active" --repo "$REPO" --target "$SHA" --prerelease \
-              --title "PadForge dev build archive" \
+              --title "XBOXDS4ONE dev build archive" \
               --notes "Latest build: https://github.com/${REPO}/releases/tag/latest-${REF}" \
               || true
 
@@ -272,18 +272,18 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dl release
-          x64="PadForge_r${COMMIT_COUNT}@${COMMIT_SHORT}.zip"
+          x64="XBOXDS4ONE_r${COMMIT_COUNT}@${COMMIT_SHORT}.zip"
           gh release download "$ARCHIVE_TAG" --repo "$REPO" --dir dl --pattern "$x64"
           [ -s "dl/$x64" ] || { echo "$x64 did not download." >&2; exit 1; }
-          mv "dl/$x64" release/PadForge.zip
+          mv "dl/$x64" release/XBOXDS4ONE.zip
 
           # has_arm64 is what the archive job uploaded, so a missing file here
           # is a failed download and not a build that never existed.
           if [ "$HAS_ARM64" = "true" ]; then
-            arm="PadForge_r${COMMIT_COUNT}@${COMMIT_SHORT}-arm64.zip"
+            arm="XBOXDS4ONE_r${COMMIT_COUNT}@${COMMIT_SHORT}-arm64.zip"
             gh release download "$ARCHIVE_TAG" --repo "$REPO" --dir dl --pattern "$arm"
             [ -s "dl/$arm" ] || { echo "$arm did not download." >&2; exit 1; }
-            mv "dl/$arm" release/PadForge-arm64.zip
+            mv "dl/$arm" release/XBOXDS4ONE-arm64.zip
           fi
 
       # The old order was delete, create, upload. Every failure after the
@@ -315,11 +315,11 @@ jobs:
                 gh api -X DELETE "repos/$REPO/releases/$stale"
               done
 
-          assets=("release/PadForge.zip")
-          notes="PadForge.zip is the x64 build."
+          assets=("release/XBOXDS4ONE.zip")
+          notes="XBOXDS4ONE.zip is the x64 build."
           if [ "$HAS_ARM64" = "true" ]; then
-            assets+=("release/PadForge-arm64.zip")
-            notes="$notes PadForge-arm64.zip is the preliminary build for Windows on ARM."
+            assets+=("release/XBOXDS4ONE-arm64.zip")
+            notes="$notes XBOXDS4ONE-arm64.zip is the preliminary build for Windows on ARM."
           else
             notes="$notes No ARM64 build is attached for this commit."
           fi
@@ -329,11 +329,11 @@ jobs:
 
           # The in-app updater (#457, UpdateService.cs) reads this release
           # through the tag latest-v<major>-dev, takes the build number from
-          # this exact title, and picks PadForge.zip or PadForge-arm64.zip by
+          # this exact title, and picks XBOXDS4ONE.zip or XBOXDS4ONE-arm64.zip by
           # name. Renaming any of them turns off Include Pre-Releases for
           # every installed copy.
           gh release create "$STAGING" --repo "$REPO" --draft --prerelease --target "$SHA" \
-            --title "PadForge r${COMMIT_COUNT}@${COMMIT_SHORT}" --notes "$notes" "${assets[@]}"
+            --title "XBOXDS4ONE r${COMMIT_COUNT}@${COMMIT_SHORT}" --notes "$notes" "${assets[@]}"
 
           id=$(gh api "repos/$REPO/releases?per_page=100" \
                  --jq ".[] | select(.draft and .tag_name == \"$STAGING\") | .id")

@@ -6,7 +6,7 @@
 # maintainer who edits or reopens an older report does not close it again.
 #
 # Parses the issue body for a Discussion URL of the shape:
-#   https://github.com/hifihedgehog/PadForge/discussions/<digits>
+#   https://github.com/DUMMYONGIT/XBOXDS4ONE/discussions/<digits>
 # optionally with a #discussioncomment-<digits> suffix.
 #
 # - If no URL is present: close as `not planned`, post a redirect comment,
@@ -82,7 +82,7 @@ jobs:
           set -euo pipefail
           BODY_FILE="$(mktemp)"
           printf '%s' "${ISSUE_BODY:-}" > "$BODY_FILE"
-          MATCH=$(grep -Eo 'https://github\.com/hifihedgehog/PadForge/discussions/[0-9]+(#discussioncomment-[0-9]+)?' "$BODY_FILE" | head -n1 || true)
+          MATCH=$(grep -Eo 'https://github\.com/hifihedgehog/XBOXDS4ONE/discussions/[0-9]+(#discussioncomment-[0-9]+)?' "$BODY_FILE" | head -n1 || true)
           if [ -z "$MATCH" ]; then
             echo "found=false" >> "$GITHUB_OUTPUT"
             echo "number=" >> "$GITHUB_OUTPUT"
@@ -101,13 +101,13 @@ jobs:
           cat > "$COMMENT_FILE" <<'EOF'
           Thanks for filing.
 
-          This bug report does not include a link to a Discussion thread. The PadForge issue tracker accepts bug reports only after the question has been raised in [Discussions](https://github.com/hifihedgehog/PadForge/discussions) and either went unanswered or was confirmed as a bug.
+          This bug report does not include a link to a Discussion thread. The XBOXDS4ONE issue tracker accepts bug reports only after the question has been raised in [Discussions](https://github.com/DUMMYONGIT/XBOXDS4ONE/discussions) and either went unanswered or was confirmed as a bug.
 
           Most reports that look like bugs at first turn out to be setup-order or configuration issues. The Discussion step catches those without filling the tracker.
 
           Next steps:
 
-          1. Open a thread under [Q&A](https://github.com/hifihedgehog/PadForge/discussions/new?category=q-a).
+          1. Open a thread under [Q&A](https://github.com/DUMMYONGIT/XBOXDS4ONE/discussions/new?category=q-a).
           2. If the thread confirms a real bug, file a new report and paste the Discussion URL into the "Discussion link" field.
 
           Closing for now.
@@ -167,7 +167,7 @@ jobs:
           cat > "$COMMENT_FILE" <<EOF
           Thanks for filing.
 
-          The Discussion link in this report points to discussion #${DISCUSSION_NUMBER}, which does not exist in this repository. The link must point to a thread at https://github.com/hifihedgehog/PadForge/discussions/.
+          The Discussion link in this report points to discussion #${DISCUSSION_NUMBER}, which does not exist in this repository. The link must point to a thread at https://github.com/DUMMYONGIT/XBOXDS4ONE/discussions/.
 
           Open or locate the right Discussion, then file a new report with the correct URL.
 

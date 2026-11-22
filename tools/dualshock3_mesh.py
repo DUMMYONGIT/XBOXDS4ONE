@@ -1,4 +1,4 @@
-"""Convert the DualShock 3 model into PadForge's per-part OBJs and atlas.
+"""Convert the DualShock 3 model into XBOXDS4ONE's per-part OBJs and atlas.
 
 Source: "Sony PlayStation Dualshock 3 wireless controller" by 3doverstock,
 bought on CGTrader under its Royalty Free License
@@ -36,7 +36,7 @@ filling the hole at every angle. Its center is therefore the pivot, and
 the run prints it for the model class.
 
 Axes. The source is X right, Y out of the face, Z toward the player.
-PadForge wants X right, Y into the controller, Z toward the top edge, in
+XBOXDS4ONE wants X right, Y into the controller, Z toward the top edge, in
 millimeters, so the map is (10x, -10y, -10z): a half turn about X, which
 keeps the winding. The result is centered on its own bounding box, the
 way the other bought models are.
@@ -50,7 +50,7 @@ import numpy as np
 from PIL import Image
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DST = os.path.join(PROJ_ROOT, "PadForge.App", "3DModels", "DS3")
+DST = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "3DModels", "DS3")
 ZIP = os.environ.get("DS3_ZIP", os.path.join(
     os.path.expanduser("~"), "Downloads", "DualShock 3",
     "Sony__PlayStation_Dualshock_3_wireless_controller_obj.zip"))
@@ -274,11 +274,11 @@ def cut_stick(v, faces, shell, axis):
 #  Output
 # ----------------------------------------------------------------------
 
-def to_padforge(p):
+def to_XBOXDS4ONE(p):
     return np.column_stack([10.0 * p[:, 0], -10.0 * p[:, 1], -10.0 * p[:, 2]])
 
 
-def to_padforge_n(n):
+def to_XBOXDS4ONE_n(n):
     return np.column_stack([n[:, 0], -n[:, 1], -n[:, 2]])
 
 
@@ -289,8 +289,8 @@ def write_obj(path, v, vt, vn, faces, idx, center):
     mv = {k: j + 1 for j, k in enumerate(used_v)}
     mt = {k: j + 1 for j, k in enumerate(used_t)}
     mn = {k: j + 1 for j, k in enumerate(used_n)}
-    pv = to_padforge(v[used_v]) - center
-    pn = to_padforge_n(vn[used_n])
+    pv = to_XBOXDS4ONE(v[used_v]) - center
+    pn = to_XBOXDS4ONE_n(vn[used_n])
     stem = os.path.splitext(os.path.basename(path))[0]
     with io.open(path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(f"# {stem}\n# {CREDIT}\no {stem}\n")
@@ -370,7 +370,7 @@ def main():
         pivots.append((side, axis, cy))
     parts["MainBody.obj"] = shell
 
-    allp = to_padforge(v)
+    allp = to_XBOXDS4ONE(v)
     center = (allp.min(axis=0) + allp.max(axis=0)) / 2.0
     lo, hi = allp.min(axis=0) - center, allp.max(axis=0) - center
     print(f"  centered on ({center[0]:.2f}, {center[1]:.2f}, {center[2]:.2f}) mm: "
@@ -380,18 +380,18 @@ def main():
         nf, nv = write_obj(os.path.join(DST, name), v, vt, vn, faces, parts[name], center)
         print(f"  {name:28s} {nf:5,} faces  {nv:5,} verts")
 
-    body = to_padforge(v[sorted({c[0] for i in parts['MainBody.obj'] for c in faces[i]})])
+    body = to_XBOXDS4ONE(v[sorted({c[0] for i in parts['MainBody.obj'] for c in faces[i]})])
     print(f"  MainBody width {np.ptp(body[:, 0]):.2f} mm")
 
     for side, (ax, az), cy in pivots:
-        p = to_padforge(np.array([[ax, cy, az]]))[0] - center
+        p = to_XBOXDS4ONE(np.array([[ax, cy, az]]))[0] - center
         print(f"  {side} stick pivot ({p[0]:.3f}, {p[1]:.3f}, {p[2]:.3f}) mm")
 
     # Trigger hinge: a third of the way up the trigger in its own bounds,
     # the fraction the Xbox One model has always used (0.327 of the depth
     # span, 0.371 of the height span, from the front and the bottom).
     for name in ("Shoulder-Left-Trigger.obj", "Shoulder-Right-Trigger.obj"):
-        t = to_padforge(v[sorted({c[0] for i in parts[name] for c in faces[i]})]) - center
+        t = to_XBOXDS4ONE(v[sorted({c[0] for i in parts[name] for c in faces[i]})]) - center
         tlo, thi = t.min(axis=0), t.max(axis=0)
         hy = tlo[1] + 0.327 * (thi[1] - tlo[1])
         hz = tlo[2] + 0.371 * (thi[2] - tlo[2])

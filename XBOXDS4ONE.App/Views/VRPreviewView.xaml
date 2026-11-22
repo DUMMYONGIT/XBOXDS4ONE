@@ -1,0 +1,16 @@
+<UserControl x:Class="XBOXDS4ONE.Views.VRPreviewView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignHeight="400" d:DesignWidth="600"
+             Background="Transparent">
+
+    <!-- The hands keep the room the 3D controller keeps around it
+         (ArrangeOverride sets the margin from the view's size). -->
+    <Viewbox x:Name="VrBox" Stretch="Uniform">
+        <Canvas FlowDirection="LeftToRight" x:Name="VrCanvas" ClipToBounds="True" />
+    </Viewbox>
+
+</UserControl>

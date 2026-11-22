@@ -7,7 +7,7 @@ WHAT IT READS, under OpenRGB's Controllers/GaiZongGaiKeyboardController:
   each light's name in light order.
 - RGBController/RGBControllerKeyNames.cpp: the string behind each KEY_ name.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/HidFamilies/GaiZhongGaiLayouts.g.cs:
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/GaiZhongGaiLayouts.g.cs:
 per board, the lights its matrix holds, by number, each with its name, row
 and column.
 
@@ -24,7 +24,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies", "GaiZhongGaiLayouts.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies", "GaiZhongGaiLayouts.g.cs")
 
 RGB_REL = "RGBController_GaiZhongGai.cpp"
 # The C# name, the matrix, its rows and columns as declared, and the names
@@ -150,7 +150,7 @@ def main():
     out.append("//     RGBController_GaiZhongGai.cpp, with the key names of")
     out.append("//     RGBController/RGBControllerKeyNames.cpp). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     out.append("{")
     out.append("    internal static partial class GaiZhongGaiLayouts")
     out.append("    {")

@@ -1,17 +1,17 @@
-﻿<#
+<#
 .SYNOPSIS
-    Captures ALL PadForge screenshots for wiki and README.
+    Captures ALL XBOXDS4ONE screenshots for wiki and README.
 .DESCRIPTION
-    1. Backs up PadForge.xml and records the backup in a marker file under
-       %TEMP%\PadForge_Capture
+    1. Backs up XBOXDS4ONE.xml and records the backup in a marker file under
+       %TEMP%\XBOXDS4ONE_Capture
     2. Injects test data (4 slot types, macros with mouse/AppVolume, sensitivity curves, profiles)
-    3. Kills and restarts PadForge
+    3. Kills and restarts XBOXDS4ONE
     4. Runs full UIA-based capture (~30 screenshots)
-    5. Restores PadForge.xml backup and removes the marker
-    Must run elevated (PadForge runs elevated for HIDMaestro and HidHide).
+    5. Restores XBOXDS4ONE.xml backup and removes the marker
+    Must run elevated (XBOXDS4ONE runs elevated for HIDMaestro and HidHide).
 
     Before the run overwrites or deletes a settings file it copies the file to
-    %TEMP%\PadForge_Capture under a name that carries the UTC time. Twenty copies
+    %TEMP%\XBOXDS4ONE_Capture under a name that carries the UTC time. Twenty copies
     are kept at most: the newest fourteen of files a run found and the newest
     six of files a run wrote itself.
 
@@ -31,25 +31,25 @@
 
 param(
     # The GitHub wiki was RETIRED to pointer pages on 2026-07-30; the live
-    # documentation is Material for MkDocs in the padforge.org repo, source
+    # documentation is Material for MkDocs in the XBOXDS4ONE.org repo, source
     # under wiki/ and the built site committed to docs/. Capturing into the
-    # old PadForge.wiki\images ships nothing, so this points at the docs
+    # old XBOXDS4ONE.wiki\images ships nothing, so this points at the docs
     # source that is actually published.
-    [string]$OutputDir = "C:\Users\sonic\OneDrive\Documents\GitHub\padforge.org\wiki\images",
-    [string]$PadForgeExe = "C:\PadForge\PadForge.exe",
-    [string]$PadForgeXml = "C:\PadForge\PadForge.xml",
+    [string]$OutputDir = "C:\Users\sonic\OneDrive\Documents\GitHub\XBOXDS4ONE.org\wiki\images",
+    [string]$XBOXDS4ONEExe = "C:\XBOXDS4ONE\XBOXDS4ONE.exe",
+    [string]$XBOXDS4ONEXml = "C:\XBOXDS4ONE\XBOXDS4ONE.xml",
     # The owner's answer to a run that stopped over a settings backup lying
     # beside the settings file (see "The owner's settings file" below). Ask,
     # the default, is that stop: the run changes nothing and prints both
     # files. File says the settings file holds the settings to keep, so the
     # backup is set aside. Backup says the backup holds them, so it goes back
     # over the settings file. The file that gives way is copied to
-    # %TEMP%\PadForge_Capture first, whichever is chosen. A run with nothing
+    # %TEMP%\XBOXDS4ONE_Capture first, whichever is chosen. A run with nothing
     # to ask refuses File and Backup, so neither can be left on a command
     # line to wave the next stop through.
     [ValidateSet('Ask', 'File', 'Backup')]
     [string]$KeepSettingsFrom = 'Ask',
-    # Tail mode: reuse the capture-configured PadForge.xml an aborted full
+    # Tail mode: reuse the capture-configured XBOXDS4ONE.xml an aborted full
     # run left behind (slots + dummies + assignments intact, owner backup
     # still in .bak) and jump straight to the STEP 3b tail on a FRESH app
     # process. Exists because the WPF UIA tree degrades over a marathon
@@ -95,8 +95,8 @@ param(
 
 Set-StrictMode -Version Latest
 
-# How long PadForge takes to finish what a click started, measured instead of
-# guessed. A wait after an action ends once PadForge's UI thread has run less
+# How long XBOXDS4ONE takes to finish what a click started, measured instead of
+# guessed. A wait after an action ends once XBOXDS4ONE's UI thread has run less
 # than a third of the last 48 ms, which is when WPF has done the input, the
 # bindings and the layout it set off, and one frame later, when the render
 # thread has drawn them. That takes tens of milliseconds where the fixed waits
@@ -347,13 +347,13 @@ try {
 } catch { }
 
 # Proxy that shadows the cmdlet for the whole script. A -Milliseconds wait
-# after an action lasts until PadForge has finished it (UiSettle.Wait), with
+# after an action lasts until XBOXDS4ONE has finished it (UiSettle.Wait), with
 # the scaled time as its ceiling. One in a polling loop sleeps the scaled time.
 # -Seconds waits pass through untouched.
 $script:SettleScaleValue = $SettleScale
 # How many slots the staged sidebar holds: set once STEP 2b has made one of
 # each type, or from the snapshot a targeted run loads. Cap refuses a
-# PadForge frame whose sidebar shows any other number. Zero until known.
+# XBOXDS4ONE frame whose sidebar shows any other number. Zero until known.
 $script:ExpectedSlots = 0
 $script:RunClock = [System.Diagnostics.Stopwatch]::StartNew()
 # Where the pointer was when Park-Pointer last moved it off the content, and
@@ -401,14 +401,14 @@ function Wait-ModelStill {
     [void][UiSettle]::WaitStableBox([int]$p.X, [int]$p.Y, [int]$p.Width, [int]$p.Height, $CeilingMs, 300)
 }
 
-# PadForge's restarts, timed by what they wait on: a process that exits, then
+# XBOXDS4ONE's restarts, timed by what they wait on: a process that exits, then
 # a window whose sidebar UI Automation can read, then a UI thread gone quiet.
 # The fixed waits they replace were 2 to 3 s after a kill, and up to 25 s for
 # the window and then 6 s more.
-function Wait-PadForgeGone {
+function Wait-XBOXDS4ONEGone {
     param([int]$TimeoutMs = 8000)
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
-    foreach ($gone in @(Get-Process PadForge -EA SilentlyContinue)) {
+    foreach ($gone in @(Get-Process XBOXDS4ONE -EA SilentlyContinue)) {
         $left = [math]::Max(0, $TimeoutMs - [int]$sw.ElapsedMilliseconds)
         try { [void]$gone.WaitForExit($left) } catch { }
     }
@@ -425,24 +425,24 @@ function Wait-FileQuiet {
         Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds 100
     }
 }
-# Returns once the settings file has been written after Since, PadForge's
+# Returns once the settings file has been written after Since, XBOXDS4ONE's
 # save 2 s after its last change, or at TimeoutMs.
 function Wait-SettingsSaved {
     param([DateTime]$Since, [int]$TimeoutMs = 5000)
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     while ($sw.ElapsedMilliseconds -lt $TimeoutMs) {
-        $item = Get-Item $PadForgeXml -EA SilentlyContinue
+        $item = Get-Item $XBOXDS4ONEXml -EA SilentlyContinue
         if ($item -and $item.LastWriteTimeUtc -gt $Since.ToUniversalTime()) { return $true }
         Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds 100
     }
     return $false
 }
-function Wait-PadForgeReady {
+function Wait-XBOXDS4ONEReady {
     param([int]$TimeoutSec = 31)
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
     $up = $null
     while ($sw.Elapsed.TotalSeconds -lt $TimeoutSec) {
-        $up = Get-Process PadForge -EA SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+        $up = Get-Process XBOXDS4ONE -EA SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
         if ($up) { break }
         Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds 100
     }
@@ -472,12 +472,12 @@ function Wait-PadForgeReady {
 }
 $ErrorActionPreference = "Stop"
 
-# NOT beside the exe. The standing bar is that only PadForge.xml and crash.log
+# NOT beside the exe. The standing bar is that only XBOXDS4ONE.xml and crash.log
 # may ever sit in the deploy directory, and this transcript was breaking it on
 # every run: the 2026-08-09 release prep found six stray log files there, all
 # written by this harness and its siblings. TEMP keeps them out of the way and
 # out of the hygiene sweep.
-$logDir = Join-Path $env:TEMP "PadForge_Capture"
+$logDir = Join-Path $env:TEMP "XBOXDS4ONE_Capture"
 if (-not (Test-Path $logDir)) { New-Item -ItemType Directory -Path $logDir | Out-Null }
 $logPath = Join-Path $logDir "capture_log.txt"
 $script:CaptureRunStart = Get-Date
@@ -626,7 +626,7 @@ $TC = [System.Windows.Automation.TreeScope]::Children
 $TD = [System.Windows.Automation.TreeScope]::Descendants
 
 # A search of the window, in the order that reads the fewest elements. While
-# the engine runs, PadForge answers UI Automation at about 10 ms an element,
+# the engine runs, XBOXDS4ONE answers UI Automation at about 10 ms an element,
 # and a plain descendants search walks the title bar, the sidebar's ninety
 # elements and only then the page: 2 to 5 s to find the page view, a direct
 # child of the window. The page view a recipe last found comes first while
@@ -733,7 +733,7 @@ function Find-UIA {
             return $found
         } catch {
             $resp = try { (Get-Process -Id $script:proc.Id -EA Stop).Responding } catch { "unknown" }
-            Write-Host ("  !! UIA search for {0} failed after {1:N1} s (attempt {2}), PadForge responding: {3}. {4}" -f $what, ($sw.ElapsedMilliseconds / 1000), $attempt, $resp, $_.Exception.Message) -ForegroundColor Yellow
+            Write-Host ("  !! UIA search for {0} failed after {1:N1} s (attempt {2}), XBOXDS4ONE responding: {3}. {4}" -f $what, ($sw.ElapsedMilliseconds / 1000), $attempt, $resp, $_.Exception.Message) -ForegroundColor Yellow
             Microsoft.PowerShell.Utility\Start-Sleep -Seconds 3
             $sw.Restart()
         }
@@ -741,7 +741,7 @@ function Find-UIA {
     return $null
 }
 
-function Reset-PadForgeUia {
+function Reset-XBOXDS4ONEUia {
     # The WPF UIA tree degrades over a long capture run: late FindAlls come back
     # empty for elements that are plainly on screen. The script header has noted
     # this since 2026-07-30 and -SkipToTail exists because of it. The KBM block
@@ -750,12 +750,12 @@ function Reset-PadForgeUia {
     # A fresh process gets a fresh tree. Settings are already on disk, so this
     # costs a restart and nothing else.
     param([string]$ExePath)
-    Write-Host "  restarting PadForge for a fresh UIA tree" -ForegroundColor Cyan
-    Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
-    Wait-PadForgeGone
+    Write-Host "  restarting XBOXDS4ONE for a fresh UIA tree" -ForegroundColor Cyan
+    Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
+    Wait-XBOXDS4ONEGone
     Start-Process $ExePath
-    $pr = Wait-PadForgeReady
-    if (-not $pr) { Write-Host "  !! PadForge did not come back" -ForegroundColor Red; return $false }
+    $pr = Wait-XBOXDS4ONEReady
+    if (-not $pr) { Write-Host "  !! XBOXDS4ONE did not come back" -ForegroundColor Red; return $false }
     # REBIND THE PROCESS TOO, not just the window. Every modal helper keys
     # on $script:proc.Id: Close-AnyModal filters candidate windows by it,
     # and Get-ForegroundDialogHwnd / Find-DialogHwndByEnum enumerate by it.
@@ -807,7 +807,7 @@ function Get-Rect {
 }
 
 # The x of the spot in the main window's title bar where the pointer rests
-# and the warm-up click lands. PadForge 6 (#574) put the search box at the
+# and the warm-up click lands. XBOXDS4ONE 6 (#574) put the search box at the
 # bar's middle, where that spot was: a pointer resting there showed the
 # box's hover in every frame, and a click there opens Search. Only the box
 # takes the pointer, and the bar between it and the profile pill is empty
@@ -970,7 +970,7 @@ function Ensure-DeviceAssigned {
     # MapTo is the ZERO-BASED pad index (InputManager filters on
     # `us.MapTo == slot`), not the UI slot number.
     #
-    # Runs with PadForge closed and restarts it, which is the state proven to
+    # Runs with XBOXDS4ONE closed and restarts it, which is the state proven to
     # load settings cleanly.
     # SlotType resolves the pad index by VirtualControllerType instead of
     # trusting a hardcoded number. Home CARD order is type-group order
@@ -981,18 +981,18 @@ function Ensure-DeviceAssigned {
     # never appeared. Pass the type and let the file say where it is.
     #
     # PeripheralOutputs, when given, is written into the device's own row in
-    # the same save: the record of the lighting and rumble PadForge found on
+    # the same save: the record of the lighting and rumble XBOXDS4ONE found on
     # a mouse or keyboard (UserDevice.PeripheralOutputs, #494), which keeps
     # its Lighting and Force Feedback groups up while it is offline.
     param([string]$DeviceNamePart, [int]$PadIndex, [int]$SlotType = -1,
           [string]$XmlPath, [string]$ExePath, [int]$PeripheralOutputs = -1)
 
-    Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
-    Wait-PadForgeGone
+    Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
+    Wait-XBOXDS4ONEGone
 
     try {
         $ax = Read-SettingsXml $XmlPath
-        $root = $ax.PadForgeSettings
+        $root = $ax.XBOXDS4ONESettings
 
         if ($SlotType -ge 0) {
             # The slot arrays live under AppSettings (SettingsService reads
@@ -1034,7 +1034,7 @@ function Ensure-DeviceAssigned {
 
         $outputsChanged = $false
         if ($PeripheralOutputs -ge 0) {
-            # Every row PadForge writes carries the element, an int it always
+            # Every row XBOXDS4ONE writes carries the element, an int it always
             # serializes, so a row without one is not a row this can trust.
             $po = $dev.SelectSingleNode("PeripheralOutputs")
             if (-not $po) { Write-Host "  !! '$iname' has no <PeripheralOutputs>" -ForegroundColor Red; Start-Process $ExePath; return $false }
@@ -1057,7 +1057,7 @@ function Ensure-DeviceAssigned {
                 # other and the handles must follow it. Returning with the old
                 # hwnd left every later UIA call on a dead window, and the next
                 # FromHandle threw "Unrecognized error" (2026-09-22).
-                return (Reset-PadForgeUia -ExePath $ExePath)
+                return (Reset-XBOXDS4ONEUia -ExePath $ExePath)
             }
         }
 
@@ -1075,7 +1075,7 @@ function Ensure-DeviceAssigned {
                 $bakPath = "$XmlPath.bak"
                 if (Test-Path $bakPath) {
                     $bx = Read-SettingsXml $bakPath
-                    $bTpl = $bx.PadForgeSettings.SelectSingleNode("UserSettings/Setting")
+                    $bTpl = $bx.XBOXDS4ONESettings.SelectSingleNode("UserSettings/Setting")
                     if ($bTpl) {
                         $template = $ax.ImportNode($bTpl, $true)
                         Write-Host "  (no row to clone; borrowed the shape of one from the backup)" -ForegroundColor DarkGray
@@ -1119,8 +1119,8 @@ function Ensure-DeviceAssigned {
     }
 
     Start-Process $ExePath
-    $pr = Wait-PadForgeReady
-    if (-not $pr) { Write-Host "  !! PadForge did not come back up" -ForegroundColor Red; return $false }
+    $pr = Wait-XBOXDS4ONEReady
+    if (-not $pr) { Write-Host "  !! XBOXDS4ONE did not come back up" -ForegroundColor Red; return $false }
     # REBIND THE PROCESS TOO, not just the window. Every modal helper keys
     # on $script:proc.Id: Close-AnyModal filters candidate windows by it,
     # and Get-ForegroundDialogHwnd / Find-DialogHwndByEnum enumerate by it.
@@ -1150,11 +1150,11 @@ function Ensure-DeviceAssigned {
 # four-band correction in AutoEq's own shape, and the limiter at its default.
 function Seed-AudioDsp {
     param([string]$DeviceGuid, [string]$DeviceNamePart, [int]$PadIndex, [string]$XmlPath, [string]$ExePath)
-    Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
-    Wait-PadForgeGone
+    Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
+    Wait-XBOXDS4ONEGone
     try {
         $ax = Read-SettingsXml $XmlPath
-        $root = $ax.PadForgeSettings
+        $root = $ax.XBOXDS4ONESettings
         # Resolve the guid from the device list by NAME when asked. The
         # synthetic DualSense carries a fixed guid, but on a machine where the
         # owner's real pad is already cached the injector skips the synthetic
@@ -1184,12 +1184,12 @@ function Seed-AudioDsp {
         # DeviceSlotConfigs is a child of <AppSettings>, not of the root.
         # The serializer's AppSettingsData owns the bag ([XmlArray
         # "DeviceSlotConfigs"] on AppSettingsData, reached through
-        # PadForgeSettings/AppSettings). Writing it at the root created a
+        # XBOXDS4ONESettings/AppSettings). Writing it at the root created a
         # node the loader never reads, so the seed landed in the file and
         # the app came up with the chain off, twice, while the log reported
         # success. The 1u rule in reverse: the artifact LOOKED right.
         $appNode = $root.SelectSingleNode("AppSettings")
-        if (-not $appNode) { Write-Host "  !! no <AppSettings> node" -ForegroundColor Red; Start-Process $ExePath; Wait-PadForgeReady | Out-Null; return $false }
+        if (-not $appNode) { Write-Host "  !! no <AppSettings> node" -ForegroundColor Red; Start-Process $ExePath; Wait-XBOXDS4ONEReady | Out-Null; return $false }
         $cfgs = $appNode.SelectSingleNode("DeviceSlotConfigs")
         if (-not $cfgs) {
             $cfgs = $ax.CreateElement("DeviceSlotConfigs")
@@ -1221,12 +1221,12 @@ function Seed-AudioDsp {
         Write-Host "  seeded audio DSP (crossfeed + 4-band EQ) on pad $PadIndex / $($DeviceGuid.Substring(0,8)) (the file before that write: $kept)" -ForegroundColor Green
     } catch {
         Write-Host "  !! audio DSP seed failed: $($_.Exception.Message)" -ForegroundColor Red
-        Start-Process $ExePath; Wait-PadForgeReady | Out-Null
+        Start-Process $ExePath; Wait-XBOXDS4ONEReady | Out-Null
         return $false
     }
     Start-Process $ExePath
-    $pr = Wait-PadForgeReady
-    if (-not $pr) { Write-Host "  !! PadForge did not come back up" -ForegroundColor Red; return $false }
+    $pr = Wait-XBOXDS4ONEReady
+    if (-not $pr) { Write-Host "  !! XBOXDS4ONE did not come back up" -ForegroundColor Red; return $false }
     # Rebind process + window + UIA root, exactly as Ensure-DeviceAssigned
     # does and for the same reason: every modal helper keys on $script:proc.Id.
     $script:proc = $pr
@@ -1257,7 +1257,7 @@ function Seed-AudioDsp {
 # leaves them alone.
 function Write-SlotStructures {
     param([xml]$Doc)
-    $setsNode = $Doc.PadForgeSettings.SelectSingleNode("SlotMappingSets")
+    $setsNode = $Doc.XBOXDS4ONESettings.SelectSingleNode("SlotMappingSets")
     if (-not $setsNode) {
         Write-Host "  !! no <SlotMappingSets> node -- SKIPPING the Aim shift layer AND the macro-cell menu" -ForegroundColor Red
         Write-Host "  !! macro-switch-layer and menu-macro-cell cannot be captured without them" -ForegroundColor Red
@@ -1584,18 +1584,18 @@ function Set-SlotPreset {
     # came up customized: a combination the shots must not show.
     param([int]$PadIndex, [string]$ProfileId, [string]$XmlPath, [string]$ExePath, [switch]$ClearCustomize)
 
-    Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
-    Wait-PadForgeGone
+    Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
+    Wait-XBOXDS4ONEGone
     try {
         $px = Read-SettingsXml $XmlPath
-        $appNode = $px.PadForgeSettings.SelectSingleNode("AppSettings")
-        if (-not $appNode) { Write-Host "  !! no <AppSettings> node" -ForegroundColor Red; Start-Process $ExePath; Wait-PadForgeReady | Out-Null; return $false }
+        $appNode = $px.XBOXDS4ONESettings.SelectSingleNode("AppSettings")
+        if (-not $appNode) { Write-Host "  !! no <AppSettings> node" -ForegroundColor Red; Start-Process $ExePath; Wait-XBOXDS4ONEReady | Out-Null; return $false }
         $idsNode = $appNode.SelectSingleNode("SlotProfileIds")
-        if (-not $idsNode) { Write-Host "  !! no <SlotProfileIds> node" -ForegroundColor Red; Start-Process $ExePath; Wait-PadForgeReady | Out-Null; return $false }
+        if (-not $idsNode) { Write-Host "  !! no <SlotProfileIds> node" -ForegroundColor Red; Start-Process $ExePath; Wait-XBOXDS4ONEReady | Out-Null; return $false }
         $ids = @($idsNode.SelectNodes("Id"))
         if ((Get-Count $ids) -le $PadIndex) {
             Write-Host "  !! <SlotProfileIds> has $(Get-Count $ids) entries, need index $PadIndex" -ForegroundColor Red
-            Start-Process $ExePath; Wait-PadForgeReady | Out-Null; return $false
+            Start-Process $ExePath; Wait-XBOXDS4ONEReady | Out-Null; return $false
         }
         $slot = $ids[$PadIndex]
         # The empty entries are written as xsi:nil, which keeps the element
@@ -1614,13 +1614,13 @@ function Set-SlotPreset {
         Write-Host "  set slot $PadIndex preset to '$ProfileId' by XML (the file before that write: $kept)" -ForegroundColor Green
     } catch {
         Write-Host "  !! preset write failed: $($_.Exception.Message)" -ForegroundColor Red
-        Start-Process $ExePath; Wait-PadForgeReady | Out-Null
+        Start-Process $ExePath; Wait-XBOXDS4ONEReady | Out-Null
         return $false
     }
 
     Start-Process $ExePath
-    $pr = Wait-PadForgeReady
-    if (-not $pr) { Write-Host "  !! PadForge did not come back up" -ForegroundColor Red; return $false }
+    $pr = Wait-XBOXDS4ONEReady
+    if (-not $pr) { Write-Host "  !! XBOXDS4ONE did not come back up" -ForegroundColor Red; return $false }
     $script:proc = $pr
     $script:hwnd = $pr.MainWindowHandle
     Reset-KnownState
@@ -1633,7 +1633,7 @@ function Set-SlotPreset {
     # controller body under the right file name.
     try {
         $vx = Read-SettingsXml $XmlPath
-        $back = @($vx.PadForgeSettings.SelectNodes("AppSettings/SlotProfileIds/Id"))
+        $back = @($vx.XBOXDS4ONESettings.SelectNodes("AppSettings/SlotProfileIds/Id"))
         $now = if ((Get-Count $back) -gt $PadIndex) { "$($back[$PadIndex].InnerText)".Trim() } else { "" }
         if ($now -ne $ProfileId) {
             Write-Host "  !! slot $PadIndex preset read back as '$now', not '$ProfileId'" -ForegroundColor Red
@@ -1641,7 +1641,7 @@ function Set-SlotPreset {
         }
         Write-Host "  slot $PadIndex preset survived the load: $now" -ForegroundColor Green
         if ($ClearCustomize) {
-            $cfgBack = $vx.PadForgeSettings.SelectSingleNode("AppSettings/ExtendedConfigs/Config[@SlotIndex='$PadIndex']")
+            $cfgBack = $vx.XBOXDS4ONESettings.SelectSingleNode("AppSettings/ExtendedConfigs/Config[@SlotIndex='$PadIndex']")
             if ($cfgBack -and $cfgBack.GetAttribute("Customize") -eq "true") {
                 Write-Host "  !! slot $PadIndex came back with Customize on" -ForegroundColor Red
                 return $false
@@ -1656,7 +1656,7 @@ function Set-SlotPreset {
 function Ensure-MacrosLoaded {
     # "Injected the macros" is not the same as "the app is showing macros", and
     # on 2026-08-09 the gap between those two shipped five blank screenshots.
-    # The macros survive a load when they are written while PadForge is CLOSED
+    # The macros survive a load when they are written while XBOXDS4ONE is CLOSED
     # (proven: inject, launch, exit, and the file comes back re-serialized with
     # all five and their actions). During a capture run something between
     # startup and the macro editor empties them. Rather than keep guessing at
@@ -1664,7 +1664,7 @@ function Ensure-MacrosLoaded {
     # the state that is known to work. Returns $true when macros are present.
     param([string]$XmlPath, [string]$ExePath)
 
-    Write-Host "  Ensuring macros: rewriting them with PadForge closed, then restarting" -ForegroundColor Cyan
+    Write-Host "  Ensuring macros: rewriting them with XBOXDS4ONE closed, then restarting" -ForegroundColor Cyan
 
     $src = Get-Content $PSCommandPath -Raw
     $frags = [regex]::Matches($src, "(?s)<Macro PadIndex=""0"">.*?</Macro>") | ForEach-Object { $_.Value }
@@ -1673,15 +1673,15 @@ function Ensure-MacrosLoaded {
         return $false
     }
 
-    Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
-    Wait-PadForgeGone
+    Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
+    Wait-XBOXDS4ONEGone
 
     try {
         $mx = Read-SettingsXml $XmlPath
-        $mroot = $mx.PadForgeSettings.SelectSingleNode("Macros")
+        $mroot = $mx.XBOXDS4ONESettings.SelectSingleNode("Macros")
         if (-not $mroot) {
             $mroot = $mx.CreateElement("Macros")
-            $mx.PadForgeSettings.AppendChild($mroot) | Out-Null
+            $mx.XBOXDS4ONESettings.AppendChild($mroot) | Out-Null
         }
         while ($mroot.HasChildNodes) { $mroot.RemoveChild($mroot.FirstChild) | Out-Null }
         foreach ($f in $frags) {
@@ -1691,7 +1691,7 @@ function Ensure-MacrosLoaded {
         }
         # The shift layer and the macro-cell menu ride the SAME closed-app
         # window. They are slot-scoped rather than macro-scoped, but the state
-        # that loads them cleanly is identical (written while PadForge is not
+        # that loads them cleanly is identical (written while XBOXDS4ONE is not
         # running, read on the next launch), and folding them in here spends
         # one restart instead of two.
         Write-SlotStructures -Doc $mx | Out-Null
@@ -1704,8 +1704,8 @@ function Ensure-MacrosLoaded {
     }
 
     Start-Process $ExePath
-    $pr = Wait-PadForgeReady
-    if (-not $pr) { Write-Host "  !! PadForge did not come back up" -ForegroundColor Red; return $false }
+    $pr = Wait-XBOXDS4ONEReady
+    if (-not $pr) { Write-Host "  !! XBOXDS4ONE did not come back up" -ForegroundColor Red; return $false }
     # REBIND THE PROCESS TOO, not just the window. Every modal helper keys
     # on $script:proc.Id: Close-AnyModal filters candidate windows by it,
     # and Get-ForegroundDialogHwnd / Find-DialogHwndByEnum enumerate by it.
@@ -1721,17 +1721,17 @@ function Ensure-MacrosLoaded {
     $script:uiaWin = [System.Windows.Automation.AutomationElement]::FromHandle($script:hwnd)
     [Win32]::ForceFG($script:hwnd)
     Start-Sleep -Milliseconds 800
-    Write-Host "  PadForge restarted for macros (HWND=$($script:hwnd))" -ForegroundColor Green
+    Write-Host "  XBOXDS4ONE restarted for macros (HWND=$($script:hwnd))" -ForegroundColor Green
 
     # PROVE THE LOAD, do not assume it. XmlSerializer drops a whole array on
-    # one malformed element and PadForge re-saves what it has in memory, so
+    # one malformed element and XBOXDS4ONE re-saves what it has in memory, so
     # "the write succeeded" and "the app is showing them" are different
     # facts and the gap between them has already shipped five blank panes.
     # Read the file BACK after the restart: the app has re-serialized its own
     # state by now, so what survives here is what the UI holds.
     try {
         $vx = Read-SettingsXml $XmlPath
-        $vRoot = $vx.PadForgeSettings
+        $vRoot = $vx.XBOXDS4ONESettings
         $vMacros = @($vRoot.SelectNodes("Macros/Macro")).Count
         $vLayers = @($vRoot.SelectNodes("SlotMappingSets/MappingSet/ShiftActivator")).Count
         $vMenus  = @($vRoot.SelectNodes("SlotMappingSets/MappingSet/Menu")).Count
@@ -1778,8 +1778,8 @@ $script:RefusedShots = @()
 $script:StateFailures = @()
 
 # A staging step that did not do what it asked leaves every later picture of
-# PadForge suspect: a device left off its slot, or another left on it. The run
-# records it, and Cap saves no more PadForge shots. The two browser shots
+# XBOXDS4ONE suspect: a device left off its slot, or another left on it. The run
+# records it, and Cap saves no more XBOXDS4ONE shots. The two browser shots
 # (Cap-Web) go on: they photograph the local web landing page and the Xbox 360
 # web controller, which carries no slot lighting, so no slot staging shows in
 # them.
@@ -1790,7 +1790,7 @@ function Assert-Staged {
     if (@($Result).Count -gt 0 -and @($Result)[-1] -eq $true) { return $true }
     $script:StagingFailed = $true
     $script:StateFailures += "$What failed"
-    Write-Host "  !! $What failed. No more PadForge shots are saved." -ForegroundColor Red
+    Write-Host "  !! $What failed. No more XBOXDS4ONE shots are saved." -ForegroundColor Red
     return $false
 }
 
@@ -1825,7 +1825,7 @@ $script:SyntheticGuids = @(
 # Controller address, which each row had kept from the row it was cloned from.
 # STEP 0 runs this over the device list it saved, and a run that reuses a
 # staged file runs it over that file. A synthetic row that holds a value a
-# real row also holds fails the run by name, and Cap saves no more PadForge
+# real row also holds fails the run by name, and Cap saves no more XBOXDS4ONE
 # shots, since any Devices page shot could show it.
 function Assert-SyntheticRowsClean {
     param($DevicesNode, $SyntheticGuids)
@@ -1852,7 +1852,7 @@ function Assert-SyntheticRowsClean {
                 $clean = $false
                 $script:StagingFailed = $true
                 $script:StateFailures += $what
-                Write-Host "  !! $what. No more PadForge shots are saved." -ForegroundColor Red
+                Write-Host "  !! $what. No more XBOXDS4ONE shots are saved." -ForegroundColor Red
                 break
             }
         }
@@ -1876,7 +1876,7 @@ function Want {
 }
 
 # Waits, up to TimeoutSec, for the message line to go, and says whether it
-# did. PadForge 6 has no status bar: a message shows on a line over the
+# did. XBOXDS4ONE 6 has no status bar: a message shows on a line over the
 # page's lower corner, and only while there is one (MainWindow.xaml,
 # StatusMessageLine). Its text is the element StatusMessageText, a child of
 # the window like the pages, since the grid they share has no peer. No such
@@ -1898,12 +1898,12 @@ function Wait-MessageClear {
     }
 }
 
-# A fresh PadForge saves its settings once it has loaded them, and its
+# A fresh XBOXDS4ONE saves its settings once it has loaded them, and its
 # "Settings saved" message then shows for 5 to 10 s. A scene recipe waits
 # that out before its first frame: the file quiet past the 2 s autosave,
 # then the message line gone.
 function Wait-AfterRestartSave {
-    Wait-FileQuiet -Path $PadForgeXml -QuietMs 2500 -TimeoutMs 8000 | Out-Null
+    Wait-FileQuiet -Path $XBOXDS4ONEXml -QuietMs 2500 -TimeoutMs 8000 | Out-Null
     [void](Wait-MessageClear -TimeoutSec 15)
 }
 
@@ -1946,11 +1946,11 @@ function Cap {
         Refuse-Shots @($Name) "the view, the annotation overlay or the staging is in an unknown state"
         return
     }
-    # The slot rail is in every PadForge frame, so every frame shows the whole
+    # The slot rail is in every XBOXDS4ONE frame, so every frame shows the whole
     # staged set, one slot of each type. A recipe that stages its own
     # settings cannot shorten it: the colorways shipped with one controller
     # in the sidebar for two releases. Edge's frames (Cap-Web) are not
-    # PadForge's and do not come through here.
+    # XBOXDS4ONE's and do not come through here.
     if ($script:ExpectedSlots -gt 0) {
         $rail = Get-SidebarSlotCount
         if ($rail -ne $script:ExpectedSlots) {
@@ -1959,7 +1959,7 @@ function Cap {
         }
     }
     # No frame is taken under a dialog a recipe left open. Every dialog of
-    # PadForge 6 is a DialogWindow shown modally, which disables the main
+    # XBOXDS4ONE 6 is a DialogWindow shown modally, which disables the main
     # window for as long as it is up, and a picker's list or a flyout never
     # does: that separates a dialog from a popup exactly, where a look for
     # any second window of the process took three open pickers for leaks in
@@ -1977,7 +1977,7 @@ function Cap {
     $r = New-Object Win32+RECT
     [Win32]::GetWindowRect($script:hwnd, [ref]$r) | Out-Null
     Park-Pointer -Settle
-    # "Settings saved to PadForge.xml." shows on the message line for 5 to
+    # "Settings saved to XBOXDS4ONE.xml." shows on the message line for 5 to
     # 10 s after each autosave, and a restart or one of this harness's
     # clicks sets one off. Run 9 of the 5.0.0 prep photographed it on four
     # pages, in the status bar it showed in then. Wait, up to 12 s, for the
@@ -1997,7 +1997,7 @@ function Cap {
     # (DWMWA_EXTENDED_FRAME_BOUNDS, 9), as Cap-Web takes Edge's. The window
     # rectangle of a maximized window runs 11 px past the screen on the left,
     # right and top, and those strips came out black: 2582 x 1550 frames that
-    # padforge.org's trim_shots.py cropped to 2560 x 1539 by hand.
+    # XBOXDS4ONE.org's trim_shots.py cropped to 2560 x 1539 by hand.
     $fr = New-Object Win32+RECT
     $frSize = [System.Runtime.InteropServices.Marshal]::SizeOf([type][Win32+RECT])
     if ([Win32]::DwmGetWindowAttribute([IntPtr]$script:hwnd, 9, [ref]$fr, $frSize) -ne 0) { $fr = $r }
@@ -2180,7 +2180,7 @@ function Find-AllSlots {
     for ($attempt = 1; $attempt -le $Retries; $attempt++) {
         $menuHost = Get-SidebarList
         $searchIn = if ($menuHost) { $menuHost } else { $script:uiaWin }
-        # A sidebar entry reads as a ListItem since PadForge 6
+        # A sidebar entry reads as a ListItem since XBOXDS4ONE 6
         # (NavItemAutomationPeer), and read as a DataItem before. A search
         # for the wrong one returns an empty set, which reads exactly like
         # "no slots exist" even when all were just created, and then every
@@ -2237,7 +2237,7 @@ function Find-AllSlots {
     return @()
 }
 
-# The pad page's tabs are six sections (PadForge 6, #574). A recipe still
+# The pad page's tabs are six sections (XBOXDS4ONE 6, #574). A recipe still
 # names what it wants by the tab's name, and this table says where that is
 # now: the section's button in the header, then either a part button (Mappings
 # has Picture and List, Macros & Menus has its two parts) or a group in the
@@ -2457,7 +2457,7 @@ function Get-SlotPadIndex {
     param([int]$Type)
     for ($i = 0; $i -lt 5; $i++) {
         try {
-            $sx = Read-SettingsXml $PadForgeXml
+            $sx = Read-SettingsXml $XBOXDS4ONEXml
             $app = $sx.DocumentElement.SelectSingleNode("AppSettings")
             if (-not $app) { return -1 }
             $created = @($app.SelectNodes("SlotCreated/*"))
@@ -2479,7 +2479,7 @@ function Get-SlotPadIndex {
 # either. The entry reads selected once its page has been asked for. The
 # window ignores the request while it rebuilds its controller entries, and a
 # long run's tree degrades, so a request not taken in 10 s is made once more
-# on a fresh process (Reset-PadForgeUia). Returns the PadPageView, or $null.
+# on a fresh process (Reset-XBOXDS4ONEUia). Returns the PadPageView, or $null.
 function Open-SlotPage {
     param([int]$Type, [string]$Label)
     $pad = Get-SlotPadIndex $Type
@@ -2505,14 +2505,14 @@ function Open-SlotPage {
                 Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds 250
             }
         }
-        if ($attempt -eq 1) { Reset-PadForgeUia -ExePath $PadForgeExe | Out-Null }
+        if ($attempt -eq 1) { Reset-XBOXDS4ONEUia -ExePath $XBOXDS4ONEExe | Out-Null }
     }
     Write-Host "  !! $Label did not open its controller page" -ForegroundColor Red
     return $null
 }
 
 # Set while the controller page or an extra's page shows (Open-SlotPage,
-# Open-Extra), cleared by Nav and by a fresh process (Wait-PadForgeReady).
+# Open-Extra), cleared by Nav and by a fresh process (Wait-XBOXDS4ONEReady).
 # A wheel turned there changes what the pointer rests on: the 3D view zooms
 # and keeps the zoom, a closed picker with the focus takes its next choice,
 # an EQ handle changes its Q. Those pages scroll through a scrolled view's
@@ -2529,7 +2529,7 @@ function Test-WheelSafe {
 
 # Open every fold card and every More row under an element of the pad page,
 # through each one's expand pattern, so the pointer stays parked. Cards open
-# small since PadForge 6 (#574): some fold to one line and some keep settings
+# small since XBOXDS4ONE 6 (#574): some fold to one line and some keep settings
 # under a More row, and a shot wants every setting in view. The element is
 # the group of output cards under the picture, or a section's scrolling
 # column, each of which has a peer. False when it is not on the page, which
@@ -2621,7 +2621,7 @@ function Tab {
         $tg = [System.Drawing.Graphics]::FromImage($tbmp)
         $tg.CopyFromScreen($tr.Left, $tr.Top, 0, 0, [System.Drawing.Size]::new($tw, $th))
         $tg.Dispose()
-        $tp = Join-Path (Join-Path $env:TEMP "PadForge_Capture") (("tabfail-" + ($Name -replace "[^A-Za-z0-9]", "")) + ".png")
+        $tp = Join-Path (Join-Path $env:TEMP "XBOXDS4ONE_Capture") (("tabfail-" + ($Name -replace "[^A-Za-z0-9]", "")) + ".png")
         $tbmp.Save($tp, [System.Drawing.Imaging.ImageFormat]::Png)
         $tbmp.Dispose()
         Write-Host "  .. tab-failure screenshot: $tp" -ForegroundColor DarkGray
@@ -2780,18 +2780,18 @@ function Close-PickedOptions {
 }
 
 # A control picked through its list row stays picked for its slot until
-# PadForge restarts: the page offers no way to pick nothing. Its ring on the
+# XBOXDS4ONE restarts: the page offers no way to pick nothing. Its ring on the
 # picture and the bar under it would be in every later frame of that slot's
 # picture. So a recipe that picked a row ends here, with a fresh process.
 # Select-MappingRow sets the flag and a fresh process clears it
-# (Wait-PadForgeReady).
+# (Wait-XBOXDS4ONEReady).
 $script:RowPicked = $false
 function Drop-RowPick {
     if (-not $script:RowPicked) { return $true }
     Write-Host "  a row was picked: a fresh process puts the picture back as it opens" -ForegroundColor DarkGray
     # A frame after the restart shows the engine as it was before it.
     $wasForging = [bool](Find-UIA -Name "Forging")
-    $back = ((Reset-PadForgeUia -ExePath $PadForgeExe) -eq $true)
+    $back = ((Reset-XBOXDS4ONEUia -ExePath $XBOXDS4ONEExe) -eq $true)
     if ($back -and $wasForging) { Wait-EngineForging | Out-Null }
     return $back
 }
@@ -2946,7 +2946,7 @@ function Get-ScreenStripHash {
 # the overlay is on and carry none of it while it is off
 # (UpdateAnnotationToggleChrome in ControllerModelView.Annotations.cs and
 # ControllerModel2DView.Annotations.cs). A fresh process starts with the
-# overlay on for every pad since PadForge 6 (PadViewModel's
+# overlay on for every pad since XBOXDS4ONE 6 (PadViewModel's
 # AnnotationOverlayEnabled, session-only), so the chain begins from a known
 # state: the frames are taken with the overlay as the page opens, and it is
 # switched on, and left on, only where an earlier step turned it off.
@@ -3106,8 +3106,8 @@ function Get-SavedViewMode {
     # A read can land mid-write, so try a few times before giving up.
     for ($i = 0; $i -lt 5; $i++) {
         try {
-            $vx = Read-SettingsXml $PadForgeXml
-            $node = $vx.PadForgeSettings.SelectSingleNode("AppSettings/Use2DControllerView")
+            $vx = Read-SettingsXml $XBOXDS4ONEXml
+            $node = $vx.XBOXDS4ONESettings.SelectSingleNode("AppSettings/Use2DControllerView")
             if ($null -ne $node -and "$($node.InnerText)".Trim() -eq 'true') { return '2D' }
             return '3D'
         } catch { Start-Sleep -Seconds 1 }
@@ -3124,7 +3124,7 @@ function Reset-KnownState {
     if ($null -eq (Get-SavedViewMode)) { return }
     $script:ViewUnknown = $false
     $script:AnnotationUnknown = $false
-    Write-Host "  fresh PadForge process: the view and the annotation overlay are known again" -ForegroundColor DarkGray
+    Write-Host "  fresh XBOXDS4ONE process: the view and the annotation overlay are known again" -ForegroundColor DarkGray
 }
 
 # The 2D/3D toggle carries AutomationId "ViewModeToggle" (PadPage.xaml). It
@@ -3164,7 +3164,7 @@ function Set-ViewMode {
     $have = Get-SavedViewMode
     if ($null -eq $have) {
         $script:ViewUnknown = $true
-        Write-Host "  !! could not read the saved view from $PadForgeXml" -ForegroundColor Red
+        Write-Host "  !! could not read the saved view from $XBOXDS4ONEXml" -ForegroundColor Red
         return $false
     }
     if ($have -eq $Want) { return $true }
@@ -3203,9 +3203,9 @@ function Wait-SavedAssignments {
         if ($clickAge + $clock.Elapsed.TotalSeconds -lt 3) { continue }
         $missing = @()
         try {
-            $w1 = (Get-Item $PadForgeXml -ErrorAction Stop).LastWriteTimeUtc
-            $wx = Read-SettingsXml $PadForgeXml
-            $root = $wx.PadForgeSettings
+            $w1 = (Get-Item $XBOXDS4ONEXml -ErrorAction Stop).LastWriteTimeUtc
+            $wx = Read-SettingsXml $XBOXDS4ONEXml
+            $root = $wx.XBOXDS4ONESettings
             $names = @{}
             foreach ($d in $root.SelectSingleNode("Devices").ChildNodes) {
                 $n = $d.SelectSingleNode("InstanceName"); $g = $d.SelectSingleNode("InstanceGuid")
@@ -3233,7 +3233,7 @@ function Wait-SavedAssignments {
             # Reading the file took time too: the stability wait has to fit.
             if ($clock.Elapsed.TotalSeconds + 3 -gt $TimeoutSec) { break }
             Start-Sleep -Seconds 3
-            $stable = (Get-Item $PadForgeXml -ErrorAction Stop).LastWriteTimeUtc -eq $w1
+            $stable = (Get-Item $XBOXDS4ONEXml -ErrorAction Stop).LastWriteTimeUtc -eq $w1
             if ($stable -and $clock.Elapsed.TotalSeconds -le $TimeoutSec) { return $true }
             $missing = @("the file was still being written")
         } catch { $missing = @("the settings file could not be read") }
@@ -3378,9 +3378,9 @@ function ScrollContent {
     Start-Sleep -Milliseconds 600
 }
 
-# Dismiss ANY modal dialog PadForge left open (Clone Device confirm, Pair, NFC
+# Dismiss ANY modal dialog XBOXDS4ONE left open (Clone Device confirm, Pair, NFC
 # register, gesture recorder). These are SEPARATE top-level windows, not children
-# of the main PadForge window, so the old per-block closes that scanned
+# of the main XBOXDS4ONE window, so the old per-block closes that scanned
 # $script:uiaWin never found their Cancel/Close buttons -- the modal stayed up and
 # the NEXT Find-UIA (a Descendants walk of the window) HUNG the whole run with the
 # modal blocking it (run 1 froze on the KBM slot's first lookup exactly
@@ -3500,7 +3500,7 @@ function Close-DialogHwnd {
     }
 }
 
-# Find a modal FluentWindow by Win32 EnumWindows: a visible PadForge-PID
+# Find a modal FluentWindow by Win32 EnumWindows: a visible XBOXDS4ONE-PID
 # top-level window that is not the main HWND and is dialog-sized. The pair /
 # NFC / workshop modals never surface in RootElement's child Window scan, so
 # this is the authoritative discovery (proven in tools/diag-sweep.ps1).
@@ -3524,7 +3524,7 @@ function Find-DialogHwndByEnum {
 # ==============================================================================
 # PRE-FLIGHT: a backup left beside the settings file
 # ==============================================================================
-# Settled before the toast values, PadForge or any file is touched, so a run
+# Settled before the toast values, XBOXDS4ONE or any file is touched, so a run
 # that stops here has changed nothing. The run asks only when it has to: a
 # backup is there, it differs from the settings file, and no marker young
 # enough names it. -KeepSettingsFrom is the answer to that stop and
@@ -3533,12 +3533,12 @@ function Find-DialogHwndByEnum {
 # (STEP 0 may fall back to Settings.xml), so that answer is left for STEP 0.
 # The transcript and the lock are closed by hand here, because the lines that
 # close them sit below the try.
-$xmlBak = "$PadForgeXml.bak"
-$preflightDoubt = Get-BackupDoubt $PadForgeXml $xmlBak 'Ask'
+$xmlBak = "$XBOXDS4ONEXml.bak"
+$preflightDoubt = Get-BackupDoubt $XBOXDS4ONEXml $xmlBak 'Ask'
 $preflightStop = @()
 if ($KeepSettingsFrom -eq 'Ask' -and $preflightDoubt) {
-    $preflightStop = @(Get-BackupStopLines $PadForgeXml $xmlBak $preflightDoubt)
-} elseif ($KeepSettingsFrom -ne 'Ask' -and -not $preflightDoubt -and (Test-Path -LiteralPath $PadForgeXml)) {
+    $preflightStop = @(Get-BackupStopLines $XBOXDS4ONEXml $xmlBak $preflightDoubt)
+} elseif ($KeepSettingsFrom -ne 'Ask' -and -not $preflightDoubt -and (Test-Path -LiteralPath $XBOXDS4ONEXml)) {
     $preflightStop = @("!! -KeepSettingsFrom $KeepSettingsFrom answers a run that stopped over a settings backup, and this run has nothing to ask. Leave it out.")
 }
 if ($preflightStop.Count -gt 0) {
@@ -3612,7 +3612,7 @@ Write-Host "  Toast notifications suppressed for the run"
 # path's settings swap, STEP 0's backup, delete and rewrite, the starting-view
 # edit of a reused file and the whole capture. Twice on 2026-08-09 a
 # StrictMode property read threw mid-run, STEP 4 never executed, and the
-# owner's real PadForge.xml was left replaced by the capture file complete
+# owner's real XBOXDS4ONE.xml was left replaced by the capture file complete
 # with injected dummy devices. A capture run may fail. It may not walk away
 # holding someone's settings hostage, so the restore is in a finally, which
 # runs after an error, an exit or CTRL+C. The guard opens only after the
@@ -3630,7 +3630,7 @@ $script:FocusedPassRan = $false
 try {
 
 # ==============================================================================
-# STEP 0: Inject test data into PadForge.xml
+# STEP 0: Inject test data into XBOXDS4ONE.xml
 # ==============================================================================
 Write-Host ""
 Write-Host "=== STEP 0: Inject test data ===" -ForegroundColor Cyan
@@ -3661,13 +3661,13 @@ if ($SkipToTail) {
     # with the two files alike it is the owner's. Neither is staged, and STEP
     # 0 deals with the backup.
     if ($KeepSettingsFrom -eq 'Ask' -and (Test-Path $xmlBak) -and
-        -not (Test-SameSettings $PadForgeXml $xmlBak) -and
-        -not (Get-BackupDoubt $PadForgeXml $xmlBak 'Ask')) {
+        -not (Test-SameSettings $XBOXDS4ONEXml $xmlBak) -and
+        -not (Get-BackupDoubt $XBOXDS4ONEXml $xmlBak 'Ask')) {
         Write-Host "  Tail mode: reusing the staged xml from an earlier run; killing for a fresh process"
         $script:doSetup = $false
-        Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force; Wait-PadForgeGone
-        Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force; Wait-PadForgeGone
-        $tailDoc = Read-SettingsXml $PadForgeXml
+        Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force; Wait-XBOXDS4ONEGone
+        Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force; Wait-XBOXDS4ONEGone
+        $tailDoc = Read-SettingsXml $XBOXDS4ONEXml
         $script:ExpectedSlots = @($tailDoc.DocumentElement.SelectNodes("AppSettings/SlotCreated/*") |
             Where-Object { "$($_.InnerText)".Trim() -eq "true" }).Count
     } else {
@@ -3685,14 +3685,14 @@ if ($SkipToTail) {
 $script:SnapshotXml = Join-Path $logDir "capture-configured.xml"
 $script:Direct = $false
 if ($Only.Count -gt 0 -and -not $StageAll -and -not $SkipToTail -and (Test-Path $script:SnapshotXml)) {
-    Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force; Wait-PadForgeGone
-    Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force; Wait-PadForgeGone
+    Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force; Wait-XBOXDS4ONEGone
+    Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force; Wait-XBOXDS4ONEGone
     if (Test-Path $xmlBak) {
         # The same guard STEP 0 keeps, for the reasons its comment gives.
-        $doubt = Get-BackupDoubt $PadForgeXml $xmlBak $KeepSettingsFrom
+        $doubt = Get-BackupDoubt $XBOXDS4ONEXml $xmlBak $KeepSettingsFrom
         if ($doubt) {
             $script:BackupHoldsSettings = $false
-            foreach ($line in (Get-BackupStopLines $PadForgeXml $xmlBak $doubt)) { Write-Host $line -ForegroundColor Red }
+            foreach ($line in (Get-BackupStopLines $XBOXDS4ONEXml $xmlBak $doubt)) { Write-Host $line -ForegroundColor Red }
             exit 1
         }
         if ($KeepSettingsFrom -eq 'File') {
@@ -3703,10 +3703,10 @@ if ($Only.Count -gt 0 -and -not $StageAll -and -not $SkipToTail -and (Test-Path 
             Write-Host "  -KeepSettingsFrom File: the settings file stays as it is, and the backup is set aside as $kept" -ForegroundColor Yellow
         } else {
             $script:BackupHoldsSettings = $true
-            $kept = Save-SettingsCopy $PadForgeXml
+            $kept = Save-SettingsCopy $XBOXDS4ONEXml
             Write-Host "  !! Restoring the backup an interrupted run left, before the capture file goes in" -ForegroundColor Yellow
             if ($kept) { Write-Host "  !! The file it replaces is kept as $kept" -ForegroundColor Yellow }
-            Copy-Item $xmlBak $PadForgeXml -Force
+            Copy-Item $xmlBak $XBOXDS4ONEXml -Force
         }
     }
     # A backup is written only where none is, so a copy cut short can never
@@ -3714,13 +3714,13 @@ if ($Only.Count -gt 0 -and -not $StageAll -and -not $SkipToTail -and (Test-Path 
     # what the settings file holds.
     if (-not (Test-Path $xmlBak)) {
         $script:BackupHoldsSettings = $false
-        Copy-Item $PadForgeXml $xmlBak -Force
+        Copy-Item $XBOXDS4ONEXml $xmlBak -Force
     }
     Set-BackupMarker $xmlBak
     $script:BackupTaken = $true
     $script:BackupHoldsSettings = $true
-    $kept = Save-SettingsCopy $PadForgeXml
-    Copy-Item $script:SnapshotXml $PadForgeXml -Force
+    $kept = Save-SettingsCopy $XBOXDS4ONEXml
+    Copy-Item $script:SnapshotXml $XBOXDS4ONEXml -Force
     $script:doSetup = $false
     $script:Direct = $true
     $snapAge = [math]::Round(((Get-Date) - (Get-Item $script:SnapshotXml).LastWriteTime).TotalHours, 1)
@@ -3735,46 +3735,46 @@ $script:Staged = $StageAll -or $script:Direct
 if ($script:doSetup) {
 if (-not (Test-Path $OutputDir)) { New-Item -ItemType Directory -Path $OutputDir | Out-Null }
 
-# Kill PadForge if running (double-kill pattern — may auto-restart via startup entry)
-$existing = Get-Process PadForge -EA SilentlyContinue
+# Kill XBOXDS4ONE if running (double-kill pattern — may auto-restart via startup entry)
+$existing = Get-Process XBOXDS4ONE -EA SilentlyContinue
 if ($existing) {
-    Write-Host "  Stopping PadForge (first kill)..."
+    Write-Host "  Stopping XBOXDS4ONE (first kill)..."
     $existing | Stop-Process -Force
-    Wait-PadForgeGone
+    Wait-XBOXDS4ONEGone
     # Second kill in case it auto-restarted
-    $respawned = Get-Process PadForge -EA SilentlyContinue
+    $respawned = Get-Process XBOXDS4ONE -EA SilentlyContinue
     if ($respawned) {
-        Write-Host "  PadForge respawned -- killing again..."
+        Write-Host "  XBOXDS4ONE respawned -- killing again..."
         $respawned | Stop-Process -Force
     }
-    Wait-PadForgeGone
+    Wait-XBOXDS4ONEGone
 }
 
-# If PadForge.xml doesn't exist, launch PadForge briefly to create default settings
-if (-not (Test-Path $PadForgeXml)) {
-    Write-Host "  PadForge.xml not found -- launching PadForge to create defaults..."
-    Start-Process $PadForgeExe
+# If XBOXDS4ONE.xml doesn't exist, launch XBOXDS4ONE briefly to create default settings
+if (-not (Test-Path $XBOXDS4ONEXml)) {
+    Write-Host "  XBOXDS4ONE.xml not found -- launching XBOXDS4ONE to create defaults..."
+    Start-Process $XBOXDS4ONEExe
     $defaultsClock = [System.Diagnostics.Stopwatch]::StartNew()
-    while (-not (Test-Path $PadForgeXml) -and $defaultsClock.Elapsed.TotalSeconds -lt 15) { Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds 100 }
-    Wait-FileQuiet -Path $PadForgeXml
-    Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
-    Wait-PadForgeGone
-    if (-not (Test-Path $PadForgeXml)) {
+    while (-not (Test-Path $XBOXDS4ONEXml) -and $defaultsClock.Elapsed.TotalSeconds -lt 15) { Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds 100 }
+    Wait-FileQuiet -Path $XBOXDS4ONEXml
+    Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
+    Wait-XBOXDS4ONEGone
+    if (-not (Test-Path $XBOXDS4ONEXml)) {
         # Check fallback name
-        $fallback = Join-Path (Split-Path $PadForgeXml) "Settings.xml"
+        $fallback = Join-Path (Split-Path $XBOXDS4ONEXml) "Settings.xml"
         if (Test-Path $fallback) {
             Write-Host "  Found Settings.xml instead -- using it"
-            $PadForgeXml = $fallback
+            $XBOXDS4ONEXml = $fallback
         } else {
-            Write-Host "  !! PadForge.xml still not found after launch" -ForegroundColor Red
+            Write-Host "  !! XBOXDS4ONE.xml still not found after launch" -ForegroundColor Red
             exit 1
         }
     }
-    Write-Host "  PadForge created default settings"
+    Write-Host "  XBOXDS4ONE created default settings"
 }
 
 # Backup and delete XML for a clean start (no leftover slots from previous runs)
-$xmlBak = "$PadForgeXml.bak"
+$xmlBak = "$XBOXDS4ONEXml.bak"
 if (Test-Path $xmlBak) {
     # A backup left by a run that was interrupted before its restore holds
     # the USER'S REAL SETTINGS, and the xml beside it is capture residue.
@@ -3788,10 +3788,10 @@ if (Test-Path $xmlBak) {
     # pre-flight asks the same thing before anything is touched, so this
     # stop is reached only when STEP 0 fell back to Settings.xml or the
     # backup appeared after the pre-flight.
-    $doubt = Get-BackupDoubt $PadForgeXml $xmlBak $KeepSettingsFrom
+    $doubt = Get-BackupDoubt $XBOXDS4ONEXml $xmlBak $KeepSettingsFrom
     if ($doubt) {
         $script:BackupHoldsSettings = $false
-        foreach ($line in (Get-BackupStopLines $PadForgeXml $xmlBak $doubt)) { Write-Host $line -ForegroundColor Red }
+        foreach ($line in (Get-BackupStopLines $XBOXDS4ONEXml $xmlBak $doubt)) { Write-Host $line -ForegroundColor Red }
         exit 1
     }
     if ($KeepSettingsFrom -eq 'File') {
@@ -3802,10 +3802,10 @@ if (Test-Path $xmlBak) {
         Write-Host "  -KeepSettingsFrom File: the settings file stays as it is, and the backup is set aside as $kept" -ForegroundColor Yellow
     } else {
         $script:BackupHoldsSettings = $true
-        $kept = Save-SettingsCopy $PadForgeXml
+        $kept = Save-SettingsCopy $XBOXDS4ONEXml
         Write-Host "  !! Restoring the backup an interrupted run left, before the clean start" -ForegroundColor Yellow
         if ($kept) { Write-Host "  !! The file it replaces is kept as $kept" -ForegroundColor Yellow }
-        Copy-Item $xmlBak $PadForgeXml -Force
+        Copy-Item $xmlBak $XBOXDS4ONEXml -Force
     }
 }
 # A backup is written only where none is, so a copy cut short can never leave
@@ -3813,48 +3813,48 @@ if (Test-Path $xmlBak) {
 # settings file holds.
 if (-not (Test-Path $xmlBak)) {
     $script:BackupHoldsSettings = $false
-    Copy-Item $PadForgeXml $xmlBak -Force
+    Copy-Item $XBOXDS4ONEXml $xmlBak -Force
 }
 Set-BackupMarker $xmlBak
 $script:BackupTaken = $true
 $script:BackupHoldsSettings = $true
-$kept = Save-SettingsCopy $PadForgeXml
-Remove-Item $PadForgeXml -Force
-Write-Host "  Backed up and deleted PadForge.xml for clean start. A copy of it is kept as $kept"
+$kept = Save-SettingsCopy $XBOXDS4ONEXml
+Remove-Item $XBOXDS4ONEXml -Force
+Write-Host "  Backed up and deleted XBOXDS4ONE.xml for clean start. A copy of it is kept as $kept"
 
-# Launch PadForge briefly to regenerate default XML, then kill it.
+# Launch XBOXDS4ONE briefly to regenerate default XML, then kill it.
 # Poll for the file rather than wait a fixed interval — first-time launch
 # on a stock system can take 15-20s for the SDL3 enumeration + initial
 # settings flush to complete. Cap at 30s so we don't hang forever if
 # something's broken.
-Start-Process $PadForgeExe
+Start-Process $XBOXDS4ONEExe
 $xmlAppeared = $false
 $regenClock = [System.Diagnostics.Stopwatch]::StartNew()
 while ($regenClock.Elapsed.TotalSeconds -lt 30) {
-    if (Test-Path $PadForgeXml) { $xmlAppeared = $true; break }
+    if (Test-Path $XBOXDS4ONEXml) { $xmlAppeared = $true; break }
     Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds 100
 }
 if ($xmlAppeared) {
-    Write-Host ("  PadForge.xml regenerated after {0:N1}s" -f $regenClock.Elapsed.TotalSeconds) -ForegroundColor Green
+    Write-Host ("  XBOXDS4ONE.xml regenerated after {0:N1}s" -f $regenClock.Elapsed.TotalSeconds) -ForegroundColor Green
     # The first flush and the device enumeration write it more than once.
     # It is done when it has held still for a second.
-    Wait-FileQuiet -Path $PadForgeXml
+    Wait-FileQuiet -Path $XBOXDS4ONEXml
 } else {
-    Write-Host "  !! PadForge.xml never appeared (waited 30s)" -ForegroundColor Yellow
+    Write-Host "  !! XBOXDS4ONE.xml never appeared (waited 30s)" -ForegroundColor Yellow
 }
-Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
-Wait-PadForgeGone
-if (-not (Test-Path $PadForgeXml)) {
-    Write-Host "  !! PadForge.xml not regenerated after clean launch" -ForegroundColor Red
+Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
+Wait-XBOXDS4ONEGone
+if (-not (Test-Path $XBOXDS4ONEXml)) {
+    Write-Host "  !! XBOXDS4ONE.xml not regenerated after clean launch" -ForegroundColor Red
     # Nothing is there to copy aside unless the file appeared since the test.
-    $kept = Save-SettingsCopy $PadForgeXml
-    Copy-Item $xmlBak $PadForgeXml -Force
+    $kept = Save-SettingsCopy $XBOXDS4ONEXml
+    Copy-Item $xmlBak $XBOXDS4ONEXml -Force
     Write-Host "  Restored backup"
 }
 
 # Load and modify XML
-$xml = Read-SettingsXml $PadForgeXml
-$ns = $xml.PadForgeSettings
+$xml = Read-SettingsXml $XBOXDS4ONEXml
+$ns = $xml.XBOXDS4ONESettings
 
 # --- Preserve cached device list (incl. offline placeholder devices) from backup ---
 # The clean-start regen above only enumerates currently-connected hardware, so the
@@ -3868,7 +3868,7 @@ $ns = $xml.PadForgeSettings
 # entries; runtime recomputes online state from what's actually plugged in).
 try {
     $xmlBakDoc = Read-SettingsXml $xmlBak
-    $bakDevices = $xmlBakDoc.PadForgeSettings.SelectSingleNode("Devices")
+    $bakDevices = $xmlBakDoc.XBOXDS4ONESettings.SelectSingleNode("Devices")
     if ($bakDevices) {
         $imported = $xml.ImportNode($bakDevices, $true)
         $freshDevices = $ns.SelectSingleNode("Devices")
@@ -3992,7 +3992,7 @@ try {
         # keyboard, NFC reader and MIDI keyboard shots showed its address as
         # SERIAL and its SDL GUID and drew a Power section, and the NFC reader
         # and MIDI keyboard had Hide from Games ticked. A synthetic row
-        # therefore gets what PadForge writes for a device it has just met:
+        # therefore gets what XBOXDS4ONE writes for a device it has just met:
         # no serial, SDL GUID, display name, gun calibration or Falcon reach
         # (#521), every per-device switch off, no HidHide instance ids and no
         # peripheral outputs. It owes Home no offer either (HomeOfferPending,
@@ -4005,7 +4005,7 @@ try {
             $set = { param($tag, $val) $n = $d.SelectSingleNode($tag); if ($n) { $n.InnerText = "$val" } }
             foreach ($tag in @("SerialNumber", "SdlGuid", "DisplayName", "GunCalibration", "FalconCalibration", "WheelCalibration")) { & $set $tag "" }
             foreach ($tag in @("HidHideEnabled", "ConsumeInputEnabled", "ForceRawJoystickMode",
-                               "QuickChargeEnabled", "TouchpadOnlyInPadForge", "TouchpadKeepPending",
+                               "QuickChargeEnabled", "TouchpadOnlyInXBOXDS4ONE", "TouchpadKeepPending",
                                "HomeOfferPending", "HasAccelAux", "HasGyroAux")) { & $set $tag "false" }
             foreach ($tag in @("IdleDisconnectSeconds", "PeripheralOutputs", "CapTouchpadCount")) { & $set $tag 0 }
             foreach ($tag in @("HidHideInstanceIds", "CapTouchpadFingerCounts")) {
@@ -4086,7 +4086,7 @@ try {
         # its Link row, gyro+accel true so the Gyro group gates on (SDL sixaxis
         # motion) along with the Pitch and Roll Simulation card (#474,
         # SimulatedGyro.MissingAxes). Keeps gamepad DeviceObjects so the
-        # mapping grid has rows. Named "DualShock 3", the name PadForge
+        # mapping grid has rows. Named "DualShock 3", the name XBOXDS4ONE
         # gives the pad and the one its cached record carries: the old
         # "PLAYSTATION(R)3 Controller" is a Windows HID string the app no
         # longer shows, and four shots shipped with it. A machine with a
@@ -4097,7 +4097,7 @@ try {
         $n = $ds3.SelectSingleNode("HasAccel"); if ($n) { $n.InnerText = "true" }
         # The Details card's Serial Number row needs a serial. RFC 7042 sets
         # 00-00-5E-00-53-00 through -FF aside for documentation, so this
-        # address belongs to no real pad. Bare hex, the form PadForge records
+        # address belongs to no real pad. Bare hex, the form XBOXDS4ONE records
         # for a DualShock 3 paired through BthPS3.
         $n = $ds3.SelectSingleNode("SerialNumber"); if ($n) { $n.InnerText = "00005e005302" }
         Add-DeviceOnce $ds3
@@ -4414,7 +4414,7 @@ if ($macrosNode.ChildNodes.Count -eq 0) {
     Write-Host "  Injected 7 test macros"
 }
 
-# --- Ensure PadForge starts with window visible (not minimized to tray) ---
+# --- Ensure XBOXDS4ONE starts with window visible (not minimized to tray) ---
 $appSettings = $ns.SelectSingleNode("AppSettings")
 if ($appSettings) {
     $smNode = $appSettings.SelectSingleNode("StartMinimized")
@@ -4428,7 +4428,7 @@ if ($appSettings) {
 
     # Both assignment prompts OFF for the run. Every Windows microphone is an
     # input device (#317), and this settings copy has never seen the PC's
-    # microphone, so PadForge offered it as newly connected on every pad
+    # microphone, so XBOXDS4ONE offered it as newly connected on every pad
     # page and the banner sat across the top of the frame. The real pads the
     # run assigns are new to this copy too. The one shot of the card that
     # governs the prompts turns them back on for its frame
@@ -4504,7 +4504,7 @@ if ($appSettings) {
     # access code, status and QR only while it serves. The analog keyboard
     # and Bliss-Box readers print their status lines in the Settings Input
     # Engine card only while they run. The access code is the capture
-    # file's own: it is stored encrypted in PadForge.xml, which STEP 0
+    # file's own: it is stored encrypted in XBOXDS4ONE.xml, which STEP 0
     # regenerated, so the owner's code never reaches a picture. The owner's
     # values ride the backup and are restored in STEP 4.
     foreach ($sw in @("EnableWebControllerPlainHttp", "AnalogKeyboardsEnabled", "BlissBoxEnabled")) {
@@ -4585,8 +4585,8 @@ if ($appSettings) {
     Write-Host "  Set Language=en for English screenshots"
 }
 
-$kept = Save-SettingsXml $xml $PadForgeXml
-Write-Host "  Saved modified PadForge.xml. The file it replaced is kept as $kept" -ForegroundColor Green
+$kept = Save-SettingsXml $xml $XBOXDS4ONEXml
+Write-Host "  Saved modified XBOXDS4ONE.xml. The file it replaced is kept as $kept" -ForegroundColor Green
 Assert-SyntheticRowsClean ($ns.SelectSingleNode("Devices")) $script:SyntheticGuids | Out-Null
 }
 
@@ -4596,14 +4596,14 @@ Assert-SyntheticRowsClean ($ns.SelectSingleNode("Devices")) $script:SyntheticGui
 # names the mode that ran. The owner's backup is not touched.
 if (-not $script:doSetup) {
     $modeLabel = if ($script:Direct) { "Direct" } else { "Tail mode" }
-    $tx = Read-SettingsXml $PadForgeXml
+    $tx = Read-SettingsXml $XBOXDS4ONEXml
     # No STEP 0 built this file, so the check STEP 0 makes of its own save is
-    # made of the reused file here, before PadForge starts on it.
-    if (-not (Assert-SyntheticRowsClean ($tx.PadForgeSettings.SelectSingleNode("Devices")) $script:SyntheticGuids)) {
+    # made of the reused file here, before XBOXDS4ONE starts on it.
+    if (-not (Assert-SyntheticRowsClean ($tx.XBOXDS4ONESettings.SelectSingleNode("Devices")) $script:SyntheticGuids)) {
         $rebuild = if ($script:Direct) { "A run with -StageAll rebuilds the snapshot." } else { "The next run rebuilds the file." }
         Write-Host "  !! ${modeLabel}: the reused file failed that check. $rebuild" -ForegroundColor Red
     }
-    $tApp = $tx.PadForgeSettings.SelectSingleNode("AppSettings")
+    $tApp = $tx.XBOXDS4ONESettings.SelectSingleNode("AppSettings")
     if ($tApp) {
         $tNode = $tApp.SelectSingleNode("Use2DControllerView")
         if (-not $tNode) {
@@ -4611,33 +4611,33 @@ if (-not $script:doSetup) {
             $tApp.AppendChild($tNode) | Out-Null
         }
         $tNode.InnerText = if ($script:Start2D) { "true" } else { "false" }
-        $kept = Save-SettingsXml $tx $PadForgeXml
+        $kept = Save-SettingsXml $tx $XBOXDS4ONEXml
         Write-Host "  ${modeLabel}: set Use2DControllerView=$($tNode.InnerText) in the reused file. The file as it was is kept as $kept"
     } else {
-        Write-Host "  !! ${modeLabel}: no AppSettings in $PadForgeXml, so the starting view is unknown" -ForegroundColor Red
+        Write-Host "  !! ${modeLabel}: no AppSettings in $XBOXDS4ONEXml, so the starting view is unknown" -ForegroundColor Red
         $script:ViewUnknown = $true
     }
 }
 
 # ==============================================================================
-# STEP 1: Start PadForge
+# STEP 1: Start XBOXDS4ONE
 # ==============================================================================
 Write-Host ""
-Write-Host "=== STEP 1: Start PadForge ===" -ForegroundColor Cyan
-Start-Process $PadForgeExe
-Write-Host "  Waiting for PadForge to start..."
+Write-Host "=== STEP 1: Start XBOXDS4ONE ===" -ForegroundColor Cyan
+Start-Process $XBOXDS4ONEExe
+Write-Host "  Waiting for XBOXDS4ONE to start..."
 $timeout = 15
-$proc = Wait-PadForgeReady -TimeoutSec $timeout
+$proc = Wait-XBOXDS4ONEReady -TimeoutSec $timeout
 $started = [bool]$proc
 if (-not $started) {
-    $kept = Save-SettingsCopy $PadForgeXml
-    Write-Host "  !! PadForge failed to start in ${timeout}s. The capture file is kept as $kept" -ForegroundColor Red
-    Copy-Item $xmlBak $PadForgeXml -Force
+    $kept = Save-SettingsCopy $XBOXDS4ONEXml
+    Write-Host "  !! XBOXDS4ONE failed to start in ${timeout}s. The capture file is kept as $kept" -ForegroundColor Red
+    Copy-Item $xmlBak $XBOXDS4ONEXml -Force
     exit 1
 }
 
 $hwnd = $proc.MainWindowHandle
-Write-Host "  PadForge PID=$($proc.Id) HWND=$hwnd" -ForegroundColor Green
+Write-Host "  XBOXDS4ONE PID=$($proc.Id) HWND=$hwnd" -ForegroundColor Green
 
 # ==============================================================================
 # STEP 2: Setup window
@@ -4646,7 +4646,7 @@ Write-Host ""
 Write-Host "=== STEP 2: Setup window ===" -ForegroundColor Cyan
 
 ## No TOPMOST, ever (feedback_no_topmost_in_capture): ForceFG before each
-## click/Cap is the mechanism; TOPMOST pins PadForge over the user's other
+## click/Cap is the mechanism; TOPMOST pins XBOXDS4ONE over the user's other
 ## windows and a mid-script failure leaves it stuck there.
 [Win32]::ForceFG($hwnd)
 # The elevated console is OUR window and it must never appear in a shot.
@@ -4678,9 +4678,9 @@ $pidCond = New-Object System.Windows.Automation.PropertyCondition(
     [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $proc.Id)
 $uiaWin = $uiaRoot.FindFirst($TC, $pidCond)
 if (-not $uiaWin) {
-    $kept = Save-SettingsCopy $PadForgeXml
+    $kept = Save-SettingsCopy $XBOXDS4ONEXml
     Write-Host "  !! UIA fail. The capture file is kept as $kept" -ForegroundColor Red
-    Copy-Item $xmlBak $PadForgeXml -Force
+    Copy-Item $xmlBak $XBOXDS4ONEXml -Force
     exit 1
 }
 Write-Host "  UIA: '$($uiaWin.Current.Name)'"
@@ -4721,8 +4721,8 @@ function Add-SlotViaDialog {
     # restart beats zero.
     if (-not (Get-SidebarList)) {
         Write-UiaState "before $TypeLabel"
-        Wait-FileQuiet -Path $PadForgeXml -QuietMs 2200 | Out-Null
-        Reset-PadForgeUia -ExePath $PadForgeExe | Out-Null
+        Wait-FileQuiet -Path $XBOXDS4ONEXml -QuietMs 2200 | Out-Null
+        Reset-XBOXDS4ONEUia -ExePath $XBOXDS4ONEExe | Out-Null
     }
     $startCount = Get-Count @(Find-AllSlots -Retries 1)
     for ($try = 1; $try -le 3; $try++) {
@@ -4732,8 +4732,8 @@ function Add-SlotViaDialog {
             Start-Sleep -Milliseconds 800
             if (-not (Get-SidebarList)) {
                 Write-UiaState "before retry $try of $TypeLabel"
-                Wait-FileQuiet -Path $PadForgeXml -QuietMs 2200 | Out-Null
-                if (Reset-PadForgeUia -ExePath $PadForgeExe) {
+                Wait-FileQuiet -Path $XBOXDS4ONEXml -QuietMs 2200 | Out-Null
+                if (Reset-XBOXDS4ONEUia -ExePath $XBOXDS4ONEExe) {
                     if ((Get-Count @(Find-AllSlots -Retries 1)) -gt $startCount) {
                         Write-Host "  the $TypeLabel slot was made before the tree broke" -ForegroundColor Yellow
                         return $true
@@ -4750,7 +4750,7 @@ function Add-SlotViaDialog {
     return $false
 }
 
-# What UI Automation reads of PadForge's window, for a log line when a tree
+# What UI Automation reads of XBOXDS4ONE's window, for a log line when a tree
 # stops answering: the window itself, each child's type, name and id, and
 # the exception a read throws.
 function Write-UiaState {
@@ -4775,17 +4775,17 @@ function Write-UiaState {
         Write-Host "    a fresh root finds NavigationItems: $([bool]$nav)"
     } catch { Write-Host "    a fresh root threw $($_.Exception.GetType().Name): $($_.Exception.Message)" }
     # The process object holds a handle from the moment it was found
-    # (Wait-PadForgeReady), so an exit leaves its code to read.
+    # (Wait-XBOXDS4ONEReady), so an exit leaves its code to read.
     try {
         if ($script:proc.HasExited) {
-            Write-Host ("    PadForge pid {0} EXITED at {1:HH:mm:ss.fff}, exit code {2} (0x{2:X8})" -f $script:proc.Id, $script:proc.ExitTime, $script:proc.ExitCode) -ForegroundColor Red
+            Write-Host ("    XBOXDS4ONE pid {0} EXITED at {1:HH:mm:ss.fff}, exit code {2} (0x{2:X8})" -f $script:proc.Id, $script:proc.ExitTime, $script:proc.ExitCode) -ForegroundColor Red
         } else {
-            Write-Host "    PadForge pid $($script:proc.Id) is running, responding $($script:proc.Responding)"
+            Write-Host "    XBOXDS4ONE pid $($script:proc.Id) is running, responding $($script:proc.Responding)"
         }
     } catch { Write-Host "    the process could not be read: $($_.Exception.Message)" }
 }
 
-# Add a Controller is drawn inside PadForge's window (#574), over the page
+# Add a Controller is drawn inside XBOXDS4ONE's window (#574), over the page
 # area. It is looked for among the window's children first, as the message
 # line is, and anywhere under the window after that, and waited for, since it
 # reaches the UI Automation tree a moment after the click that opens it. A
@@ -4977,7 +4977,7 @@ $slots = @(Find-AllSlots)
 Write-Host "  Slots after creation: $(Get-Count $slots)"
 if ((Get-Count $slots) -ne $slotTypes.Count) {
     Write-Host "  !! expected $($slotTypes.Count) slots, refreshing the UIA tree" -ForegroundColor Yellow
-    if (Reset-PadForgeUia -ExePath $PadForgeExe) {
+    if (Reset-XBOXDS4ONEUia -ExePath $XBOXDS4ONEExe) {
         $slots = @(Find-AllSlots)
         Write-Host "  Slots after the refresh: $(Get-Count $slots)"
     }
@@ -5052,7 +5052,7 @@ function Set-DeviceListTop {
     } catch { }
 }
 
-# The Devices page folds the devices PadForge remembers into a line under
+# The Devices page folds the devices XBOXDS4ONE remembers into a line under
 # the connected rows (#574). A row in a closed fold has no place on screen,
 # so a find opens it first. A recipe closes it after its shots: a fold's
 # state is saved in the staged settings file's OpenCards, so one left open
@@ -5216,8 +5216,8 @@ function Select-DeviceByName36 {
     $listTop36 = Get-DeviceListTop
     # 100, not 40: the list's viewport ended about 102 px above the window's
     # bottom, over the "Drag a device onto a sidebar controller card" hint
-    # and the status bar PadForge had then. The status bar is gone since
-    # PadForge 6 and the margin stays, the safe side. Run 6 of the 5.0.0
+    # and the status bar XBOXDS4ONE had then. The status bar is gone since
+    # XBOXDS4ONE 6 and the margin stays, the safe side. Run 6 of the 5.0.0
     # capture clicked the Razer row at y=1435 of 1550, inside the window but
     # under the viewport's clip, the selection stayed on the Head Tracker,
     # and devices-analog-keyboard photographed that instead.
@@ -5243,7 +5243,7 @@ function Select-DeviceByName36 {
             return $true
         } catch { return $false }
     }
-    # The row's own patterns first (PadForge 6): every row of the list is
+    # The row's own patterns first (XBOXDS4ONE 6): every row of the list is
     # in the tree with the folds open, so the row is found by its name, or
     # by its type line, brought into the list's view and selected, with the
     # pointer left parked. The click path below needs the row inside a
@@ -5449,7 +5449,7 @@ Assert-Staged (Assign-DeviceToSlot -DeviceNamePart "Logitech G29" -SlotNumberLab
 # Best effort: Ensure-DeviceAssigned below writes this one, and that is checked.
 Assign-DeviceToSlot -DeviceNamePart "All Mice (Merged)" -SlotNumberLabel "5" | Out-Null
 # WHEN THIS KEEPS FAILING, STOP DRIVING THE UI. A device assignment is
-# nothing but `UserSetting.MapTo = slotIndex` in PadForge.xml: clone an
+# nothing but `UserSetting.MapTo = slotIndex` in XBOXDS4ONE.xml: clone an
 # existing <Setting>, override InstanceGuid / ProductGuid / MapTo, and
 # append it under <UserSettings>. That skips the whole flaky chain (device
 # card scroll, detail-pane realize, toggle enumeration) which stranded
@@ -5494,7 +5494,7 @@ Assert-Staged (Wait-SavedAssignments -LastClick (Get-Date) -Pairs @(
 # capture, so the restart costs nothing and the full multi-slot topology the
 # rest of the gallery shows is untouched.
 Assert-Staged (Ensure-DeviceAssigned -DeviceNamePart "Xbox Series X GIP" -PadIndex 0 -SlotType 0 `
-    -XmlPath $PadForgeXml -ExePath $PadForgeExe) "writing the Xbox Series X GIP assignment" | Out-Null
+    -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe) "writing the Xbox Series X GIP assignment" | Out-Null
 
 # Same treatment for the mouse. The Mouse group gates on the SELECTED device
 # being IsMouse, so pad-mouse-gestures needs "All Mice (Merged)" reachable in
@@ -5510,7 +5510,7 @@ Assert-Staged (Ensure-DeviceAssigned -DeviceNamePart "Xbox Series X GIP" -PadInd
 # select. The SlotType argument is meant to catch exactly this, and it did
 # not fire, so do not lean on it. Read the creation list above.
 Assert-Staged (Ensure-DeviceAssigned -DeviceNamePart "All Mice (Merged)" -PadIndex 3 -SlotType 4 `
-    -XmlPath $PadForgeXml -ExePath $PadForgeExe) "writing the All Mice (Merged) assignment" | Out-Null
+    -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe) "writing the All Mice (Merged) assignment" | Out-Null
 
 # The Wii Remote, by the same route and for the same reason. Its UI toggle
 # reported "Assigned Wii Remote to slot 4" in the 4.4.0 run and wrote NO
@@ -5520,14 +5520,14 @@ Assert-Staged (Ensure-DeviceAssigned -DeviceNamePart "All Mice (Merged)" -PadInd
 # chain, and the answer has been the same every time: an assignment is one
 # XML field, so write it. Extended is pad index 4 in creation order.
 Assert-Staged (Ensure-DeviceAssigned -DeviceNamePart "Wii Remote" -PadIndex 4 -SlotType 2 `
-    -XmlPath $PadForgeXml -ExePath $PadForgeExe) "writing the Wii Remote assignment" | Out-Null
+    -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe) "writing the Wii Remote assignment" | Out-Null
 
 # PlayStation is pad index 1 in creation order (Xbox 0, PlayStation 1).
 # A focused run's PlayStation recipe seeds it for the audio shots, and the
 # seed restarts the app, so -StageAll leaves it to that recipe.
 if ($Only.Count -eq 0) {
     Seed-AudioDsp -DeviceGuid "bbbb2222-3333-4444-5555-666677778888" -DeviceNamePart "DualSense Wireless Controller" -PadIndex 1 `
-        -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+        -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
 }
 
 # Macros, written AFTER the slots exist. STEP 0 clears SlotCreated to all-false
@@ -5538,7 +5538,7 @@ if ($Only.Count -eq 0) {
 # is why every macro shot came out as an empty pane while the injection step
 # cheerfully logged success. Writing them here, with the topology already
 # persisted, is the same state that loads them correctly by hand.
-Ensure-MacrosLoaded -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+Ensure-MacrosLoaded -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
 
 # Keep what this staging built, so a later -Only run loads it directly. The
 # app saves 2 s after its last change, so let it go quiet first.
@@ -5552,7 +5552,7 @@ if ($script:StagingFailed) {
     $earlier = if (Test-Path $script:SnapshotXml) { "The snapshot of an earlier staging stays as it was." } else { "There is none yet, so a targeted run builds its own." }
     Write-Host "  !! A staging step failed, so this staging is not saved as the snapshot for targeted runs. $earlier" -ForegroundColor Red
 } else {
-    Copy-Item $PadForgeXml $script:SnapshotXml -Force
+    Copy-Item $XBOXDS4ONEXml $script:SnapshotXml -Force
     Write-Host "  Saved the staged settings for later targeted runs: $script:SnapshotXml"
 }
 
@@ -5635,7 +5635,7 @@ function Scroll-ToAnchors {
 # so the shot clicks Check Now and waits for GitHub's answer first. The frame
 # must hold the whole card, from its title to the Check Now button. A check
 # that never answers skips the shot rather than photographing "Checking".
-$script:UpdateAnswers = @("PadForge * is up to date.", "PadForge * is available.",
+$script:UpdateAnswers = @("XBOXDS4ONE * is up to date.", "XBOXDS4ONE * is available.",
     "Pre-release * is available.", "Could not check for updates: *",
     "GitHub is limiting requests from this network. Try again later.",
     "The newest version has no build for this PC’s processor yet.")
@@ -5854,7 +5854,7 @@ function Test-InFrame {
     return ($null -ne $r -and $r.Y -ge ($wr.Top + 60) -and ($r.Y + $r.Height) -le ($wr.Bottom - 60))
 }
 
-# A group of the Settings page (PadForge 6, #574): General, Input, Hardware,
+# A group of the Settings page (XBOXDS4ONE 6, #574): General, Input, Hardware,
 # Drivers or Data. The page shows one group's cards at a time, and a group
 # that is not shown is out of the UI Automation tree, so every Settings
 # recipe opens its group first. This opens the page, selects the group's
@@ -5899,7 +5899,7 @@ function Set-HidHideOptions {
     return $true
 }
 
-# The Settings page's search (PadForge 6, #574): the box holds "notify", and
+# The Settings page's search (XBOXDS4ONE 6, #574): the box holds "notify", and
 # the page shows the matching rows of every group under its group's name,
 # with Battery Alerts' More row open while the search lasts. The box is set
 # through its value pattern, as the Workshop search is, and emptied after,
@@ -5934,7 +5934,7 @@ function Capture-SettingsSearch {
     Start-Sleep -Milliseconds 300
 }
 
-# An extra's own page (PadForge 6, #574). The Dashboard's ten service cards
+# An extra's own page (XBOXDS4ONE 6, #574). The Dashboard's ten service cards
 # became a catalog on the Extras page with a page for each extra, and a
 # card's less-used rows sit under the More row at its foot. This opens the
 # Extras page (its sidebar item always lands on the catalog), invokes the
@@ -5991,7 +5991,7 @@ function Open-Extra {
 # Search (#574) over Home. Search answers for the controller whose page was
 # opened last, so the Xbox slot's page is opened first: in the 6.0.0 run the
 # VR slot's was the last, a page with no stick or trigger settings, and the
-# board's query "deadzone" answered "Nothing in PadForge matches". The query
+# board's query "deadzone" answered "Nothing in XBOXDS4ONE matches". The query
 # is one that finds a section among Pages and settings under Settings, so
 # the frame shows two groups with their second lines over the footer's
 # keys. It is set through the box's ValuePattern, so no key is typed, and
@@ -6191,7 +6191,7 @@ function Capture-UninstallPreviews {
         if (-not [Win32]::IsWindowEnabled([IntPtr]$script:hwnd)) {
             $script:ViewUnknown = $true
             $script:StateFailures += "the $($u.Shot) preview did not close"
-            Write-Host "  !! the preview is still open. No more PadForge shots are saved." -ForegroundColor Red
+            Write-Host "  !! the preview is still open. No more XBOXDS4ONE shots are saved." -ForegroundColor Red
             return
         }
         ScrollContent -Clicks 90
@@ -6201,7 +6201,7 @@ function Capture-UninstallPreviews {
 # A mouse takes its controller's lighting and rumble (#494): the G502
 # HERO's Lighting group, with the Control This Device's Lighting box, the
 # Lighting Hold row and the lightbar's mode card, and the Rival 710's Force
-# Feedback group. Both go on the Xbox slot with the record of what PadForge
+# Feedback group. Both go on the Xbox slot with the record of what XBOXDS4ONE
 # found on them: the G502 HERO lit over HID++ with its lighting power hold
 # (2 + 4, HidppUnits), the Rival 710 lit and rumbling (2 + 1). Two restarts,
 # so it runs after every other shot of that slot.
@@ -6211,9 +6211,9 @@ function Capture-PeripheralTabs {
     if ($wanted.Count -eq 0) { return }
     Write-Host "[5.1.0] Xbox slot: a mouse's Lighting and Force Feedback tabs"
     $okG = Ensure-DeviceAssigned -DeviceNamePart "G502 HERO" -PadIndex 0 -SlotType 0 -PeripheralOutputs 6 `
-        -XmlPath $PadForgeXml -ExePath $PadForgeExe
+        -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe
     $okR = Ensure-DeviceAssigned -DeviceNamePart "Rival 710" -PadIndex 0 -SlotType 0 -PeripheralOutputs 3 `
-        -XmlPath $PadForgeXml -ExePath $PadForgeExe
+        -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe
     if (-not ((@($okG)[-1] -eq $true) -and (@($okR)[-1] -eq $true))) {
         Refuse-Shots $wanted "the two mice were not staged on the Xbox slot"
         return
@@ -6333,7 +6333,7 @@ function Capture-FalconPadShots {
     if ($wanted.Count -eq 0) { return }
     Write-Host "[5.2.0] Xbox slot: the Novint Falcon card and Steering Angle Rumble"
     $okF = Ensure-DeviceAssigned -DeviceNamePart "Novint Falcon" -PadIndex 0 -SlotType 0 `
-        -XmlPath $PadForgeXml -ExePath $PadForgeExe
+        -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe
     if (-not (@($okF)[-1] -eq $true)) {
         Refuse-Shots $wanted "the stand-in Falcon was not staged on the Xbox slot"
         return
@@ -6389,7 +6389,7 @@ function Capture-ExtendedSlot {
     # which a run with no staging writes onto the slot first.
     if ($Only.Count -gt 0 -and -not $script:Staged -and (Want "pad-extended-clone-device")) {
         Ensure-DeviceAssigned -DeviceNamePart "Wii Remote" -PadIndex 4 -SlotType 2 `
-            -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+            -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
         Start-Sleep -Milliseconds 2000
         $script:uiaWin = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$script:hwnd)
     }
@@ -6455,12 +6455,12 @@ function Capture-ExtendedSlot {
             # window: a click needs it in view.
             $null = Scroll-PadGroupToTop -ColumnAid "ButtonsScroll" -Element $cloneBtn -At 0.4 -Label "Clone Device 1:1"
             Click-El $cloneBtn -Label "Clone Device 1:1" -Delay 1400 | Out-Null
-            # The confirm is one of PadForge 6's own dialog windows, which
+            # The confirm is one of XBOXDS4ONE 6's own dialog windows, which
             # the root's window scan does not list, so Close-AnyModal alone
             # never found it: in the 6.0.0 run it stayed over the next 28
             # frames. It is found among the process's windows and closed by
             # WM_CLOSE, which declines as its Cancel does, and a dialog that
-            # will not close stops the PadForge shots after it.
+            # will not close stops the XBOXDS4ONE shots after it.
             $cloneDlg = Find-DialogHwndByEnum -MinW 300 -MinH 150 -Retries 6 -DelayMs 400
             if ([IntPtr]$cloneDlg -eq [IntPtr]::Zero) {
                 Refuse-Shots @("pad-extended-clone-device") "the Clone Device 1:1 confirm did not open"
@@ -6487,7 +6487,7 @@ function Capture-KbmSlot {
     # Mouse is pad index 3 in creation order.
     if ($Only.Count -gt 0 -and -not $script:Staged) {
         Ensure-DeviceAssigned -DeviceNamePart "All Mice (Merged)" -PadIndex 3 -SlotType 4 `
-            -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+            -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
         Start-Sleep -Milliseconds 2000
         $script:uiaWin = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$script:hwnd)
     }
@@ -6605,7 +6605,7 @@ function Capture-VrSlot {
 # The In front now line (#574) of the Profiles page's Automatic Switching
 # card. It shows only while Switch Profiles by Game is on, so the switch is
 # turned on, the line waited for, the frame taken and the switch turned
-# back off. The line names whatever program is in front (PadForge during a
+# back off. The line names whatever program is in front (XBOXDS4ONE during a
 # capture, so no profile loads for it): a line that names a profile needs
 # the profile's game in front, which a capture cannot stage. Turning it
 # back off keeps switching off for the rest of the run. The switch and the
@@ -6660,7 +6660,7 @@ function Show-ReleaseTestLive {
     # A click, not an Invoke: the window is modal, and an Invoke waits until
     # it closes.
     if (-not (Click-El $foot -Label "Release Test" -Delay 1200)) { return }
-    $dlg = Find-PadForgeWindow -Title "Release Test" -Retries 12
+    $dlg = Find-XBOXDS4ONEWindow -Title "Release Test" -Retries 12
     if ($dlg -eq [IntPtr]::Zero) {
         Write-Host "  .. the Release Test window did not open on the staged wheel" -ForegroundColor Yellow
         Close-AnyModal | Out-Null
@@ -6687,7 +6687,7 @@ function Show-ReleaseTestLive {
             $lg = [System.Drawing.Graphics]::FromImage($lbmp)
             $lg.CopyFromScreen($lr.Left, $lr.Top, 0, 0, [System.Drawing.Size]::new($lw, $lh))
             $lg.Dispose()
-            $lp = Join-Path (Join-Path $env:TEMP "PadForge_Capture") "release-test-live.png"
+            $lp = Join-Path (Join-Path $env:TEMP "XBOXDS4ONE_Capture") "release-test-live.png"
             $lbmp.Save($lp, [System.Drawing.Imaging.ImageFormat]::Png)
             $lbmp.Dispose()
             Write-Host "  .. the window as it opened: $lp" -ForegroundColor DarkGray
@@ -6722,7 +6722,7 @@ function Capture-WheelCentering {
     if (-not $OnPage) {
         if (-not $script:Staged) {
             $okW = Ensure-DeviceAssigned -DeviceNamePart "Logitech G29" -PadIndex 0 -SlotType 0 `
-                -XmlPath $PadForgeXml -ExePath $PadForgeExe
+                -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe
             if (-not (@($okW)[-1] -eq $true)) {
                 Refuse-Shots $wanted "the stand-in G29 was not staged on the Xbox slot"
                 return
@@ -6762,7 +6762,7 @@ function Capture-WheelCentering {
 
 # The Release Test window after a run (#588). A run needs a wheel that a
 # pass polls, and the staged G29 is offline, so the build draws the window:
-# PageRenderDumpPages.DrawCentering (PadForge.Tests) steps a simulated wheel
+# PageRenderDumpPages.DrawCentering (XBOXDS4ONE.Tests) steps a simulated wheel
 # through the test the engine runs and pictures the window with both
 # releases on its chart, its three figures and its result sentence. It
 # draws off every screen, at this window's scale, into a folder beside the
@@ -6773,12 +6773,12 @@ function Capture-WheelCentering {
 function Capture-WheelReleaseTest {
     if (-not (Want "wheel-release-test")) { return }
     Write-Host "[6.0.0] The Release Test window after a run, drawn by the build"
-    $project = Join-Path (Split-Path $PSScriptRoot -Parent) "PadForge.Tests\PadForge.Tests.csproj"
+    $project = Join-Path (Split-Path $PSScriptRoot -Parent) "XBOXDS4ONE.Tests\XBOXDS4ONE.Tests.csproj"
     if (-not (Test-Path -LiteralPath $project)) {
         Refuse-Shots @("wheel-release-test") "the test project is not beside this script ($project)"
         return
     }
-    $renderDir = Join-Path (Join-Path $env:TEMP "PadForge_Capture") "release-test-render"
+    $renderDir = Join-Path (Join-Path $env:TEMP "XBOXDS4ONE_Capture") "release-test-render"
     if (Test-Path -LiteralPath $renderDir) { Get-ChildItem -LiteralPath $renderDir -File | Remove-Item -Force -EA SilentlyContinue }
     else { New-Item -ItemType Directory -Path $renderDir | Out-Null }
     $scale = 1.5
@@ -6865,12 +6865,12 @@ function Capture-GyroEngage {
     if (-not $OnPage) {
         if (-not $script:Staged) {
             $okG = Ensure-DeviceAssigned -DeviceNamePart "DualSense Wireless Controller" -PadIndex 0 -SlotType 0 `
-                -XmlPath $PadForgeXml -ExePath $PadForgeExe
+                -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe
             if (-not (@($okG)[-1] -eq $true)) {
                 Refuse-Shots @("pad-gyro-engage") "the DualSense was not staged on the Xbox slot"
                 return
             }
-            Ensure-MacrosLoaded -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+            Ensure-MacrosLoaded -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
             Start-Sleep -Milliseconds 2000
             $script:uiaWin = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$script:hwnd)
         }
@@ -7038,7 +7038,7 @@ function Capture-LanguageShots {
         if (-not (Select-ComboItem $back "English (United States)")) {
             $script:ViewUnknown = $true
             $script:StateFailures += "the interface did not go back to English after settings-language-rtl"
-            Write-Host "  !! the interface is not back in English. No more PadForge shots are saved." -ForegroundColor Red
+            Write-Host "  !! the interface is not back in English. No more XBOXDS4ONE shots are saved." -ForegroundColor Red
         }
         Start-Sleep -Milliseconds 600
     }
@@ -7063,7 +7063,7 @@ $script:EdgePath = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe
 if (-not (Test-Path $script:EdgePath)) { $script:EdgePath = "C:\Program Files\Microsoft\Edge\Application\msedge.exe" }
 # A temporary Edge profile, so the owner's own browser profile is never
 # touched. STEP 4 deletes it.
-$script:EdgeProfile = Join-Path $env:TEMP "PadForge_EdgeCapture"
+$script:EdgeProfile = Join-Path $env:TEMP "XBOXDS4ONE_EdgeCapture"
 
 # The browser process of the Edge this run started, while one is up.
 $script:EdgePid = 0
@@ -7099,7 +7099,7 @@ function Stop-CaptureEdge {
     while ((Test-CaptureEdgeUp) -and $sw.ElapsedMilliseconds -lt 3000) { Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds 50 }
     if (-not (Test-CaptureEdgeUp)) { return }
     Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" -EA SilentlyContinue |
-        Where-Object { $_.CommandLine -like "*PadForge_EdgeCapture*" } |
+        Where-Object { $_.CommandLine -like "*XBOXDS4ONE_EdgeCapture*" } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -EA SilentlyContinue }
     $sw.Restart()
     while ((Test-CaptureEdgeUp) -and $sw.ElapsedMilliseconds -lt 3000) { Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds 50 }
@@ -7178,7 +7178,7 @@ function Cap-Web {
     if ([Win32]::GetWindowRect($ehwnd, [ref]$er0)) {
         [Win32]::MoveTo([int](($er0.Left + $er0.Right) / 2), ($er0.Top + 20))
     }
-    # The served pages set a title of their own ("PadForge - Controller"), so
+    # The served pages set a title of their own ("XBOXDS4ONE - Controller"), so
     # a page whose window carries one has loaded. Its layout images arrive
     # over its WebSocket a moment later: the frame is then taken once the
     # page has held still for 400 ms, or after 3 s for a page that animates.
@@ -7186,7 +7186,7 @@ function Cap-Web {
     while ($sw.ElapsedMilliseconds -lt $WaitMs) {
         $edge.Refresh()
         $title = $edge.MainWindowTitle
-        if ($title -like "PadForge*") { break }
+        if ($title -like "XBOXDS4ONE*") { break }
         Microsoft.PowerShell.Utility\Start-Sleep -Milliseconds 100
     }
     [void][UiSettle]::WaitStable($ehwnd, 3000, 400)
@@ -7228,12 +7228,12 @@ function Cap-Web {
     return $true
 }
 
-# Every web shot asked for. PadForge steps aside, minimized, while Edge is
+# Every web shot asked for. XBOXDS4ONE steps aside, minimized, while Edge is
 # in front, and comes back restored (SW_RESTORE, maximized again) whatever
 # happens: ForceFG's SW_SHOW leaves a minimized window minimized, and on
 # 2026-10-23 every recipe after the web shots clicked a minimized window
 # and saved nothing. A server that answers on no address gets one fresh
-# PadForge process, which starts it, and up to 30 s to listen.
+# XBOXDS4ONE process, which starts it, and up to 30 s to listen.
 function Capture-WebShots {
     $wanted = @($script:WebShots | Where-Object { Want $_.Name })
     if ($wanted.Count -eq 0) { return }
@@ -7242,8 +7242,8 @@ function Capture-WebShots {
         [Win32]::ShowWindow([IntPtr]$script:hwnd, 6) | Out-Null  # SW_MINIMIZE
         $base = Get-WebBase
         if (-not $base) {
-            Write-Host "  .. the web controller answered on no address, so PadForge restarts" -ForegroundColor Yellow
-            Reset-PadForgeUia -ExePath $PadForgeExe | Out-Null
+            Write-Host "  .. the web controller answered on no address, so XBOXDS4ONE restarts" -ForegroundColor Yellow
+            Reset-XBOXDS4ONEUia -ExePath $XBOXDS4ONEExe | Out-Null
             [Win32]::ShowWindow([IntPtr]$script:hwnd, 6) | Out-Null
             $listen = [System.Diagnostics.Stopwatch]::StartNew()
             while (-not $base -and $listen.Elapsed.TotalSeconds -lt 30) {
@@ -7312,13 +7312,13 @@ $script:ColorwayScenes = @(
     @{ Shot = "colorway-xbox-squadrons";        Type = 0; Profile = "xbox-series-xs-bt"; Fam = "XboxSeries"; App = "Squadrons"; Name = "Star Wars: Squadrons" }
 )
 
-# Writes a scene onto the staged settings and restarts PadForge on it,
+# Writes a scene onto the staged settings and restarts XBOXDS4ONE on it,
 # maximized: a colorway on its family's slot (-Scene), the staged settings
 # without the slot of one type (-DropType), or the staged settings as they
 # are (neither). The scene starts from the staged settings each time (the
 # snapshot, or the settings file when a run saved none), so every other
 # slot, device and assignment is the one the rest of the gallery shows. THE TRAP that cost three runs of
-# wrong images: the slot arrays and the app flags live under PadForgeSettings
+# wrong images: the slot arrays and the app flags live under XBOXDS4ONESettings
 # > AppSettings, never at the root, where they are ignored duplicates. The
 # slot type alone does not choose the model: SlotProfileIds picks the
 # HIDMaestro profile the preview renders (a PlayStation slot whose profile was
@@ -7326,8 +7326,8 @@ $script:ColorwayScenes = @(
 function Write-StagedScene {
     param([string]$BaseXmlPath, [string]$XmlPath, [string]$ExePath, $Scene = $null, [int]$DropType = -1,
           [hashtable]$SlotProfiles = @{}, [switch]$NoSlots)
-    Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
-    Wait-PadForgeGone
+    Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
+    Wait-XBOXDS4ONEGone
     try {
         $sx = Read-SettingsXml $BaseXmlPath
         $app = $sx.DocumentElement.SelectSingleNode("AppSettings")
@@ -7403,13 +7403,13 @@ function Write-StagedScene {
     } catch {
         Write-Host "  !! scene write failed: $($_.Exception.Message)" -ForegroundColor Red
         Start-Process $ExePath
-        $back = Wait-PadForgeReady
+        $back = Wait-XBOXDS4ONEReady
         if ($back) { $script:proc = $back; $script:hwnd = $back.MainWindowHandle; Reset-KnownState; $script:uiaWin = [System.Windows.Automation.AutomationElement]::FromHandle($script:hwnd) }
         return $false
     }
     Start-Process $ExePath
-    $pr = Wait-PadForgeReady
-    if (-not $pr) { Write-Host "  !! PadForge did not come back up" -ForegroundColor Red; return $false }
+    $pr = Wait-XBOXDS4ONEReady
+    if (-not $pr) { Write-Host "  !! XBOXDS4ONE did not come back up" -ForegroundColor Red; return $false }
     $script:proc = $pr
     $script:hwnd = $pr.MainWindowHandle
     Reset-KnownState
@@ -7429,12 +7429,12 @@ function Write-StagedScene {
 # pattern and never clicked (Open-SlotPage). A colorway the picker will not
 # select is refused, which leaves the previous good file in place. The
 # frames show the finish, so the picture's tags and leader lines, on as a
-# page opens since PadForge 6, are turned off for a family's frames and on
+# page opens since XBOXDS4ONE 6, are turned off for a family's frames and on
 # again after: the 6.0.0 run's frames had lines drawn across every finish.
 function Capture-Colorways {
     $wanted = @($script:ColorwayScenes | Where-Object { Want $_.Shot })
     if ($wanted.Count -eq 0) { return }
-    $base = if (Test-Path $script:SnapshotXml) { $script:SnapshotXml } else { $PadForgeXml }
+    $base = if (Test-Path $script:SnapshotXml) { $script:SnapshotXml } else { $XBOXDS4ONEXml }
     # The scene starts from the staged settings, so the file is copied aside
     # first: the scene write replaces it.
     $stagedCopy = Join-Path $logDir "colorway-base.xml"
@@ -7442,7 +7442,7 @@ function Capture-Colorways {
     $profiles = @{}
     foreach ($sc in $wanted) { $profiles[[int]$sc.Type] = $sc.Profile }
     Write-Host "  colorways: $($wanted.Count), picked in the 3D view on the seven staged slots"
-    if (-not (Write-StagedScene -BaseXmlPath $stagedCopy -XmlPath $PadForgeXml -ExePath $PadForgeExe -SlotProfiles $profiles)) {
+    if (-not (Write-StagedScene -BaseXmlPath $stagedCopy -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe -SlotProfiles $profiles)) {
         Refuse-Shots @($wanted | ForEach-Object { $_.Shot }) "the families' slots could not be staged"
         return
     }
@@ -7471,7 +7471,7 @@ function Capture-Colorways {
         if (-not (Set-AnnotationOverlay -On $true)) {
             $script:AnnotationUnknown = $true
             $script:StateFailures += "the 3D view's tags did not come back on after the colorways"
-            Write-Host "  !! the 3D view's tags did not come back on after the colorways. No more PadForge shots are saved until PadForge restarts." -ForegroundColor Red
+            Write-Host "  !! the 3D view's tags did not come back on after the colorways. No more XBOXDS4ONE shots are saved until XBOXDS4ONE restarts." -ForegroundColor Red
         }
     }
 }
@@ -7487,12 +7487,12 @@ function Capture-Colorways {
 function Capture-AddController {
     if (-not (Want "add-controller-popup")) { return }
     Write-Host "  Add a Controller"
-    $base = if (Test-Path $script:SnapshotXml) { $script:SnapshotXml } else { $PadForgeXml }
+    $base = if (Test-Path $script:SnapshotXml) { $script:SnapshotXml } else { $XBOXDS4ONEXml }
     $stagedCopy = Join-Path $logDir "popup-base.xml"
     Copy-Item $base $stagedCopy -Force
-    # VirtualControllerType.Vr (PadForge.Engine/Common/VirtualControllerTypes.cs).
+    # VirtualControllerType.Vr (XBOXDS4ONE.Engine/Common/VirtualControllerTypes.cs).
     $vrType = 6
-    if (-not (Write-StagedScene -BaseXmlPath $stagedCopy -XmlPath $PadForgeXml -ExePath $PadForgeExe -DropType $vrType)) {
+    if (-not (Write-StagedScene -BaseXmlPath $stagedCopy -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe -DropType $vrType)) {
         Refuse-Shots @("add-controller-popup") "its scene could not be staged"
         return
     }
@@ -7512,7 +7512,7 @@ function Capture-AddController {
     } finally {
         [System.Windows.Forms.SendKeys]::SendWait("{ESC}")
         $script:ExpectedSlots = $savedSlots
-        [void](Write-StagedScene -BaseXmlPath $stagedCopy -XmlPath $PadForgeXml -ExePath $PadForgeExe)
+        [void](Write-StagedScene -BaseXmlPath $stagedCopy -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe)
     }
 }
 
@@ -7523,10 +7523,10 @@ function Capture-AddController {
 function Capture-HomeFirstRun {
     if (-not (Want "home-first-run")) { return }
     Write-Host "  Home's first page"
-    $base = if (Test-Path $script:SnapshotXml) { $script:SnapshotXml } else { $PadForgeXml }
+    $base = if (Test-Path $script:SnapshotXml) { $script:SnapshotXml } else { $XBOXDS4ONEXml }
     $stagedCopy = Join-Path $logDir "first-run-base.xml"
     Copy-Item $base $stagedCopy -Force
-    if (-not (Write-StagedScene -BaseXmlPath $stagedCopy -XmlPath $PadForgeXml -ExePath $PadForgeExe -NoSlots)) {
+    if (-not (Write-StagedScene -BaseXmlPath $stagedCopy -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe -NoSlots)) {
         Refuse-Shots @("home-first-run") "its scene could not be staged"
         return
     }
@@ -7548,7 +7548,7 @@ function Capture-HomeFirstRun {
         Cap "home-first-run"
     } finally {
         $script:ExpectedSlots = $savedSlots
-        [void](Write-StagedScene -BaseXmlPath $stagedCopy -XmlPath $PadForgeXml -ExePath $PadForgeExe)
+        [void](Write-StagedScene -BaseXmlPath $stagedCopy -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe)
     }
 }
 
@@ -7653,7 +7653,7 @@ function Capture-PairDialog {
 
 # Opens every More row and fold of a dialog through its expand pattern, as
 # Open-PadCards opens a page's: the profile dialog keeps Polling Rate under
-# its More row since PadForge 6. A picker expands too and is left alone.
+# its More row since XBOXDS4ONE 6. A picker expands too and is left alone.
 function Open-DialogFolds {
     param($Dialog)
     if (-not $Dialog) { return }
@@ -8044,7 +8044,7 @@ function Capture-MotionRow {
 function Capture-Ds3Preset {
     if (-not (Want "pad-playstation-ds3")) { return }
     Write-Host "[5.0.0] PlayStation slot: DualShock 3 model"
-    if (-not (Set-SlotPreset -PadIndex 1 -ProfileId "dualshock-3" -XmlPath $PadForgeXml -ExePath $PadForgeExe)) {
+    if (-not (Set-SlotPreset -PadIndex 1 -ProfileId "dualshock-3" -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe)) {
         Write-Host "  !! SKIPPED pad-playstation-ds3" -ForegroundColor Red
         return
     }
@@ -8121,7 +8121,7 @@ $script:ImportSample = @'
 
 # A common Open dialog's file name box and Open button, set by messages
 # (WM_SETTEXT, then BM_CLICK on IDOK), the way the #561 arc's preview check
-# chose its file. Class and title reads find PadForge's own windows by kind.
+# chose its file. Class and title reads find XBOXDS4ONE's own windows by kind.
 if (-not ('CapFileDialog' -as [type])) {
     Add-Type @'
 using System;
@@ -8151,9 +8151,9 @@ public static class CapFileDialog {
 '@
 }
 
-# A visible top-level window of PadForge's process other than the main one,
+# A visible top-level window of XBOXDS4ONE's process other than the main one,
 # by window class or by exact title. Zero when none came up in time.
-function Find-PadForgeWindow {
+function Find-XBOXDS4ONEWindow {
     param([string]$Class, [string]$Title, [int]$Retries = 20, [int]$DelayMs = 250)
     for ($i = 0; $i -lt $Retries; $i++) {
         foreach ($h in [Win32]::WindowsForPid([uint32]$script:proc.Id)) {
@@ -8168,14 +8168,14 @@ function Find-PadForgeWindow {
     return [IntPtr]::Zero
 }
 
-# Leaves the run's PadForge shots refused when a dialog would not close, the
+# Leaves the run's XBOXDS4ONE shots refused when a dialog would not close, the
 # rule Capture-UninstallPreviews keeps.
 function Assert-MainWindowBack {
     param([string]$What)
     if ([Win32]::IsWindowEnabled([IntPtr]$script:hwnd)) { return $true }
     $script:ViewUnknown = $true
     $script:StateFailures += "$What did not close"
-    Write-Host "  !! $What is still open. No more PadForge shots are saved." -ForegroundColor Red
+    Write-Host "  !! $What is still open. No more XBOXDS4ONE shots are saved." -ForegroundColor Red
     return $false
 }
 
@@ -8187,7 +8187,7 @@ function Assert-MainWindowBack {
 function Capture-ImportPreview {
     if (-not (Want "import-preview") -and -not (Want "profiles-get-file")) { return }
     Write-Host "[5.3.0] Profiles: import preview"
-    $sample = Join-Path (Join-Path $env:TEMP "PadForge_Capture") "Star Courier.rewasd"
+    $sample = Join-Path (Join-Path $env:TEMP "XBOXDS4ONE_Capture") "Star Courier.rewasd"
     [System.IO.File]::WriteAllText($sample, $script:ImportSample, (New-Object System.Text.UTF8Encoding($false)))
     $gp = Open-GetProfiles -Tab "File"
     if ($gp -eq [IntPtr]::Zero) { Refuse-Shots @("profiles-get-file", "import-preview") "Get Profiles did not open on Import a File"; return }
@@ -8204,14 +8204,14 @@ function Capture-ImportPreview {
     Start-Sleep -Milliseconds 150
     Click-At ([int]($ir.X + $ir.Width / 2)) ([int]($ir.Y + $ir.Height / 2))
     Start-Sleep -Milliseconds 1200
-    $fd = Find-PadForgeWindow -Class "#32770"
+    $fd = Find-XBOXDS4ONEWindow -Class "#32770"
     if ($fd -eq [IntPtr]::Zero) { Refuse-Shots @("import-preview") "the Open dialog did not come up"; Close-DialogHwnd $gp; Close-AnyModal | Out-Null; return }
     if (-not [CapFileDialog]::Choose($fd, $sample)) {
         Refuse-Shots @("import-preview") "the Open dialog has no file name box"
         Close-DialogHwnd $fd; Close-DialogHwnd $gp; Close-AnyModal | Out-Null
         return
     }
-    $pv = Find-PadForgeWindow -Title "Import Profile" -Retries 40
+    $pv = Find-XBOXDS4ONEWindow -Title "Import Profile" -Retries 40
     if ($pv -eq [IntPtr]::Zero) { Refuse-Shots @("import-preview") "the preview did not open on the sample"; Close-DialogHwnd $gp; Close-AnyModal | Out-Null; return }
     Start-Sleep -Milliseconds 900
     Cap "import-preview" -AllowModal
@@ -8244,7 +8244,7 @@ function Capture-TwitchChatShots {
     $btn = Find-UIA -Aid "TwitchChat_ManageCommands"
     if (-not $btn) { Refuse-Shots @("twitch-chat-commands") "the Twitch Chat page has no Manage Chat Commands button"; return }
     Click-El $btn -Label "Manage Chat Commands" -Delay 1200 | Out-Null
-    $dlg = Find-PadForgeWindow -Title "Chat Commands"
+    $dlg = Find-XBOXDS4ONEWindow -Title "Chat Commands"
     if ($dlg -eq [IntPtr]::Zero) { Refuse-Shots @("twitch-chat-commands") "the Chat Commands window did not open"; Close-AnyModal | Out-Null; return }
     Start-Sleep -Milliseconds 700
     Cap "twitch-chat-commands" -AllowModal
@@ -8303,7 +8303,7 @@ function Capture-MapKeyLights {
     Close-DeviceFolds
     if (-not $btn) { Refuse-Shots @("map-key-lights") "no connected keyboard row offers Map Key Lights ($($script:MapKeyLightsRows -join ', '))"; return }
     Click-El $btn -Label "Map Key Lights" -Delay 1200 | Out-Null
-    $dlg = Find-PadForgeWindow -Title "Map Key Lights"
+    $dlg = Find-XBOXDS4ONEWindow -Title "Map Key Lights"
     if ($dlg -eq [IntPtr]::Zero) { Refuse-Shots @("map-key-lights") "the Map Key Lights window did not open"; Close-AnyModal | Out-Null; return }
     Start-Sleep -Milliseconds 900
     Cap "map-key-lights" -AllowModal
@@ -8326,12 +8326,12 @@ $script:MenuStyleShots = @(
 # $null when the write failed.
 function Seed-LightbarMode {
     param([string]$DeviceNamePart, [int]$PadIndex, [string]$Mode, [string]$XmlPath, [string]$ExePath)
-    Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
-    Wait-PadForgeGone
+    Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
+    Wait-XBOXDS4ONEGone
     $was = $null
     try {
         $ax = Read-SettingsXml $XmlPath
-        $root = $ax.PadForgeSettings
+        $root = $ax.XBOXDS4ONESettings
         $guid = $null
         foreach ($d in @($root.SelectNodes("Devices/Device"))) {
             $nameNode = $d.SelectSingleNode("InstanceName")
@@ -8360,8 +8360,8 @@ function Seed-LightbarMode {
         $was = $null
     }
     Start-Process $ExePath
-    $pr = Wait-PadForgeReady
-    if (-not $pr) { Write-Host "  !! PadForge did not come back up" -ForegroundColor Red; return $null }
+    $pr = Wait-XBOXDS4ONEReady
+    if (-not $pr) { Write-Host "  !! XBOXDS4ONE did not come back up" -ForegroundColor Red; return $null }
     $script:proc = $pr
     $script:hwnd = $pr.MainWindowHandle
     Reset-KnownState
@@ -8379,7 +8379,7 @@ function Capture-ScreenColorLighting {
     if (-not (Want "pad-lighting-screen-color")) { return }
     Write-Host "[5.3.0] PlayStation slot: Screen Color lighting"
     $was = Seed-LightbarMode -DeviceNamePart "DualSense Wireless Controller" -PadIndex 1 -Mode "ScreenColor" `
-        -XmlPath $PadForgeXml -ExePath $PadForgeExe
+        -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe
     if ($null -eq $was) { Refuse-Shots @("pad-lighting-screen-color") "the Screen Color mode could not be written"; return }
     Start-Sleep -Milliseconds 2000
     $ppS = Open-SlotPage -Type 1 -Label "PlayStation slot (Screen Color)"
@@ -8392,7 +8392,7 @@ function Capture-ScreenColorLighting {
         } else { Refuse-Shots @("pad-lighting-screen-color") "the DualSense's Lighting tab did not open" }
     }
     Seed-LightbarMode -DeviceNamePart "DualSense Wireless Controller" -PadIndex 1 -Mode $was `
-        -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+        -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
 }
 
 # ==============================================================================
@@ -8599,7 +8599,7 @@ function Capture-RowOptionShots {
 if ($Only.Count -gt 0) {
     Write-Host ""
     Write-Host "=== FOCUSED PASS ($($Only.Count) target(s)) ===" -ForegroundColor Cyan
-    # PadForge saves its settings once it has loaded them, and that
+    # XBOXDS4ONE saves its settings once it has loaded them, and that
     # "Settings saved" line outlasted Cap's own 12 s wait when the first
     # frame came at once: about.png of 2026-10-23 carried it.
     Wait-AfterRestartSave
@@ -8709,7 +8709,7 @@ if ($Only.Count -gt 0) {
             $wasOn = Set-CheckBoxState -Name $t.Check -On $true
             if ($null -eq $wasOn) { Refuse-Shots @($t.Shot) "no '$($t.Check)' check box would turn on"; continue }
             if (-not $wasOn) {
-                # Turning the box on sets off PadForge's save 2 s later, and
+                # Turning the box on sets off XBOXDS4ONE's save 2 s later, and
                 # its "Settings saved" message then shows for 5 to 10 s: on
                 # 2026-10-23 it was still there 12 s into the frame's own
                 # wait. Both are waited out first.
@@ -8823,9 +8823,9 @@ if ($Only.Count -gt 0) {
         Write-Host "[focused] PlayStation slot: $(($psWanted | ForEach-Object { $_.Shot }) -join ', ')"
         # PlayStation is pad index 1 in creation order (Xbox 0, PlayStation 1).
         Ensure-DeviceAssigned -DeviceNamePart "DualSense Wireless Controller" -PadIndex 1 -SlotType 1 `
-            -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+            -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
         Seed-AudioDsp -DeviceGuid "bbbb2222-3333-4444-5555-666677778888" -DeviceNamePart "DualSense Wireless Controller" -PadIndex 1 `
-            -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+            -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
 
         # Two restarts just happened. Re-attach the UIA root before the
         # slot's page is asked for.
@@ -8910,13 +8910,13 @@ if ($Only.Count -gt 0) {
     }
     if ($twoDWanted.Count -gt 0 -and $staged -and -not $script:Staged) {
         $x = Ensure-DeviceAssigned -DeviceNamePart "Xbox Series X GIP" -PadIndex 0 -SlotType 0 `
-            -XmlPath $PadForgeXml -ExePath $PadForgeExe | Select-Object -Last 1
+            -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Select-Object -Last 1
         # Every synthetic device is offline, so nothing above starts the
         # engine. The full pass forges because the merged mouse, a real device,
         # sits on the keyboard-and-mouse slot (pad 3 in creation order). Without
         # it the sidebar's foot reads 0 Hz Idle beside a set that reads Forging.
         $m = Ensure-DeviceAssigned -DeviceNamePart "All Mice (Merged)" -PadIndex 3 -SlotType 4 `
-            -XmlPath $PadForgeXml -ExePath $PadForgeExe | Select-Object -Last 1
+            -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Select-Object -Last 1
         if ($x -ne $true -or $m -ne $true) {
             Refuse-Shots $twoDWanted "the Xbox or keyboard-and-mouse slot was not staged"
             $staged = $false
@@ -9007,7 +9007,7 @@ if ($Only.Count -gt 0) {
             # which Wait-SavedAssignments reports as an unreadable file.
             Assert-Staged (Wait-SavedAssignments -LastClick (Get-Date) -Pairs @(
                 , @("DualSense Wireless Controller", 0))) "saving the DualSense assignment" | Out-Null
-            Ensure-MacrosLoaded -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+            Ensure-MacrosLoaded -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
             Start-Sleep -Milliseconds 2000
             $script:uiaWin = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$script:hwnd)
             Write-Host "[focused] Source pickers: $(($pickWanted | ForEach-Object { $_.Shot }) -join ', ')"
@@ -9027,7 +9027,7 @@ if ($Only.Count -gt 0) {
     $xboxWanted = @($xboxSlotTargets | Where-Object { Want $_ })
     if ($xboxWanted.Count -gt 0) {
         Write-Host "[focused] Xbox slot: $($xboxWanted -join ', ')"
-        Ensure-MacrosLoaded -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+        Ensure-MacrosLoaded -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
         Start-Sleep -Milliseconds 2000
         $script:uiaWin = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$script:hwnd)
         if (Open-SlotPage -Type 0 -Label "Xbox slot (Macros and Menus)") {
@@ -9052,7 +9052,7 @@ if ($Only.Count -gt 0) {
         $needXboxPad = (Want "pad-lighting-guide-led") -or (Want "pad-bass-shakers")
         if ($needXboxPad -and -not $script:Staged) {
             Ensure-DeviceAssigned -DeviceNamePart "Xbox Series X GIP" -PadIndex 0 -SlotType 0 `
-                -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+                -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
             Start-Sleep -Milliseconds 2000
             $script:uiaWin = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$script:hwnd)
         }
@@ -9139,7 +9139,7 @@ if ($Only.Count -gt 0) {
         $wiiWanted = @(@("pad-gyro-grip", "pad-pointer", "wii-pointer-mode") | Where-Object { Want $_ })
         if ($wiiWanted.Count -gt 0) {
             Ensure-DeviceAssigned -DeviceNamePart "Wii Remote" -PadIndex 4 -SlotType 2 `
-                -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+                -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
             Start-Sleep -Milliseconds 2000
             $script:uiaWin = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$script:hwnd)
         }
@@ -9195,7 +9195,7 @@ if ($Only.Count -gt 0) {
             # Deck body in the picture in Buttons.
             @{ Shot = "pad-extended-steam-deck";       Id = "steam-deck-composite" })) {
             if (-not (Want $vpF.Shot)) { continue }
-            if (-not (Set-SlotPreset -PadIndex 4 -ProfileId $vpF.Id -XmlPath $PadForgeXml -ExePath $PadForgeExe -ClearCustomize)) {
+            if (-not (Set-SlotPreset -PadIndex 4 -ProfileId $vpF.Id -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe -ClearCustomize)) {
                 Write-Host "  !! SKIPPED $($vpF.Shot)" -ForegroundColor Red
                 continue
             }
@@ -9264,7 +9264,7 @@ if ($Only.Count -gt 0) {
         if (-not $gridStaged) {
             Refuse-Shots (@($gridWanted) + @(if ($motionWanted) { "mapping-motion-rows" })) "the grid slots were not staged"
         } else {
-            Ensure-MacrosLoaded -XmlPath $PadForgeXml -ExePath $PadForgeExe | Out-Null
+            Ensure-MacrosLoaded -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe | Out-Null
             Start-Sleep -Milliseconds 2000
             $script:uiaWin = [System.Windows.Automation.AutomationElement]::FromHandle([IntPtr]$script:hwnd)
             if ($gridWanted.Count -gt 0) {
@@ -9352,7 +9352,7 @@ function Next { $script:n++; return $script:n }
 
 if (-not $SkipToTail) {
 # ---- 1. Home ----
-# Home took the Dashboard's place in PadForge 6 (#574). Its sidebar entry
+# Home took the Dashboard's place in XBOXDS4ONE 6 (#574). Its sidebar entry
 # kept the id Nav_Dashboard, so Nav still asks for "Dashboard", and the
 # shots keep the file names the docs link.
 Write-Host "[$(Next)/$total] Home"
@@ -9589,8 +9589,8 @@ if (Open-SlotPage -Type 0 -Label "Xbox slot") {
     $macroNames = @("Quick Combo", "Volume Control", "Sleep Controller", "Center Cursor", "Rapid Fire", "Aim Layer", "Key Glow")
     $macroSeen = 0
     try {
-        $mkChk = Read-SettingsXml $PadForgeXml
-        $mkRoot = $mkChk.PadForgeSettings.SelectSingleNode("Macros")
+        $mkChk = Read-SettingsXml $XBOXDS4ONEXml
+        $mkRoot = $mkChk.XBOXDS4ONESettings.SelectSingleNode("Macros")
         if ($mkRoot) { $macroSeen = @($mkRoot.SelectNodes("Macro")).Count }
     } catch { $macroSeen = 0 }
     Write-Host "  macros in settings: $macroSeen"
@@ -9602,12 +9602,12 @@ if (Open-SlotPage -Type 0 -Label "Xbox slot") {
     # skipped.
     if (-not $script:MacrosPresent) {
         Write-Host "  !! macro list empty -- repairing" -ForegroundColor Yellow
-        if (Ensure-MacrosLoaded -XmlPath $PadForgeXml -ExePath $PadForgeExe) {
+        if (Ensure-MacrosLoaded -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe) {
             Open-SlotPage -Type 0 -Label "Xbox slot (macro repair)" | Out-Null
             $macroSeen = 0
             try {
-                $mkChk2 = Read-SettingsXml $PadForgeXml
-                $mkRoot2 = $mkChk2.PadForgeSettings.SelectSingleNode("Macros")
+                $mkChk2 = Read-SettingsXml $XBOXDS4ONEXml
+                $mkRoot2 = $mkChk2.XBOXDS4ONESettings.SelectSingleNode("Macros")
                 if ($mkRoot2) { $macroSeen = @($mkRoot2.SelectNodes("Macro")).Count }
             } catch { $macroSeen = 0 }
             $script:MacrosPresent = ($macroSeen -gt 0)
@@ -9855,7 +9855,7 @@ Capture-KeyboardScreensCard
 # another pushes every count below it out by a card. The focused pass has
 # been anchor-driven since 2026-08.
 #
-# The page's five groups (PadForge 6, #574), each opened by its button
+# The page's five groups (XBOXDS4ONE 6, #574), each opened by its button
 # before its cards are looked for: General (Language, Appearance, Window,
 # Updates), Input (Input Engine, Assignment Prompts, Battery Alerts),
 # Hardware (Hardware Support), Drivers (one card of drivers, HidHide Options
@@ -9865,7 +9865,7 @@ Capture-KeyboardScreensCard
 # heading.
 #
 # The SteamVR row shows its install location only while SteamVR is ABSENT
-# and Uninstall only for a PadForge-owned install, so what it captures
+# and Uninstall only for a XBOXDS4ONE-owned install, so what it captures
 # depends on the machine's state. Both are honest. settings-drivers,
 # settings-bthps3, settings-driver-cards, driver-status-flames and
 # settings-steamvr are docs pages pointing at the one Drivers card, framed
@@ -10016,7 +10016,7 @@ $valvePresets = @(
 )
 foreach ($vp in $valvePresets) {
     if (-not (Want $vp.Shot)) { continue }
-    if (-not (Set-SlotPreset -PadIndex 4 -ProfileId $vp.Id -XmlPath $PadForgeXml -ExePath $PadForgeExe -ClearCustomize)) {
+    if (-not (Set-SlotPreset -PadIndex 4 -ProfileId $vp.Id -XmlPath $XBOXDS4ONEXml -ExePath $XBOXDS4ONEExe -ClearCustomize)) {
         Write-Host "  !! SKIPPED $($vp.Shot)" -ForegroundColor Red
         continue
     }
@@ -10059,8 +10059,8 @@ $menuShots = @("pad-menus", "menu-macro-cell", "menu-icon-packs", "pad-menus-key
 Write-Host "[3b] Menus: $($menuShots -join ', ') (#390)"
 $menuSeen = 0
 try {
-    $mnChk = Read-SettingsXml $PadForgeXml
-    $menuSeen = @($mnChk.PadForgeSettings.SelectNodes("SlotMappingSets/MappingSet/Menu")).Count
+    $mnChk = Read-SettingsXml $XBOXDS4ONEXml
+    $menuSeen = @($mnChk.XBOXDS4ONESettings.SelectNodes("SlotMappingSets/MappingSet/Menu")).Count
 } catch { $menuSeen = 0 }
 Write-Host "  menus in settings: $menuSeen"
 if ($menuSeen -lt 1) {
@@ -10130,7 +10130,7 @@ Close-DeviceFolds
 # scroll" against rows plainly in the list). The KBM block already
 # takes the fresh-process cure at its own head; this tail cluster is
 # its sibling and gets the same one.
-Reset-PadForgeUia -ExePath $PadForgeExe | Out-Null
+Reset-XBOXDS4ONEUia -ExePath $XBOXDS4ONEExe | Out-Null
 Nav "Devices"; Start-Sleep -Milliseconds 800
 
 Write-Host "[3b] Power / idle disconnect + battery, and Quick Charge (#372)"
@@ -10257,7 +10257,7 @@ if (Select-DeviceByName36 "MIDI Keyboard") {
 }
 Close-DeviceFolds
 
-# The extras' pages (PadForge 6, #574). The Dashboard's services became the
+# The extras' pages (XBOXDS4ONE 6, #574). The Dashboard's services became the
 # Extras page: a catalog, and a page for each extra with its less-used rows
 # under a More row. Home keeps the engine card and the virtual
 # controllers (PageOrderContractTests holds both orders). A recipe reaches
@@ -10473,51 +10473,51 @@ finally {
 Write-Host ""
 Write-Host "=== STEP 4: Cleanup ===" -ForegroundColor Cyan
 
-# Stop PadForge, restore XML. A run that stopped before taking its backup
+# Stop XBOXDS4ONE, restore XML. A run that stopped before taking its backup
 # never replaced the settings file, so there is nothing to put back. A
 # backup an earlier interrupted run left goes back here when the pre-flight
 # had a marker's word for it, as the guards above would put it back. A
 # backup the run has no such word for stays where it is, beside a settings
 # file the run never wrote.
 #
-# The order is the point. PadForge is stopped first, because a live app saves
+# The order is the point. XBOXDS4ONE is stopped first, because a live app saves
 # its own state over a restored file. The marker goes as soon as the settings
 # are back, before the backup does: a run that dies between the two leaves a
 # backup with no marker beside a file with the same bytes, which the next run
 # takes for what it is. The other order would leave a marker vouching for a
 # backup the owner has since moved on from.
-Write-Host "  Stopping PadForge..."
-Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
-Wait-PadForgeGone
+Write-Host "  Stopping XBOXDS4ONE..."
+Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
+Wait-XBOXDS4ONEGone
 if ((Test-Path $xmlBak) -and $script:BackupHoldsSettings) {
     # Once the run has taken its backup, the file about to be replaced is
     # the run's own capture file and its copy is a courtesy. Before that the
     # file may be anyone's, and it is not replaced unless the copy was made.
     $kept = $null
     $keptBak = $null
-    try { $kept = Save-SettingsCopy $PadForgeXml }
-    catch { Write-Host "  !! could not copy $PadForgeXml aside before the restore: $($_.Exception.Message)" -ForegroundColor Red }
-    if ($kept -or $script:BackupTaken -or -not (Test-Path $PadForgeXml)) {
-        Copy-Item $xmlBak $PadForgeXml -Force
+    try { $kept = Save-SettingsCopy $XBOXDS4ONEXml }
+    catch { Write-Host "  !! could not copy $XBOXDS4ONEXml aside before the restore: $($_.Exception.Message)" -ForegroundColor Red }
+    if ($kept -or $script:BackupTaken -or -not (Test-Path $XBOXDS4ONEXml)) {
+        Copy-Item $xmlBak $XBOXDS4ONEXml -Force
         Remove-BackupMarker $xmlBak
         try {
             $keptBak = Save-SettingsCopy $xmlBak
             Remove-Item $xmlBak -Force
         } catch { Write-Host "  !! the backup could not be cleared and stays beside the restored file: $($_.Exception.Message)" -ForegroundColor Red }
-        Write-Host "  Restored PadForge.xml from backup" -ForegroundColor Green
+        Write-Host "  Restored XBOXDS4ONE.xml from backup" -ForegroundColor Green
         if ($kept) { Write-Host "  The file it replaced is kept as $kept" -ForegroundColor DarkGray }
         if ($keptBak) { Write-Host "  The backup is kept as $keptBak" -ForegroundColor DarkGray }
     } else {
-        Write-Host "  !! NOT restored: $PadForgeXml could not be copied aside first, and this run took no backup of its own. $xmlBak stays beside it for the next run to settle" -ForegroundColor Red
+        Write-Host "  !! NOT restored: $XBOXDS4ONEXml could not be copied aside first, and this run took no backup of its own. $xmlBak stays beside it for the next run to settle" -ForegroundColor Red
     }
 } elseif (Test-Path $xmlBak) {
     Write-Host "  !! $xmlBak stays where it is. Nothing told this run that it holds the settings to put back, and the run never wrote the settings file" -ForegroundColor Red
 } else {
-    Write-Host "  No backup taken, so PadForge.xml was never replaced" -ForegroundColor DarkGray
+    Write-Host "  No backup taken, so XBOXDS4ONE.xml was never replaced" -ForegroundColor DarkGray
 }
 
 # Clean up temporary Edge profile used for web screenshots.
-$edgeTempProfile = Join-Path $env:TEMP "PadForge_EdgeCapture"
+$edgeTempProfile = Join-Path $env:TEMP "XBOXDS4ONE_EdgeCapture"
 if (Test-Path $edgeTempProfile) {
     Remove-Item $edgeTempProfile -Recurse -Force -EA SilentlyContinue
     Write-Host "  Cleaned up temporary Edge profile"
@@ -10534,10 +10534,10 @@ foreach ($tk in $toastKeys) {
 Remove-Item $toastPriorPath -Force -EA SilentlyContinue
 Write-Host "  Toast notification settings restored"
 
-# Relaunch PadForge clean on the restored (owner) settings so the app is left
+# Relaunch XBOXDS4ONE clean on the restored (owner) settings so the app is left
 # running exactly as before the run.
-Start-Process $PadForgeExe
-Write-Host "  Relaunched PadForge on restored settings" -ForegroundColor Green
+Start-Process $XBOXDS4ONEExe
+Write-Host "  Relaunched XBOXDS4ONE on restored settings" -ForegroundColor Green
 
 
 Write-Host ""
@@ -10558,7 +10558,7 @@ Write-Host "=== DONE ===" -ForegroundColor Cyan
 # None of these is fatal. All of them are printed. A run that ends with a
 # non-empty list is a run whose output still needs work, and saying so here is
 # the whole point.
-$auditRoot = Split-Path (Split-Path $OutputDir -Parent) -Parent   # padforge.org
+$auditRoot = Split-Path (Split-Path $OutputDir -Parent) -Parent   # XBOXDS4ONE.org
 $mdFiles   = @(Get-ChildItem -Path (Split-Path $OutputDir -Parent) -Filter *.md -Recurse -EA SilentlyContinue)
 $imgFiles  = @(Get-ChildItem -Path $OutputDir -Filter *.png -EA SilentlyContinue)
 

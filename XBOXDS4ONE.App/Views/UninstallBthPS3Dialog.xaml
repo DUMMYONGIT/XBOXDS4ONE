@@ -1,0 +1,60 @@
+<views:DialogWindow AutomationProperties.IsDialog="True" x:Class="XBOXDS4ONE.Views.UninstallBthPS3Dialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:strings="clr-namespace:XBOXDS4ONE.Resources.Strings"
+        xmlns:controls="clr-namespace:XBOXDS4ONE.Controls"
+        xmlns:common="clr-namespace:XBOXDS4ONE.Common"
+        xmlns:views="clr-namespace:XBOXDS4ONE.Views"
+        BodyPadding="22,14,22,18"
+        Title="{Binding BthPS3Uninstall_Title, Source={x:Static strings:Strings.Instance}}"
+        Subtitle="{Binding BthPS3Uninstall_Message, Source={x:Static strings:Strings.Instance}}">
+
+    <!-- The removal of BthPS3 from the PC, the HIDMaestro removal's window
+         without the usbip-win2 choice: what the preview found, item by item,
+         over a foot where Cancel holds the default and the first focus. -->
+    <views:DialogWindow.Foot>
+        <controls:FlexLinePanel Style="{StaticResource DialogFootPanel}">
+            <Button x:Name="RefreshButton" Style="{StaticResource DialogQuietButton}"
+                    Content="{Binding Common_Refresh, Source={x:Static strings:Strings.Instance}}"
+                    Click="RefreshButton_Click"/>
+            <Button x:Name="CancelButton" Style="{StaticResource DialogButton}"
+                    Content="{Binding Common_Cancel, Source={x:Static strings:Strings.Instance}}"
+                    IsCancel="True" IsDefault="True"/>
+            <Button x:Name="ActionButton" Style="{StaticResource DialogDangerButton}" IsEnabled="False"
+                    Content="{Binding Common_Uninstall, Source={x:Static strings:Strings.Instance}}"
+                    Click="ActionButton_Click"/>
+        </controls:FlexLinePanel>
+    </views:DialogWindow.Foot>
+
+    <StackPanel>
+        <!-- While the preview reads the PC. -->
+        <Border x:Name="BusyPanel" Style="{StaticResource DialogLiveBox}">
+            <StackPanel Orientation="Horizontal">
+                <ui:ProgressRing IsIndeterminate="True" Width="16" Height="16" Margin="0,0,10,0"/>
+                <TextBlock Text="{Binding BthPS3Uninstall_Reading, Source={x:Static strings:Strings.Instance}}"
+                           VerticalAlignment="Center" common:LiveText.Polite="True"/>
+            </StackPanel>
+        </Border>
+
+        <!-- What holds the removal, or a preview that failed: the boards'
+             wait box. -->
+        <Border x:Name="NotePanel" Style="{StaticResource DialogWaitBox}" Margin="0,0,0,10" Visibility="Collapsed">
+            <TextBlock x:Name="NoteText" TextWrapping="Wrap" common:LiveText.Polite="True"/>
+        </Border>
+        <!-- Nothing to remove, or why BthPS3 stays: a plain line, with no
+             box. -->
+        <TextBlock x:Name="PlainNoteText" Margin="0,0,0,10" Visibility="Collapsed" TextWrapping="Wrap"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" common:LiveText.Polite="True"/>
+
+        <!-- Each item the preview found: what it is over where it is, with
+             why one stays or failed, and what becomes of it at the row's
+             end. -->
+        <Border x:Name="EntryFrame" Style="{StaticResource DialogList}" Visibility="Collapsed">
+            <ListBox x:Name="EntryList" Style="{StaticResource DialogListBox}" MaxHeight="300"
+                     ItemContainerStyle="{StaticResource DialogListItemTall}"
+                     ItemTemplate="{StaticResource DialogRemovalRow}"
+                     AutomationProperties.Name="{Binding BthPS3Uninstall_Title, Source={x:Static strings:Strings.Instance}}"/>
+        </Border>
+    </StackPanel>
+</views:DialogWindow>

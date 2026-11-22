@@ -104438,7 +104438,7 @@
    "plan": {
     "alternates": [],
     "notes": [
-     "OpenRGB sets the device mode to software at open (RazerController.cpp:68-77); openrazer does not, and PadForge never sends a device-mode report"
+     "OpenRGB sets the device mode to software at open (RazerController.cpp:68-77); openrazer does not, and XBOXDS4ONE never sends a device-mode report"
     ],
     "claim": [],
     "storage_byte": 0,
@@ -104809,7 +104809,7 @@
    "plan": {
     "alternates": [],
     "notes": [
-     "OpenRGB sets the device mode to software at open (RazerController.cpp:68-77); openrazer does not, and PadForge never sends a device-mode report"
+     "OpenRGB sets the device mode to software at open (RazerController.cpp:68-77); openrazer does not, and XBOXDS4ONE never sends a device-mode report"
     ],
     "claim": [],
     "storage_byte": 0,

@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new feature or improvement for PadForge
+description: Suggest a new feature or improvement for XBOXDS4ONE
 title: "[Feature Request] "
 labels: ["enhancement"]
 body:
@@ -8,7 +8,7 @@ body:
       value: |
         ## Before You Start
 
-        For early-stage ideas or open-ended brainstorming, start a thread in [Discussions](https://github.com/hifihedgehog/PadForge/discussions) instead. This form is for proposals that are concrete enough to act on.
+        For early-stage ideas or open-ended brainstorming, start a thread in [Discussions](https://github.com/DUMMYONGIT/XBOXDS4ONE/discussions) instead. This form is for proposals that are concrete enough to act on.
 
   - type: textarea
     id: description
@@ -46,5 +46,5 @@ body:
     attributes:
       label: Pre-submission checklist
       options:
-        - label: I searched [existing issues](https://github.com/hifihedgehog/PadForge/issues?q=is%3Aissue) and [Discussions](https://github.com/hifihedgehog/PadForge/discussions) for the same or a similar request.
+        - label: I searched [existing issues](https://github.com/DUMMYONGIT/XBOXDS4ONE/issues?q=is%3Aissue) and [Discussions](https://github.com/DUMMYONGIT/XBOXDS4ONE/discussions) for the same or a similar request.
           required: true

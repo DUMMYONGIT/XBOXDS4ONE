@@ -12,7 +12,7 @@ WHAT IT READS, under OpenRGB's Controllers/SinowealthController:
 The Sinowealth keyboards with product ID 0x010C are laid out by
 KeyboardLayoutManager, from KeyboardLayouts.g.cs.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/HidFamilies/SinowealthLayouts.g.cs.
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/SinowealthLayouts.g.cs.
 
 Run it without Python's -I switch: it imports tools/openrgb_cpp.py.
 
@@ -27,7 +27,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies", "SinowealthLayouts.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies", "SinowealthLayouts.g.cs")
 
 THOR_REL = "SinowealthKeyboard90Controller/SinowealthKeyboard90Controller.h"
 ZET_REL = "Sinowealth1007Controller/RGBController_Sinowealth1007.cpp"
@@ -148,7 +148,7 @@ def main():
     out.append("//     RGBController_Sinowealth1007.cpp, with the key names of")
     out.append("//     RGBController/RGBControllerKeyNames.cpp). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     out.append("{")
     out.append("    internal static partial class SinowealthLayouts")
     out.append("    {")

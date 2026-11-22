@@ -1,4 +1,4 @@
-"""The keyboard layouts of OpenRGB's KeyboardLayoutManager, for PadForge (#557).
+"""The keyboard layouts of OpenRGB's KeyboardLayoutManager, for XBOXDS4ONE (#557).
 
 OpenRGB builds a keyboard's key grid in KeyboardLayoutManager
 (KeyboardLayoutManager/KeyboardLayoutManager.cpp): four base blocks put
@@ -6,7 +6,7 @@ together by size (main keys, the F-key row, the navigation block, the number
 pad), a regional overlay (ANSI, ISO, QWERTZ, AZERTY, JIS, ABNT2), a list of
 LED values, a regional fix list from the caller, and then the caller's own
 per-model edit lists. Fifteen of its families build their keyboards this way.
-PadForge.App/Common/Input/Peripherals/HidFamilies/KeyboardLayoutManager.cs is
+XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/KeyboardLayoutManager.cs is
 a line-for-line port of the algorithm. This script reads its inputs from
 OpenRGB at a commit and writes them to KeyboardLayouts.g.cs beside it:
 
@@ -27,7 +27,7 @@ and stops when its text at OpenRGB differs from the text it was ported from.
 --harness also writes tools/openrgb_klm/klm_harness.cpp, a C++ program built
 from OpenRGB's own KeyboardLayoutManager.cpp and the families' own tables that
 dumps every recipe in every region it can take (tools/openrgb_klm/build.cmd).
-Its dump, tools/openrgb_klm/klm_dump.tsv, is the fixture PadForge's port is
+Its dump, tools/openrgb_klm/klm_dump.tsv, is the fixture XBOXDS4ONE's port is
 tested against cell by cell.
 
 Usage:
@@ -44,7 +44,7 @@ import openrgb_cpp as oc
 from openrgb_cpp import CppError, Expr, Node
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies", "KeyboardLayouts.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies", "KeyboardLayouts.g.cs")
 HARNESS = os.path.join(PROJ_ROOT, "tools", "openrgb_klm", "klm_harness.cpp")
 
 KLM_CPP = "KeyboardLayoutManager/KeyboardLayoutManager.cpp"
@@ -812,7 +812,7 @@ def write_cs(commit, rd, blocks, overlays, recipes, models):
     w("//     tables of the fifteen families that build keyboards with it). Do not")
     w("//     edit by hand.")
     w("// </auto-generated>")
-    w("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    w("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     w("{")
     w("    internal static partial class KeyboardLayouts")
     w("    {")

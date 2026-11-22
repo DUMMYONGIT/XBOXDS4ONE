@@ -1,0 +1,48 @@
+using System;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
+using XBOXDS4ONE.ViewModels;
+using Xunit;
+
+namespace XBOXDS4ONE.Tests
+{
+    /// <summary>The dial bound to a source's generic Sensitivity (a Gyro
+    /// Lean source, a row's first one or an added one) reaches the same
+    /// values as the row's own item holds, and its text box shows them: a
+    /// slider whose Minimum sat above the item's floor showed a value it
+    /// could not reach, and a two-place box showed 0.00 for a rotation's
+    /// 0.001. Every source is drawn by one line, so the dial is one.</summary>
+    public class RowSensitivitySliderTests
+    {
+        [Fact]
+        public void EveryRowSensitivityDial_ReachesTheItemsRange_AndShowsIt()
+        {
+            double floor = new MappingSourceItem { Sensitivity = 0 }.Sensitivity;
+            double ceiling = new MappingSourceItem { Sensitivity = 100 }.Sensitivity;
+            Assert.Equal(floor, new MappingItem("A", "LeftThumbAxisX", MappingCategory.LeftStick) { Sensitivity = 0 }.Sensitivity);
+            Assert.Equal(ceiling, new MappingItem("A", "LeftThumbAxisX", MappingCategory.LeftStick) { Sensitivity = 100 }.Sensitivity);
+
+            string path = AuditDelta20260823Tests.FindRepoFile(Path.Combine("XBOXDS4ONE.App", "Views", "PadPage.xaml"));
+            var sliders = XDocument.Load(path).Descendants()
+                .Where(e => e.Name.LocalName == "Slider"
+                    && ((string)e.Attribute("Value") ?? "").StartsWith("{Binding Sensitivity,", StringComparison.Ordinal)
+                    && ((string)e.Parent?.Attribute("Visibility") ?? "").Contains("IsGyroLeanSource", StringComparison.Ordinal))
+                .ToList();
+            Assert.Single(sliders);
+            foreach (var slider in sliders)
+            {
+                Assert.Equal(floor, double.Parse((string)slider.Attribute("Minimum"), CultureInfo.InvariantCulture));
+                Assert.Equal(ceiling, double.Parse((string)slider.Attribute("Maximum"), CultureInfo.InvariantCulture));
+                var box = slider.ElementsAfterSelf().First(e => e.Name.LocalName == "TextBox");
+                string text = (string)box.Attribute("Text");
+                Assert.StartsWith("{Binding Sensitivity,", text);
+                int start = text.IndexOf("{0:", StringComparison.Ordinal);
+                string format = text.Substring(start, text.IndexOf('}', start) - start + 1);
+                string shown = string.Format(CultureInfo.InvariantCulture, format, floor);
+                Assert.Equal(floor, double.Parse(shown, CultureInfo.InvariantCulture));
+            }
+        }
+    }
+}

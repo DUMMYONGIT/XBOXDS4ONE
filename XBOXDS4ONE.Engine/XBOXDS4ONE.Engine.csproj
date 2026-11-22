@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>XBOXDS4ONE.Engine</RootNamespace>
+    <AssemblyName>XBOXDS4ONE.Engine</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+
+    <!--
+      CA1416: this assembly is Windows-only by design (SDL3, Raw Input, HID,
+      registry-driven device enumeration). The TargetFramework already pins
+      net10.0-windows; the platform-compatibility warnings on RegistryKey
+      etc. don't add information.
+    -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+    <Product>XBOXDS4ONE</Product>
+    <Company>XBOXDS4ONE</Company>
+    <Copyright>Copyright © XBOXDS4ONE Contributors</Copyright>
+    <Description>XBOXDS4ONE input engine — SDL3, Raw Input, and HID device enumeration.</Description>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Pure-managed crypto (MIT) for the Remote Link pairing/transport: X25519
+         key agreement, Ed25519 static-key auth, ChaCha20-Poly1305 AEAD. The
+         in-box System.Security.Cryptography.ChaCha20Poly1305 is gated to Windows
+         11 (build 22000+); this managed implementation runs on the app's Win10
+         1809 floor, so it carries no OS gate and keeps the cipher suite pinned. -->
+    <PackageReference Include="BouncyCastle.Cryptography" Version="2.7.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared AssemblyVersion + AssemblyFileVersion — single source of truth
+         across XBOXDS4ONE.App and XBOXDS4ONE.Engine. -->
+    <Compile Include="..\SharedVersion.cs" Link="Properties\SharedVersion.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Analog keyboard key tables and model catalogs (#468), read by
+         AnalogKeyboardData under XBOXDS4ONE.Engine.Common.AnalogKeyboard.Data. -->
+    <EmbeddedResource Include="Common\AnalogKeyboard\Data\*.json"
+                      LogicalName="XBOXDS4ONE.Engine.Common.AnalogKeyboard.Data.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

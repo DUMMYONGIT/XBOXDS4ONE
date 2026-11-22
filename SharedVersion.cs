@@ -1,5 +1,5 @@
-﻿// Single source of truth for AssemblyVersion + AssemblyFileVersion across
-// the PadForge solution. Both PadForge.App and PadForge.Engine link this
+// Single source of truth for AssemblyVersion + AssemblyFileVersion across
+// the XBOXDS4ONE solution. Both XBOXDS4ONE.App and XBOXDS4ONE.Engine link this
 // file as a shared compile item via <Compile Include="..\SharedVersion.cs">,
 // so the two assemblies always ship at the same version number — no
 // human discipline needed at release time, repo-enforced.

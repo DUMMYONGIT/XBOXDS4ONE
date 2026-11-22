@@ -10,7 +10,7 @@ WHAT IT READS, under OpenRGB's Controllers/QMKController:
   column). The controller applies the first patch whose product ID matches.
 - RGBController/RGBControllerKeyNames.cpp: the string behind each KEY_ name.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/HidFamilies/QmkTables.g.cs.
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/QmkTables.g.cs.
 
 Run without Python's -I switch: it imports tools/openrgb_cpp.py.
 
@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import openrgb_cpp as cpp  # noqa: E402
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies", "QmkTables.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies", "QmkTables.g.cs")
 
 Q = "Controllers/QMKController/"
 KEYCODES_H = Q + "QMKKeycodes.h"
@@ -113,7 +113,7 @@ def main():
     out.append("//     QMKKeychronController_Devices.cpp, with the key names of")
     out.append("//     RGBController/RGBControllerKeyNames.cpp). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     out.append("{")
     out.append("    internal static partial class QmkTables")
     out.append("    {")

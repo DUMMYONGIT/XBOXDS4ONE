@@ -22,7 +22,7 @@ RGBController/RGBControllerKeyNames.cpp:
   the names and the buffer places of the k3_keychron struct, its third,
   fourth and fifth members.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/HidFamilies/KeyboardLedNames.g.cs,
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/KeyboardLedNames.g.cs,
 each array as OpenRGB holds it, a name as its string and NA as -1, with
 CRLF line endings.
 
@@ -42,7 +42,7 @@ import openrgb_cpp as oc  # noqa: E402
 from openrgb_cpp import CppError, Node  # noqa: E402
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies",
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies",
                       "KeyboardLedNames.g.cs")
 
 NA = 0xFFFFFFFF
@@ -186,7 +186,7 @@ def main():
     out.append("//     keys out without KeyboardLayoutManager, with the key names of")
     out.append("//     RGBController/RGBControllerKeyNames.cpp). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     out.append("{")
     out.append("    internal static partial class KeyboardLedNames")
     out.append("    {")

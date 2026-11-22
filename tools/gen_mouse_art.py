@@ -11,13 +11,13 @@ controller previews already use for their 2DModels overlays.
 Every layer shares one canvas, so the view composites them all at (0,0) with no
 arithmetic and nothing to desynchronise.
 
-Emits PNG layers into PadForge.App/2DModels/MOUSE/ and a small C# descriptor.
+Emits PNG layers into XBOXDS4ONE.App/2DModels/MOUSE/ and a small C# descriptor.
 """
 import re, sys, os, cairosvg, cv2, numpy as np
 
-SRC = sys.argv[1] if len(sys.argv) > 1 else "PadForge.App/2DModels/MOUSE/mouse.svg"
-OUTDIR = sys.argv[2] if len(sys.argv) > 2 else "PadForge.App/2DModels/MOUSE"
-CS = sys.argv[3] if len(sys.argv) > 3 else "PadForge.App/Views/MouseArt.g.cs"
+SRC = sys.argv[1] if len(sys.argv) > 1 else "XBOXDS4ONE.App/2DModels/MOUSE/mouse.svg"
+OUTDIR = sys.argv[2] if len(sys.argv) > 2 else "XBOXDS4ONE.App/2DModels/MOUSE"
+CS = sys.argv[3] if len(sys.argv) > 3 else "XBOXDS4ONE.App/Views/MouseArt.g.cs"
 
 RW = 848                                     # 4x the art's own width; ample for the pane
 svg = open(SRC, encoding="utf-8").read()
@@ -152,7 +152,7 @@ lines = [
     "// redrawing any of the shape. Nothing here approximates a curve.",
     "using System.Windows;",
     "",
-    "namespace PadForge.Views;",
+    "namespace XBOXDS4ONE.Views;",
     "",
     "internal static class MouseArt",
     "{",

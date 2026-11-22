@@ -1,8 +1,8 @@
-# PadForge: Build & Project Reference
+# XBOXDS4ONE: Build & Project Reference
 
 ## Overview
 
-PadForge is a controller mapping utility (fork of [x360ce](https://github.com/x360ce/x360ce)) rebuilt with:
+XBOXDS4ONE is a controller mapping utility (fork of [x360ce](https://github.com/x360ce/x360ce)) rebuilt with:
 - **DSU/Cemuhook** motion server for gyro/accelerometer passthrough
 - **[HelixToolkit](https://github.com/helix-toolkit/helix-toolkit)** for interactive 3D controller visualization
 - **[HIDMaestro](https://github.com/hifihedgehog/HIDMaestro)** as the single virtual-controller backend (Xbox / PlayStation / Nintendo / Extended types)
@@ -18,8 +18,8 @@ Steam Controller hardware art derives from **Valve's own published CAD** (CC BY-
 ## Solution Structure
 
 ```
-PadForge.sln
-├── PadForge.Engine/          (Class library -- net10.0-windows)
+XBOXDS4ONE.sln
+├── XBOXDS4ONE.Engine/          (Class library -- net10.0-windows)
 │   ├── Common/
 │   │   ├── SDL3Minimal.cs         SDL3 P/Invoke declarations
 │   │   ├── InputTypes.cs          Enums and constant tables: MapType, ObjectGuid, InputDeviceType, etc.
@@ -41,7 +41,7 @@ PadForge.sln
 │   └── Properties/
 │       └── AssemblyInfo.cs
 │
-├── PadForge.App/             (WPF Application -- net10.0-windows10.0.26100.0)
+├── XBOXDS4ONE.App/             (WPF Application -- net10.0-windows10.0.26100.0)
 │   ├── App.xaml / .cs             Entry point, WPF-UI resources, converter registration
 │   ├── MainWindow.xaml / .cs      Shell: title bar with the search box and the profile switcher,
 │   │                              NavigationView with the engine state at its foot, page switching,
@@ -151,10 +151,10 @@ PadForge.sln
 │   ├── Resources/
 │   │   ├── ControllerIcons.xaml        XAML icon resource dictionary
 │   │   ├── Shell.xaml                  The sidebar's line icons and the two templates that draw it
-│   │   ├── PadForge.ico               Application icon
+│   │   ├── XBOXDS4ONE.ico               Application icon
 │   │   ├── SDL3/x64/SDL3.dll          Custom SDL3 fork (HIDMaestro filter, Switch 2 Pro)
 │   │   ├── SDL3/x64/libusb-1.0.dll    libusb for WinUSB device access
-│   │   ├── OpenXInput/x64/xinput1_4.dll  Custom XInput shim (filters HIDMaestro virtuals from PadForge's own view)
+│   │   ├── OpenXInput/x64/xinput1_4.dll  Custom XInput shim (filters HIDMaestro virtuals from XBOXDS4ONE's own view)
 │   │   ├── */arm64/                   ARM64 copies of the native DLLs, beside the x64 folders of
 │   │   │                              SDL3, OpenXInput and VisualCpp, plus Vosk/arm64/libvosk.dll
 │   │   ├── HIDMaestro/HIDMaestro.Core.dll  HIDMaestro managed client
@@ -165,10 +165,10 @@ PadForge.sln
 │   └── Properties/
 │       └── AssemblyInfo.cs
 │
-├── PadForge.SteamWorkshop/        (Class library, net10.0-windows) Steam Workshop config import
-├── PadForge.Tests/                xunit suite for the App and the Engine
-├── PadForge.SteamWorkshop.Tests/  xunit suite for the Workshop client
-├── PadForge.NativeChecks/         Console helper PadForge.Tests runs against the bundled SDL3.dll
+├── XBOXDS4ONE.SteamWorkshop/        (Class library, net10.0-windows) Steam Workshop config import
+├── XBOXDS4ONE.Tests/                xunit suite for the App and the Engine
+├── XBOXDS4ONE.SteamWorkshop.Tests/  xunit suite for the Workshop client
+├── XBOXDS4ONE.NativeChecks/         Console helper XBOXDS4ONE.Tests runs against the bundled SDL3.dll
 │
 └── tools/
     ├── DsuDiag/                  DSU/Cemuhook diagnostic client
@@ -186,17 +186,17 @@ PadForge.sln
 - Windows 10 or Windows 11. An x64 machine builds both the x64 and the ARM64 exe. The `10.0.26100.0` in the target framework names the Windows SDK the build compiles against, restored from NuGet, not a Windows build the machine needs.
 - A clone folder of about 125 characters or fewer. The build runs `cswinrt.exe`, which cannot write past Windows' 259-character path limit, and the project refuses a deeper clone with a message rather than let the tool crash.
 
-All native DLLs, driver installers, and model assets are included in the repository under `PadForge.App/Resources/`, `PadForge.App/3DModels/`, and `PadForge.App/2DModels/`.
+All native DLLs, driver installers, and model assets are included in the repository under `XBOXDS4ONE.App/Resources/`, `XBOXDS4ONE.App/3DModels/`, and `XBOXDS4ONE.App/2DModels/`.
 
 ## NuGet Dependencies
 
-**PadForge.App.csproj:**
+**XBOXDS4ONE.App.csproj:**
 ```
 CommunityToolkit.Mvvm 8.4.2                        MVVM data binding
 Concentus 2.2.2                                    Opus codec for DualSense Bluetooth speaker and microphone audio
 HelixToolkit.Core.Wpf 2.27.3                       3D viewport rendering
 Microsoft.Windows.CsWinRT 2.3.1                    Projection of the in-box Windows.Devices.Midi2 (metadata in Resources/WinMD)
-Microsoft.Windows.Devices.Midi2 1.0.16-rc.3.7      Projection of the App SDK runtime, Microsoft's install or PadForge's build (from nuget-local/)
+Microsoft.Windows.Devices.Midi2 1.0.16-rc.3.7      Projection of the App SDK runtime, Microsoft's install or XBOXDS4ONE's build (from nuget-local/)
 NAudio.Wasapi 2.2.1                                WASAPI loopback capture and output
 Nefarius.Utilities.DeviceManagement 6.1.0          Driver-store installs for the DualShock 3 Bluetooth stack, USB port cycling for a hidden controller
 System.Management 10.0.13                          WMI queries for the handheld hidden-button learner
@@ -205,13 +205,13 @@ Vosk 0.3.38                                        Offline recognizer for voice 
 WPF-UI 4.3.0                                       Fluent Design theme
 ```
 
-**PadForge.Engine.csproj:**
+**XBOXDS4ONE.Engine.csproj:**
 ```
 BouncyCastle.Cryptography 2.7.0                    Remote Link pairing and transport cryptography
 System.Security.Cryptography.ProtectedData 10.0.13  DPAPI protection for this PC's Remote Link identity key
 ```
 
-**PadForge.SteamWorkshop.csproj:**
+**XBOXDS4ONE.SteamWorkshop.csproj:**
 ```
 SteamKit2 3.5.0                                    Anonymous Steam session for Workshop config import
 ```
@@ -219,10 +219,10 @@ SteamKit2 3.5.0                                    Anonymous Steam session for W
 ## Build
 
 ```bash
-dotnet publish -c Release PadForge.App/PadForge.App.csproj
+dotnet publish -c Release XBOXDS4ONE.App/XBOXDS4ONE.App.csproj
 ```
 
-Output: `PadForge.App/bin/Release/net10.0-windows10.0.26100.0/win-x64/publish/PadForge.exe` (single-file, self-contained)
+Output: `XBOXDS4ONE.App/bin/Release/net10.0-windows10.0.26100.0/win-x64/publish/XBOXDS4ONE.exe` (single-file, self-contained)
 
 > **Note:** Always use `dotnet publish`, not `dotnet build`. The project is configured for single-file publish with self-contained runtime.
 
@@ -235,16 +235,16 @@ Output: `PadForge.App/bin/Release/net10.0-windows10.0.26100.0/win-x64/publish/Pa
 ### ARM64 (since 4.5.1)
 
 ```bash
-dotnet publish -c Release -r win-arm64 PadForge.App/PadForge.App.csproj
+dotnet publish -c Release -r win-arm64 XBOXDS4ONE.App/XBOXDS4ONE.App.csproj
 ```
 
-Output: `PadForge.App/bin/Release/net10.0-windows10.0.26100.0/win-arm64/publish/PadForge.exe`. With no `-r` the build is x64, so existing scripts produce what they always have.
+Output: `XBOXDS4ONE.App/bin/Release/net10.0-windows10.0.26100.0/win-arm64/publish/XBOXDS4ONE.exe`. With no `-r` the build is x64, so existing scripts produce what they always have.
 
 Every bundled native binary sits in a folder named for its architecture: `Resources/SDL3/x64` and `Resources/SDL3/arm64`, and the same pair for `OpenXInput` and `VisualCpp`. `Interhaptics` has an `x64` folder only. The `$(NativeArch)` property picks the folder. `NativeBinaryArchitectureTests` reads the PE header of every `.dll` and `.sys` in an `x64` or `arm64` folder under `Resources` and fails when a file's machine type differs from its folder name.
 
-A publish for either architecture is refused if `SDL3.dll` or `libusb-1.0.dll` is missing from `Resources/SDL3/<arch>`, or `xinput1_4.dll` from `Resources/OpenXInput/<arch>`, and an ARM64 publish is refused if `libvosk.dll` is missing from `Resources/Vosk/arm64`. Those `Content` items are conditioned on `Exists`, so without the `RequireBundledNatives` target a missing file would publish anyway, and the auto build runs no tests that would notice. Without `SDL3.dll` the input engine cannot start. Without `libusb-1.0.dll` wired Switch 2 controllers and the GameCube adapter never open. Without the fork's `xinput1_4.dll` SDL loads the system one, and PadForge reads its own virtual controllers back as input. Without the ARM64 `libvosk.dll` voice macros lose the Vosk recognizer on ARM64. A publish for any runtime other than `win-x64` and `win-arm64` is refused too, since it would be handed the x64 libraries. `SDL3.dll` and `xinput1_4.dll` come from builds of the two forks, the ARM64 pair cross-compiled on an x64 machine with `cmake -A ARM64`. A plain `dotnet build` compiles without any of them.
+A publish for either architecture is refused if `SDL3.dll` or `libusb-1.0.dll` is missing from `Resources/SDL3/<arch>`, or `xinput1_4.dll` from `Resources/OpenXInput/<arch>`, and an ARM64 publish is refused if `libvosk.dll` is missing from `Resources/Vosk/arm64`. Those `Content` items are conditioned on `Exists`, so without the `RequireBundledNatives` target a missing file would publish anyway, and the auto build runs no tests that would notice. Without `SDL3.dll` the input engine cannot start. Without `libusb-1.0.dll` wired Switch 2 controllers and the GameCube adapter never open. Without the fork's `xinput1_4.dll` SDL loads the system one, and XBOXDS4ONE reads its own virtual controllers back as input. Without the ARM64 `libvosk.dll` voice macros lose the Vosk recognizer on ARM64. A publish for any runtime other than `win-x64` and `win-arm64` is refused too, since it would be handed the x64 libraries. `SDL3.dll` and `xinput1_4.dll` come from builds of the two forks, the ARM64 pair cross-compiled on an x64 machine with `cmake -A ARM64`. A plain `dotnet build` compiles without any of them.
 
-Three features have a native half, and `PadForge.Engine/Common/PlatformSupport.cs` decides each one by the architecture that half follows:
+Three features have a native half, and `XBOXDS4ONE.Engine/Common/PlatformSupport.cs` decides each one by the architecture that half follows:
 
 | Feature | Decided by | On ARM64 |
 |---|---|---|
@@ -258,15 +258,15 @@ Each rule names the architectures that have the native half and answers false fo
 
 A HidHide class filter entry that names a driver which is not running can stop every keyboard and mouse from starting. HidHide's x64 setup ships a watchdog service for that. An ARM64 install has none, so `HidHideArm64Installer` adds the filters only after the driver's control device opens, and at startup on an ARM64 machine takes out any filter entry whose service is gone, or is registered and stopped, which is the watchdog's own condition. On removal it takes the filters off before the device node, as HidHide's setup does. If the removal then stops part way with the node still in, it adds the filters back, provided the driver still answers and no command is still running after its three-minute wait. When every add succeeds the state is a complete install again and Uninstall stays on offer, and an add that fails is logged. nefcon's `remove` takes the device node alone. The service and the driver package stay, as they do after HidHide's own uninstall. `HidHideArm64InstallerTests` pins that order and the hashes of both bundled files.
 
-Four more features load a library the vendor's own software installs, and PadForge has no gate for them because the load itself answers. `LogitechGkey.dll` comes in x64 and x86 only (`LogitechGKeyCatalog`), and the SteamVR input service loads `bin\win64\openvr_api.dll` (`OpenVrConsumerService`), so an ARM64 process gets neither. The LIGHTSYNC engine and the OpenXR runtime are whatever the registry names, so they work in an ARM64 process only if the vendor registers an ARM64 one. None of these crashes the app. G-keys, LIGHTSYNC and OpenXR each show a status line, and the SteamVR input service logs the failed load and keeps retrying.
+Four more features load a library the vendor's own software installs, and XBOXDS4ONE has no gate for them because the load itself answers. `LogitechGkey.dll` comes in x64 and x86 only (`LogitechGKeyCatalog`), and the SteamVR input service loads `bin\win64\openvr_api.dll` (`OpenVrConsumerService`), so an ARM64 process gets neither. The LIGHTSYNC engine and the OpenXR runtime are whatever the registry names, so they work in an ARM64 process only if the vendor registers an ARM64 one. None of these crashes the app. G-keys, LIGHTSYNC and OpenXR each show a status line, and the SteamVR input service logs the failed load and keeps retrying.
 
-One more ARM64 piece lives in the SDL fork, not in PadForge. The fork's Xbox Elite paddle reader (`SDL_XINPUT_PADDLES`) builds for x64 and, since fork commit 011dd342aa, for ARM64. It has two routes. The Bluetooth route uses public WinRT calls. The USB and Xbox Wireless Adapter route reads an undocumented format from the Windows GameInput service, so the fork switches it on only where the files behind that format belong to a version family it has read, by product version: `GameInputSvc.exe` and `GameInput.dll` 0.2309.26100 from revision 8875, `Windows.Gaming.Input.dll` 10.0.26100 from 8737 and `drivers\xboxgip.sys` 10.0.26100 from 8972. `GameInputRedist.dll` is optional, and must be major version 3 when it is there. That is Windows 11 24H2 or 25H2 at build 26100.8973 or 26200.8973 (July 28, 2026) or later. On Windows 10 and older Windows 11 the route stays off, and paddles are read over Bluetooth only. The version resource carries no architecture, so one table serves x64 and ARM64. Until fork commit 5df5eff539 the check was five exact file hashes. They matched the Windows updates dated 2026-08-27 to 2026-09-14 with GameInput redistributable 3.3.221.0, and no ARM64 installation (hifihedgehog/SDL#32). When the route stays off, the joystick's `SDL.joystick.xinput.paddle.error` property holds the reason. PadForge does not read it yet.
+One more ARM64 piece lives in the SDL fork, not in XBOXDS4ONE. The fork's Xbox Elite paddle reader (`SDL_XINPUT_PADDLES`) builds for x64 and, since fork commit 011dd342aa, for ARM64. It has two routes. The Bluetooth route uses public WinRT calls. The USB and Xbox Wireless Adapter route reads an undocumented format from the Windows GameInput service, so the fork switches it on only where the files behind that format belong to a version family it has read, by product version: `GameInputSvc.exe` and `GameInput.dll` 0.2309.26100 from revision 8875, `Windows.Gaming.Input.dll` 10.0.26100 from 8737 and `drivers\xboxgip.sys` 10.0.26100 from 8972. `GameInputRedist.dll` is optional, and must be major version 3 when it is there. That is Windows 11 24H2 or 25H2 at build 26100.8973 or 26200.8973 (July 28, 2026) or later. On Windows 10 and older Windows 11 the route stays off, and paddles are read over Bluetooth only. The version resource carries no architecture, so one table serves x64 and ARM64. Until fork commit 5df5eff539 the check was five exact file hashes. They matched the Windows updates dated 2026-08-27 to 2026-09-14 with GameInput redistributable 3.3.221.0, and no ARM64 installation (hifihedgehog/SDL#32). When the route stays off, the joystick's `SDL.joystick.xinput.paddle.error` property holds the reason. XBOXDS4ONE does not read it yet.
 
-Drivers that install into Windows follow the machine. HIDMaestro 2.3.0 and BthPS3 3.2.1 each carry an x64 and an ARM64 payload and install the one that matches, and the DualShock 3 WinUSB package is signed with the matching catalog OS. On ARM64 what HIDMaestro installs is usbip-win2's host controller: its controllers run there as USB devices, on Windows' own drivers. The Windows MIDI Services runtime the Settings card installs follows the machine too: `DriverInstaller.InstallMidiRuntime` downloads the x64 or the ARM64 MSI by its architecture. The in-box API is part of Windows on both architectures, and the C#/WinRT projection PadForge builds is managed code.
+Drivers that install into Windows follow the machine. HIDMaestro 2.3.0 and BthPS3 3.2.1 each carry an x64 and an ARM64 payload and install the one that matches, and the DualShock 3 WinUSB package is signed with the matching catalog OS. On ARM64 what HIDMaestro installs is usbip-win2's host controller: its controllers run there as USB devices, on Windows' own drivers. The Windows MIDI Services runtime the Settings card installs follows the machine too: `DriverInstaller.InstallMidiRuntime` downloads the x64 or the ARM64 MSI by its architecture. The in-box API is part of Windows on both architectures, and the C#/WinRT projection XBOXDS4ONE builds is managed code.
 
 Of the Visual C++ runtime, both builds bundle `vcruntime140.dll` and `msvcp140.dll`. `SDL3.dll` imports `msvcp140.dll` for the Elite paddle reader, which is C++. Neither item carries an `Exists` condition, so a missing file stops the build and names it. `vcruntime140_1.dll` is x64 only. It holds an exception handler that exists for the x64 ABI alone, and the copy in Microsoft's ARM64 redist folder is an x64 image. `BundledSdlRuntimeImportsTests` reads each bundled `SDL3.dll` for the runtime DLLs it names and fails when one is not in that architecture's `Resources/VisualCpp` folder. It did exactly that when the ARM64 `SDL3.dll` first arrived with the paddle reader in it.
 
-Virtual controllers work on Windows 11 on ARM64 from PadForge 6.0. Before HIDMaestro 2.3.0 the ARM64 build's virtual controllers did not work there. HIDMaestro 2.3.0 runs every one of its profiles there, and PadForge was tested on a Surface Pro with a Snapdragon X2 Plus: a DualSense over Bluetooth drove an Xbox virtual controller, hidden through HidHide. The DualShock 3 Bluetooth driver, the Vosk voice engine and the Elite paddle reader have not run on an ARM64 PC.
+Virtual controllers work on Windows 11 on ARM64 from XBOXDS4ONE 6.0. Before HIDMaestro 2.3.0 the ARM64 build's virtual controllers did not work there. HIDMaestro 2.3.0 runs every one of its profiles there, and XBOXDS4ONE was tested on a Surface Pro with a Snapdragon X2 Plus: a DualSense over Bluetooth drove an Xbox virtual controller, hidden through HidHide. The DualShock 3 Bluetooth driver, the Vosk voice engine and the Elite paddle reader have not run on an ARM64 PC.
 
 ## Runtime Requirements
 
@@ -280,7 +280,7 @@ Virtual controllers work on Windows 11 on ARM64 from PadForge 6.0. Before HIDMae
 
 3. **OpenXInput shim** (`xinput1_4.dll`): Custom XInput replacement DLL embedded in the
    single-file build from `Resources/OpenXInput/<arch>/`. Filters HIDMaestro virtual
-   controllers out of PadForge's own XInput view. SDL loads it by name, and `App.OnStartup`
+   controllers out of XBOXDS4ONE's own XInput view. SDL loads it by name, and `App.OnStartup`
    puts the single-file extraction folder on the DLL search path with `SetDllDirectory`, so
    this copy wins over System32's. Do NOT ship the fork's `devobj.dll`: it is a link-time
    stub, and bundling it once hijacked the real System32 devobj.dll process-wide and crashed
@@ -316,11 +316,11 @@ All gamepad-style virtuals run on HIDMaestro via `HMaestroVirtualController.cs`:
 - **Nintendo**: the Switch Pro Controller and Switch 2 Pro Controller profiles, up to 16 simultaneous
 - **Extended**: every other offered HIDMaestro profile (third-party pads, wheels, flight sticks) plus fully custom HID descriptors, up to 16 simultaneous
 
-HIDMaestro ships 344 profiles. 247 can be deployed (`HMProfile.IsDeployable`): 246 from a captured HID descriptor, and the Xbox One S: Full profile, which deploys without one. PadForge offers the 246 of those it does not withhold, every one but the GameCube adapter's Full persona (`HMaestroProfileCatalog.WithheldProfileIds`). The other 97 cannot be deployed yet. The offered profiles are split by `HMaestroProfileCatalog` into these four buckets and the Keyboard + Mouse slot's two device lists: the 51 keyboard profiles and the 52 mouse profiles.
+HIDMaestro ships 344 profiles. 247 can be deployed (`HMProfile.IsDeployable`): 246 from a captured HID descriptor, and the Xbox One S: Full profile, which deploys without one. XBOXDS4ONE offers the 246 of those it does not withhold, every one but the GameCube adapter's Full persona (`HMaestroProfileCatalog.WithheldProfileIds`). The other 97 cannot be deployed yet. The offered profiles are split by `HMaestroProfileCatalog` into these four buckets and the Keyboard + Mouse slot's two device lists: the 51 keyboard profiles and the 52 mouse profiles.
 
 Non-gamepad virtuals:
 - **KeyboardMouse**: `KeyboardMouseVirtualController.cs`, up to 16 simultaneous. Each half sends through Windows input (`SendInput`) or through a HIDMaestro keyboard or mouse picked on the slot
-- **MIDI**: `MidiVirtualController.cs`, up to 16 simultaneous. The in-box Windows.Devices.Midi2 (Windows 11 25H2 from the late-November 2026 update) is tried first, then the App SDK runtime, Microsoft's install or PadForge's build that the Settings card installs. Where neither starts, the legacy WinMM API takes over (`MidiBackendLegacy.cs`). It cannot create a port, so each slot sends to an existing port picked on its page
+- **MIDI**: `MidiVirtualController.cs`, up to 16 simultaneous. The in-box Windows.Devices.Midi2 (Windows 11 25H2 from the late-November 2026 update) is tried first, then the App SDK runtime, Microsoft's install or XBOXDS4ONE's build that the Settings card installs. Where neither starts, the legacy WinMM API takes over (`MidiBackendLegacy.cs`). It cannot create a port, so each slot sends to an existing port picked on its page
 - **VR**: `HMaestroVRController.cs`, one SteamVR left and right hand pair through HIDMaestro's OpenVR driver, one slot at most
 
 ### Mapping Descriptors
@@ -335,9 +335,9 @@ String format: `"[I][H]{Type} {Index} [{Direction}]"`
 - **2D View** (`ControllerModel2DView`): Canvas with PNG overlays from Gamepad-Asset-Pack.
   Button/stick/trigger state shown via opacity toggling on overlay images.
 
-### Settings File (PadForge.xml)
+### Settings File (XBOXDS4ONE.xml)
 ```xml
-<PadForgeSettings>
+<XBOXDS4ONESettings>
   <Devices><Device>...</Device></Devices>
   <UserSettings><Setting>...</Setting></UserSettings>
   <PadSettings><PadSetting>...</PadSetting></PadSettings>
@@ -345,7 +345,7 @@ String format: `"[I][H]{Type} {Index} [{Direction}]"`
   <Macros><Macro>...</Macro></Macros>
   <Profiles><Profile>...</Profile></Profiles>
   <!-- plus SlotMappingSets, DeviceTunings, SoundPackages, NfcTags and other sections -->
-</PadForgeSettings>
+</XBOXDS4ONESettings>
 ```
 
 ### DSU Motion Server

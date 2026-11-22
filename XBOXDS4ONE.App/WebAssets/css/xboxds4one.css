@@ -1,0 +1,126 @@
+/* XBOXDS4ONE web controller: the colors of every page and the parts the pages
+   share (#574). The colors are the app's dark brushes, named beside each
+   value, so a phone's pages look like the program they drive. System fonts
+   only: a phone on the LAN may have no internet. */
+
+:root {
+    color-scheme: dark;
+    --ground: #07110b;      /* SteelGroundBrush */
+    --card: #0e1a12;        /* CardBackgroundFillColorDefaultBrush */
+    --card-lift: #1b2b20;   /* SteelCardHoverBrush */
+    --card-edge: #294334;   /* SteelPillLineBrush */
+    --raised: #122219;      /* SteelRaisedBrush */
+    --well: #09130d;        /* SteelWellBrush */
+    --line-soft: #16251a;   /* SteelLineSoftBrush */
+    --field: #0a160e;       /* SteelFieldBrush, TextControlBackground */
+    --field-edge: #294334;  /* SteelLineBrush, TextControlElevationBorderBrush */
+    --text-1: #eef2f7;      /* TextFillColorPrimaryBrush */
+    --text-2: #a9b4c4;      /* TextFillColorSecondaryBrush */
+    --text-3: #8693a6;      /* TextFillColorTertiaryBrush, TextControlPlaceholderForeground */
+    --ember: #35d979;       /* EmberBrush */
+    --ember-lift: #56dd8c;  /* EmberLiftBrush */
+    --ember-press: #27b968; /* EmberPressBrush */
+    --ember-hot: #72eaa0;   /* EmberHotBrush */
+    --ember-ink: #06150b;   /* EmberInkBrush */
+    --ember-pick: #102318;  /* EmberPickBrush */
+    --ember-tint: rgba(53, 217, 121, 0.10);  /* EmberTintBrush */
+    --ember-glow: rgba(53, 217, 121, 0.30);  /* ember, as the light around a lit tile */
+    --dot-ring: #4b6855;    /* SteelMarkBrush */
+    --cold: #80e9b1;        /* ColdBrush */
+    --cold-tint: rgba(128, 233, 177, 0.10);  /* ColdTintBrush */
+    --cold-line: rgba(128, 233, 177, 0.62);  /* ColdMutedBrush */
+    --wait: #f2b84b;        /* WaitBrush */
+    --focus: #80e9b1;       /* ColdBrush */
+    --veil: rgba(7, 17, 11, 0.82);  /* the ground, over a picture or a page */
+    --font: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+}
+
+/* The bar at the top of a page that has one: the way back, the page's
+   name, the link's state and the fullscreen button. */
+.pf-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--text-2);
+    border-bottom: 1px solid var(--line-soft);
+}
+.pf-bar a { color: var(--text-2); text-decoration: none; white-space: nowrap; }
+.pf-bar a:hover { color: var(--ember-lift); }
+.pf-title {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The link's state: a dot and a word, ember while the page is live. */
+.pf-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-3);
+    white-space: nowrap;
+}
+.pf-status::before {
+    content: "";
+    flex: none;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-3);
+}
+.pf-status.live { color: var(--ember); }
+.pf-status.live::before { background: var(--ember); box-shadow: 0 0 6px var(--ember); }
+
+/* A small button that stands over a page: Fullscreen, Motion, Edit. Ember
+   while what it switches is on. */
+.pf-chip {
+    margin: 0;
+    padding: 5px 12px;
+    border: 1px solid var(--card-edge);
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--text-2);
+    font: 600 12px var(--font);
+    text-decoration: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.pf-chip:active { background: var(--card-lift); }
+.pf-chip.on { color: var(--ember); border-color: var(--ember); }
+/* At a page's lower right corner, clear of its controls. */
+.pf-chip.pf-corner { position: fixed; right: 10px; bottom: 10px; z-index: 45; opacity: 0.9; }
+
+/* A message that covers a page: turn the phone, or the link is lost. It is
+   one card at the page's middle, whatever lays its box out. */
+.pf-cover { background: var(--ground); font-family: var(--font); }
+.pf-cover > h2 {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: max-content;
+    max-width: 80%;
+    margin: 0;
+    padding: 16px 22px;
+    border: 1px solid var(--card-edge);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--text-1);
+    font-size: 17px;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: center;
+}
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

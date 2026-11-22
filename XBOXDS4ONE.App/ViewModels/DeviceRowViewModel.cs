@@ -1,0 +1,1706 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using XBOXDS4ONE.Resources.Strings;
+
+namespace XBOXDS4ONE.ViewModels
+{
+    /// <summary>
+    /// ViewModel for a single device row in the Devices page grid.
+    /// Displays device identification, status, and basic capability info.
+    /// </summary>
+    public partial class DeviceRowViewModel : ObservableObject
+    {
+        public DeviceRowViewModel()
+        {
+            Strings.CultureChanged += OnCultureChanged;
+        }
+
+        private void OnCultureChanged()
+        {
+            OnPropertyChanged(nameof(DeviceType));
+            OnPropertyChanged(nameof(StatusText));
+            OnPropertyChanged(nameof(CapabilitiesSummary));
+            OnPropertyChanged(nameof(FlydigiServiceWarning));
+            OnPropertyChanged(nameof(HandheldDaemonWarning));
+            OnPropertyChanged(nameof(TabletInputStatus));
+            OnPropertyChanged(nameof(TouchpadInputStatus));
+            OnPropertyChanged(nameof(GunCalibrationStatus));
+            OnPropertyChanged(nameof(GunCalibrateTooltip));
+            foreach (var badge in SlotBadges) badge.RaiseLabel();
+            OnPropertyChanged(nameof(LineLead));
+            OnPropertyChanged(nameof(LineFacts));
+            OnPropertyChanged(nameof(BatteryGlyph));
+            OnPropertyChanged(nameof(BatteryGap));
+            OnPropertyChanged(nameof(LineBattery));
+            OnPropertyChanged(nameof(LineTail));
+            OnPropertyChanged(nameof(BatteryLine));
+            OnPropertyChanged(nameof(RowLine));
+            OnPropertyChanged(nameof(RowStatus));
+            RaiseBoardWords();
+        }
+
+        // ─────────────────────────────────────────────
+        //  Identity
+        // ─────────────────────────────────────────────
+
+        private Guid _instanceGuid;
+
+        /// <summary>Unique instance GUID for this device.</summary>
+        public Guid InstanceGuid
+        {
+            get => _instanceGuid;
+            set => SetProperty(ref _instanceGuid, value);
+        }
+
+        private string _sdlGuid = string.Empty;
+
+        /// <summary>SDL joystick GUID (32 hex chars) for gamecontrollerdb matching.</summary>
+        public string SdlGuid
+        {
+            get => _sdlGuid;
+            set => SetProperty(ref _sdlGuid, value);
+        }
+
+        private string _serialNumber = string.Empty;
+
+        /// <summary>Device serial number as SDL reports it (the Bluetooth MAC
+        /// on most wireless pads). Empty when the device surfaces none. The
+        /// dossier SERIAL line hides itself instead of showing a placeholder
+        /// (#175 item 7).</summary>
+        public string SerialNumber
+        {
+            get => _serialNumber;
+            set => SetProperty(ref _serialNumber, value);
+        }
+
+        private string _firmwareVersion = string.Empty;
+
+        /// <summary>The dossier FIRMWARE line: the firmware version SDL
+        /// reports, which the DualSense and the Edge give, as do pads on the
+        /// GIP and Xbox One drivers, Switch pads over Bluetooth and Flydigi
+        /// pads (hifihedgehog/SDL#42), and Xbox pads on the XInput driver
+        /// whose device GameInput lists (hifihedgehog/SDL#44), shown in
+        /// all four parts when SDL publishes them (hifihedgehog/SDL#46). A
+        /// Bluetooth LE pad SDL reports none for shows the revision its
+        /// Device Information service gives, as an Xbox pad on Bluetooth
+        /// does ("5.23.6.0"). Empty hides the line.</summary>
+        public string FirmwareVersion
+        {
+            get => _firmwareVersion;
+            set => SetProperty(ref _firmwareVersion, value);
+        }
+
+        private string _productRevision = string.Empty;
+
+        /// <summary>The dossier REV line: the product version the device
+        /// reports, its USB release number (bcdDevice) over USB and its PnP ID
+        /// product version over Bluetooth LE. Empty hides the line.</summary>
+        public string ProductRevision
+        {
+            get => _productRevision;
+            set => SetProperty(ref _productRevision, value);
+        }
+
+        /// <summary>Sony firmware reads the way dualsense-tester's
+        /// formatUpdateVersion writes it, the high byte and the low byte as
+        /// hex around a dot (0x0224 is 2.24, the version SDL takes as current
+        /// DualSense firmware). Microsoft and Nintendo values hold the major
+        /// version in the high byte and the minor in the low one, so they
+        /// print as decimal around a dot: 0x0505 is Xbox firmware 5.5 and
+        /// 0x0348 is Switch firmware 3.72 (hifihedgehog/SDL#42). Other
+        /// makers' values print as raw hex. 0 is empty.</summary>
+        public static string FormatFirmwareVersion(ushort version, ushort vendorId)
+        {
+            if (version == 0) return string.Empty;
+            return vendorId switch
+            {
+                0x054C => $"{version >> 8:X}.{version & 0xFF:X2}",
+                0x045E or 0x057E => $"{version >> 8}.{version & 0xFF}",
+                _ => $"0x{version:X4}",
+            };
+        }
+
+        /// <summary>The product version as USB tools print a release number,
+        /// 0 as empty.</summary>
+        public static string FormatProductRevision(ushort version)
+            => version == 0 ? string.Empty : $"0x{version:X4}";
+
+        private string _deviceName = string.Empty;
+
+        /// <summary>Display name of the device.</summary>
+        public string DeviceName
+        {
+            get => _deviceName;
+            set => SetProperty(ref _deviceName, value);
+        }
+
+        private string _productName = string.Empty;
+
+        /// <summary>Product name of the device.</summary>
+        public string ProductName
+        {
+            get => _productName;
+            set => SetProperty(ref _productName, value);
+        }
+
+        private Guid _productGuid;
+
+        /// <summary>Product GUID in PIDVID format.</summary>
+        public Guid ProductGuid
+        {
+            get => _productGuid;
+            set => SetProperty(ref _productGuid, value);
+        }
+
+        // ─────────────────────────────────────────────
+        //  USB identification
+        // ─────────────────────────────────────────────
+
+        private ushort _vendorId;
+
+        /// <summary>USB Vendor ID.</summary>
+        public ushort VendorId
+        {
+            get => _vendorId;
+            set
+            {
+                if (SetProperty(ref _vendorId, value))
+                {
+                    OnPropertyChanged(nameof(VendorIdHex));
+                    OnPropertyChanged(nameof(HasVidPid));
+                    OnPropertyChanged(nameof(ShowRegisterNfcTag));
+                    OnPropertyChanged(nameof(HasNfcCapabilityChip));
+                    OnPropertyChanged(nameof(ShowManageVoicePhrases));
+                    OnPropertyChanged(nameof(CapabilitiesSummary));
+                    OnPropertyChanged(nameof(IsFlydigiDevice));
+                    OnPropertyChanged(nameof(HasFlydigiServiceWarning));
+                    OnPropertyChanged(nameof(FlydigiServiceWarning));
+                    // Transport depends on VID/PID for the fork BLE Switch 2
+                    // case (empty DevicePath never fires its own notify).
+                    OnPropertyChanged(nameof(IsBluetoothLink));
+                    RaiseRowFacts();
+                }
+            }
+        }
+
+        private ushort _productId;
+
+        /// <summary>USB Product ID.</summary>
+        public ushort ProductId
+        {
+            get => _productId;
+            set
+            {
+                if (SetProperty(ref _productId, value))
+                {
+                    OnPropertyChanged(nameof(ProductIdHex));
+                    OnPropertyChanged(nameof(HasVidPid));
+                    OnPropertyChanged(nameof(ShowRegisterNfcTag));
+                    OnPropertyChanged(nameof(HasNfcCapabilityChip));
+                    OnPropertyChanged(nameof(ShowManageVoicePhrases));
+                    OnPropertyChanged(nameof(CapabilitiesSummary));
+                    OnPropertyChanged(nameof(IsFlydigiDevice));
+                    OnPropertyChanged(nameof(HasFlydigiServiceWarning));
+                    OnPropertyChanged(nameof(FlydigiServiceWarning));
+                    OnPropertyChanged(nameof(IsBluetoothLink));
+                    RaiseRowFacts();
+                }
+            }
+        }
+
+        /// <summary>Vendor ID as a hex string (e.g., "045E").</summary>
+        public string VendorIdHex => _vendorId.ToString("X4");
+
+        /// <summary>Product ID as a hex string (e.g., "028E").</summary>
+        public string ProductIdHex => _productId.ToString("X4");
+
+        /// <summary>Whether the device reports a USB identity at all. Virtual
+        /// and merged sources surface 0000:0000, which is noise, not identity.
+        /// The list row hides its VID:PID token when this is false (#175
+        /// phase 2 item 17), the same absent-fact gating the dossier uses.</summary>
+        public bool HasVidPid => _vendorId != 0 || _productId != 0;
+
+        // ─────────────────────────────────────────────
+        //  Status
+        // ─────────────────────────────────────────────
+
+        private bool _isOnline;
+
+        /// <summary>Whether the device is currently connected.</summary>
+        public bool IsOnline
+        {
+            get => _isOnline;
+            set
+            {
+                if (SetProperty(ref _isOnline, value))
+                {
+                    OnPropertyChanged(nameof(StatusText));
+                    OnPropertyChanged(nameof(TabletInputStatus));
+                    OnPropertyChanged(nameof(CanCalibrateGun));
+                    RaiseRowFacts();
+                }
+            }
+        }
+
+        private bool _isEnabled = true;
+
+        /// <summary>Whether the device is enabled for mapping.</summary>
+        public bool IsEnabled
+        {
+            get => _isEnabled;
+            set
+            {
+                if (SetProperty(ref _isEnabled, value))
+                {
+                    OnPropertyChanged(nameof(StatusText));
+                    OnPropertyChanged(nameof(TabletInputStatus));
+                }
+            }
+        }
+
+        /// <summary>Status text for display.</summary>
+        public string StatusText
+        {
+            get
+            {
+                if (!_isEnabled) return Strings.Instance.Common_Disabled;
+                if (_isOnline) return Strings.Instance.Common_Online;
+                return Strings.Instance.Common_Offline;
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        //  List facts (#574)
+        // ─────────────────────────────────────────────
+
+        private string _kindGlyph = "\uE7FC";
+
+        /// <summary>The device's kind as the app's MDL2 glyph
+        /// (Common.DeviceTypeGlyph.For), set by InputService.PopulateDeviceRow
+        /// from the device's CapType. The row's square shows it.</summary>
+        public string KindGlyph
+        {
+            get => _kindGlyph;
+            set => SetProperty(ref _kindGlyph, value ?? "\uE7FC");
+        }
+
+        private System.Windows.Media.Geometry _kindShape;
+
+        /// <summary>The line drawing a wheel or a joystick shows in place of
+        /// a glyph (Common.DeviceTypeGlyph.ShapeFor), or null. Set with
+        /// <see cref="KindGlyph"/>.</summary>
+        public System.Windows.Media.Geometry KindShape
+        {
+            get => _kindShape;
+            set => SetProperty(ref _kindShape, value);
+        }
+
+        /// <summary>A game controller's type, the six Home offers a
+        /// controller for (InputService.IsHomeOfferEligible).</summary>
+        public bool IsGameControllerType => DeviceTypeKey is "Gamepad" or "Joystick" or "Wheel" or "FlightStick"
+            or "FirstPerson" or "Supplemental";
+
+        /// <summary>Whether the row counts in the Devices page's
+        /// "N connected": a device a person plugs in, counted once. A merged
+        /// row is no device. A keyboard's or a remote's consumer-control
+        /// collection is part of a keyboard or a remote that is counted. A
+        /// row XBOXDS4ONE or an extra feeds (IsInternalVirtual) is no device a
+        /// person plugs in, except a MIDI device, a Falcon and an analog
+        /// keyboard, which stand for one. Every row stands in the page's
+        /// lists by its connection and its kind, whether it counts or
+        /// not.</summary>
+        public bool CountsAsDevice => IsCountedDevice(_devicePath, DeviceTypeKey);
+
+        /// <summary>The same rule for a device that has no row built. Home's
+        /// "Devices connected" counts by it
+        /// (InputService.CountConnectedDevices), so Home and this page give
+        /// one number.</summary>
+        internal static bool IsCountedDevice(string devicePath, string deviceTypeKey)
+        {
+            if (IsAggregatePath(devicePath) || deviceTypeKey == "ConsumerControl") return false;
+            if (!IsInternalVirtualPath(devicePath)) return true;
+            return devicePath.StartsWith("midi://", StringComparison.Ordinal)
+                || devicePath.StartsWith("falcon://", StringComparison.Ordinal)
+                || devicePath.StartsWith("analogkb://", StringComparison.Ordinal);
+        }
+
+        /// <summary>The group a row stands in, by whether it is connected.</summary>
+        internal static DeviceListGroup GroupOf(bool online)
+            => online ? DeviceListGroup.Connected : DeviceListGroup.NotConnected;
+
+        private DeviceListGroup _listGroup = DeviceListGroup.NotConnected;
+
+        /// <summary>Whether the row stands with the devices connected now or
+        /// the ones XBOXDS4ONE remembers. Raised only when it changes. The
+        /// lists move a row at the next RefreshCounts and do not filter live
+        /// (DevicesViewModel.MakeView).</summary>
+        public DeviceListGroup ListGroup => _listGroup;
+
+        private void UpdateListGroup()
+        {
+            var group = GroupOf(_isOnline);
+            if (group == _listGroup) return;
+            _listGroup = group;
+            OnPropertyChanged(nameof(ListGroup));
+        }
+
+        /// <summary>Whether a virtual controller uses the device.</summary>
+        public bool IsAssigned => SlotBadges.Count > 0;
+
+        /// <summary>Whether the row offers Use It: a game controller that is
+        /// connected and that no virtual controller uses.</summary>
+        public bool OffersUse => _isOnline && !IsAssigned && IsGameControllerType;
+
+        /// <summary>The row's line, "Gamepad, Bluetooth, battery 82%", in three
+        /// parts so the charge draws with tabular figures: what leads it, the
+        /// charge, and what follows the charge. A link is named only when it
+        /// is Bluetooth: a path that is not makes no claim
+        /// (DeviceTransport).</summary>
+        public string LineLead => Line().Lead;
+
+        /// <summary>The charge in the row's line, or nothing.</summary>
+        public string LineBattery => Line().Battery;
+
+        /// <summary>What follows the charge in the row's line.</summary>
+        public string LineTail => Line().Tail;
+
+        /// <summary>The row's whole line, its help text for a screen reader.</summary>
+        public string RowLine => LineLead + LineBattery + LineTail;
+
+        /// <summary>The pills' names, or Not in use: the row's item status
+        /// for a screen reader.</summary>
+        public string RowStatus
+        {
+            get
+            {
+                if (!IsAssigned) return Strings.Instance.Devices_NotInUse;
+                var names = new List<string>();
+                foreach (var badge in SlotBadges) names.Add(badge.Label);
+                return string.Join(", ", names);
+            }
+        }
+
+        /// <summary>The type, the link when it is Bluetooth and the battery
+        /// part, joined with commas as CapabilitiesSummary joins its parts.
+        /// The battery's format is split at its {0}: one with none reads
+        /// before the charge with a space.</summary>
+        private (string Lead, string Battery, string Tail) Line()
+        {
+            string lead = LineFacts;
+            if (!HasBattery) return (lead, string.Empty, string.Empty);
+            string format = _batteryCharging ? Strings.Instance.Devices_Line_BatteryCharging_Format : Strings.Instance.Devices_Line_Battery_Format;
+            int at = format.IndexOf("{0}", StringComparison.Ordinal);
+            string before = at < 0 ? format + " " : format.Substring(0, at);
+            string after = at < 0 ? string.Empty : format.Substring(at + 3);
+            return (lead + before, BatteryText, after);
+        }
+
+        /// <summary>The row's line as it is drawn, up to the battery: the
+        /// type and the link when it is Bluetooth, with one more comma when
+        /// a battery follows. The battery is then a picture of its level
+        /// and the percentage (BatteryGlyph, LineBattery, LineTail). The
+        /// battery's own word is in RowLine, for a screen reader.</summary>
+        public string LineFacts
+        {
+            get
+            {
+                string facts = DeviceType ?? string.Empty;
+                if (IsBluetoothLink)
+                    facts = facts.Length > 0 ? facts + ", " + Strings.Instance.Pad_Transport_Bluetooth : Strings.Instance.Pad_Transport_Bluetooth;
+                return HasBattery && facts.Length > 0 ? facts + ", " : facts;
+            }
+        }
+
+        /// <summary>Everything the row's line and its list follow, raised
+        /// when one of the facts they are made of changes.</summary>
+        private void RaiseRowFacts()
+        {
+            UpdateListGroup();
+            OnPropertyChanged(nameof(IsGameControllerType));
+            OnPropertyChanged(nameof(CountsAsDevice));
+            OnPropertyChanged(nameof(IsAssigned));
+            OnPropertyChanged(nameof(OffersUse));
+            OnPropertyChanged(nameof(LineLead));
+            OnPropertyChanged(nameof(LineFacts));
+            OnPropertyChanged(nameof(BatteryGlyph));
+            OnPropertyChanged(nameof(BatteryGap));
+            OnPropertyChanged(nameof(LineBattery));
+            OnPropertyChanged(nameof(LineTail));
+            OnPropertyChanged(nameof(BatteryLine));
+            OnPropertyChanged(nameof(RowLine));
+            OnPropertyChanged(nameof(RowStatus));
+        }
+
+        // ─────────────────────────────────────────────
+        //  Capabilities
+        // ─────────────────────────────────────────────
+
+        private int _axisCount;
+
+        /// <summary>Number of axes on the device.</summary>
+        public int AxisCount
+        {
+            get => _axisCount;
+            set => SetProperty(ref _axisCount, value);
+        }
+
+        private int _buttonCount;
+
+        /// <summary>Number of buttons on the device.</summary>
+        public int ButtonCount
+        {
+            get => _buttonCount;
+            set => SetProperty(ref _buttonCount, value);
+        }
+
+        private int _povCount;
+
+        /// <summary>Number of POV hat switches on the device.</summary>
+        public int PovCount
+        {
+            get => _povCount;
+            set => SetProperty(ref _povCount, value);
+        }
+
+        /// <summary>Internal English device type key for comparison logic (e.g., "Gamepad", "Mouse").</summary>
+        private string _deviceTypeKey = string.Empty;
+        public string DeviceTypeKey
+        {
+            get => _deviceTypeKey;
+            set
+            {
+                if (SetProperty(ref _deviceTypeKey, value))
+                {
+                    OnPropertyChanged(nameof(DeviceType));
+                    OnPropertyChanged(nameof(IsGamepad));
+                    OnPropertyChanged(nameof(ShowInputModeSection));
+                    // Consume Input is offered by device type, and the Input
+                    // Hiding heading now follows the two toggles, so both
+                    // answer to the key. ShowConsumeToggle was missing here
+                    // while its only path-side refresh happened to run after
+                    // the key was set.
+                    OnPropertyChanged(nameof(ShowConsumeToggle));
+                    OnPropertyChanged(nameof(ShowInputHidingSection));
+                    OnPropertyChanged(nameof(ShowRawInputState));
+                    OnPropertyChanged(nameof(IsMidiDevice));
+                    OnPropertyChanged(nameof(IsHeadsetMotionDevice));
+                    OnPropertyChanged(nameof(ShowSubmitMapping));
+                    // Rows are constructed before the key is known, so a
+                    // derived property missing from this list evaluates once
+                    // against the empty key and its binding never updates.
+                    // The voice manage button shipped invisible exactly that
+                    // way (#315).
+                    OnPropertyChanged(nameof(ShowManageVoicePhrases));
+                    OnPropertyChanged(nameof(ShowManageChatCommands));
+                    OnPropertyChanged(nameof(ShowRegisterNfcTag));
+                    OnPropertyChanged(nameof(IsHandheldDevice));
+                    OnPropertyChanged(nameof(IsSystemMotionDevice));
+                    OnPropertyChanged(nameof(ShowLearnHandheldButton));
+                    OnPropertyChanged(nameof(HasHandheldDaemonWarning));
+                    OnPropertyChanged(nameof(IsTabletDevice));
+                    OnPropertyChanged(nameof(ShowTabletCaptureStatus));
+                    OnPropertyChanged(nameof(HandheldDaemonWarning));
+                    // A touchpad's row trades Hide from Games for its switch.
+                    OnPropertyChanged(nameof(IsTouchpadRow));
+                    OnPropertyChanged(nameof(ShowTouchpadCaptureStatus));
+                    OnPropertyChanged(nameof(ShowHidHideToggle));
+                    OnPropertyChanged(nameof(ShowInputHidingSection));
+                    RaiseRowFacts();
+                }
+            }
+        }
+
+        /// <summary>Localized device type description for display, derived from DeviceTypeKey.</summary>
+        public string DeviceType => Common.DeviceTypeGlyph.NameFor(DeviceTypeKey);
+
+        private bool _hasRumble;
+
+        /// <summary>Whether the device supports rumble vibration.</summary>
+        public bool HasRumble
+        {
+            get => _hasRumble;
+            set => SetProperty(ref _hasRumble, value);
+        }
+
+        private bool _hasGyro;
+
+        /// <summary>Whether the device has a gyroscope sensor.</summary>
+        public bool HasGyro
+        {
+            get => _hasGyro;
+            set => SetProperty(ref _hasGyro, value);
+        }
+
+        private bool _hasAccel;
+
+        /// <summary>Whether the device has an accelerometer sensor.</summary>
+        public bool HasAccel
+        {
+            get => _hasAccel;
+            set => SetProperty(ref _hasAccel, value);
+        }
+
+        private bool _hasTouchpad;
+
+        /// <summary>Whether the device has a touchpad.</summary>
+        public bool HasTouchpad
+        {
+            get => _hasTouchpad;
+            set => SetProperty(ref _hasTouchpad, value);
+        }
+
+        // ─────────────────────────────────────────────
+        //  Slot assignment
+        // ─────────────────────────────────────────────
+
+        private List<int> _assignedSlots = new();
+
+        /// <summary>
+        /// The pad slot indices this device is assigned to (0–7). Empty if unassigned.
+        /// A device can be assigned to multiple slots simultaneously.
+        /// </summary>
+        public List<int> AssignedSlots => _assignedSlots;
+
+        /// <summary>
+        /// Observable collection of slot badges for XAML binding (icon + number).
+        /// </summary>
+        public ObservableCollection<SlotBadge> SlotBadges { get; } = new();
+
+        // The IsUnassigned flag and its gray fallback pill are gone (#175
+        // phase 2 item 9): absence of badges encodes unassigned.
+
+        /// <summary>
+        /// Replaces the assigned slots list, rebuilds SlotBadges, and notifies the UI.
+        /// </summary>
+        public void SetAssignedSlots(List<int> slots)
+        {
+            _assignedSlots = slots ?? new();
+            SlotBadges.Clear();
+            // Walk SlotOrders in type-group order to number each badge
+            // within its type, as the sidebar numbers the controllers.
+            // Iterating raw padIndex here would number the slots in the
+            // order they were made, not the order the sidebar shows.
+            var slotToType = BuildTypeNumberLookup();
+            foreach (int slot in _assignedSlots)
+            {
+                slotToType.TryGetValue(slot, out var info);
+                SlotBadges.Add(new SlotBadge { TypeNumber = info.TypeNumber, VcType = info.Type });
+            }
+            OnPropertyChanged(nameof(AssignedSlots));
+            RaiseRowFacts();
+        }
+
+        /// <summary>Builds a slotIndex → (number within its type, VC family)
+        /// map walking type-group order, the count the sidebar's "#1" gives
+        /// each controller (MainViewModel.RefreshNavControllerItems): within
+        /// each type a count restarts and runs over the created slots in
+        /// their order. The family rides along because the walk already
+        /// knows it, and the pill's name and icon need it.</summary>
+        private static Dictionary<int, (int TypeNumber, Engine.VirtualControllerType Type)> BuildTypeNumberLookup()
+        {
+            var map = new Dictionary<int, (int TypeNumber, Engine.VirtualControllerType Type)>();
+            foreach (var groupType in Engine.VirtualControllerGroups.InOrder)
+            {
+                int count = 0;
+                foreach (int padIndex in Common.Input.SettingsManager.SlotOrders.GetOrderFor(groupType))
+                {
+                    if (padIndex < 0 || padIndex >= Common.Input.SettingsManager.SlotCreated.Length)
+                        continue;
+                    if (!Common.Input.SettingsManager.SlotCreated[padIndex])
+                        continue;
+                    count++;
+                    map[padIndex] = (count, groupType);
+                }
+            }
+            return map;
+        }
+
+        // ─────────────────────────────────────────────
+        //  Input hiding toggles
+        // ─────────────────────────────────────────────
+
+        private bool _hidHideEnabled;
+
+        /// <summary>Whether this device is hidden from games via HidHide (driver-level).</summary>
+        public bool HidHideEnabled
+        {
+            get => _hidHideEnabled;
+            set => SetProperty(ref _hidHideEnabled, value);
+        }
+
+        private bool _consumeInputEnabled;
+
+        /// <summary>Whether this device's mapped inputs are consumed via low-level hooks.</summary>
+        public bool ConsumeInputEnabled
+        {
+            get => _consumeInputEnabled;
+            set => SetProperty(ref _consumeInputEnabled, value);
+        }
+
+        private bool _forceRawJoystickMode;
+
+        /// <summary>Whether to bypass SDL's gamepad remapping and read raw joystick indices.</summary>
+        public bool ForceRawJoystickMode
+        {
+            get => _forceRawJoystickMode;
+            set
+            {
+                if (SetProperty(ref _forceRawJoystickMode, value))
+                {
+                    // A row read raw shows the checkbox whatever its type
+                    // (ShowInputModeSection).
+                    OnPropertyChanged(nameof(ShowInputModeSection));
+                }
+            }
+        }
+
+        private int _idleDisconnectMinutes;
+
+        /// <summary>Idle disconnect countdown in minutes, 0 = off (issue #162).
+        /// Shown only for Bluetooth-pathed devices; persisted on UserDevice in
+        /// seconds through the same channel as the hiding toggles.</summary>
+        public int IdleDisconnectMinutes
+        {
+            get => _idleDisconnectMinutes;
+            set => SetProperty(ref _idleDisconnectMinutes, Math.Max(0, value));
+        }
+
+        private bool _quickChargeEnabled;
+
+        /// <summary>Quick Charge (#372): drop this pad's Bluetooth link when
+        /// its USB twin comes online. Shown with the idle-disconnect control
+        /// (same Bluetooth gate), persisted on UserDevice through the same
+        /// channel as the hiding toggles.</summary>
+        public bool QuickChargeEnabled
+        {
+            get => _quickChargeEnabled;
+            set => SetProperty(ref _quickChargeEnabled, value);
+        }
+
+        private bool _showIdleDisconnect;
+
+        /// <summary>Whether the idle-disconnect control applies to this device
+        /// (Bluetooth path detected).</summary>
+        public bool ShowIdleDisconnect
+        {
+            get => _showIdleDisconnect;
+            set
+            {
+                if (SetProperty(ref _showIdleDisconnect, value))
+                {
+                    OnPropertyChanged(nameof(ShowPowerSection));
+                }
+            }
+        }
+
+        private bool _showQuickCharge;
+
+        /// <summary>Whether the Quick Charge checkbox (#372) applies to this
+        /// device. Wider than <see cref="ShowIdleDisconnect"/> on purpose:
+        /// the checkbox used to live behind that gate, and the USB cable
+        /// REBINDS a Sony record to the USB path (identity keys on the
+        /// shared MAC serial, so no twin record exists), which is a path
+        /// the disconnect predicate rejects. The checkbox therefore
+        /// vanished exactly while the pad was plugged in, the one moment
+        /// the feature is about. Seeded by <see cref="ComputeShowQuickCharge"/>.</summary>
+        public bool ShowQuickCharge
+        {
+            get => _showQuickCharge;
+            set
+            {
+                if (SetProperty(ref _showQuickCharge, value))
+                {
+                    OnPropertyChanged(nameof(ShowPowerSection));
+                }
+            }
+        }
+
+        /// <summary>The Power section draws when either control in it
+        /// does: the idle countdown, or the Quick Charge checkbox.</summary>
+        public bool ShowPowerSection => ShowIdleDisconnect || ShowQuickCharge;
+
+        /// <summary>The Quick Charge visibility rule, static so the tests
+        /// need no view model: a disconnect target (the Bluetooth-pathed
+        /// shape), or a record whose serial parses as a non-zero Bluetooth
+        /// address. The second leg is EXACTLY the gate CheckQuickCharge's
+        /// wired path fires on (InputManager.Step2: TryParseAddress on the
+        /// record's own serial, address non-zero), with no vendor gate,
+        /// because the feature fires for any pad that reports its radio's
+        /// MAC as the serial on both transports, and a setting the engine
+        /// acts on must have its card wherever it acts.</summary>
+        internal static bool ComputeShowQuickCharge(string devicePath, ushort vendorId, ushort productId, string serial)
+        {
+            if (XBOXDS4ONE.Common.Input.BluetoothLinkHelper.IsDisconnectTarget(devicePath, vendorId, productId, serial))
+                return true;
+            return XBOXDS4ONE.Common.Input.BluetoothLinkHelper.TryParseAddress(serial, out long address) && address != 0;
+        }
+
+        private int _batteryPercent = -1;
+
+        /// <summary>Battery percentage from SDL, -1 when the device reports
+        /// none (wired, unknown, or offline). Drives the row's battery
+        /// indicator (issue #167).</summary>
+        public int BatteryPercent
+        {
+            get => _batteryPercent;
+            set
+            {
+                if (SetProperty(ref _batteryPercent, value))
+                {
+                    OnPropertyChanged(nameof(HasBattery));
+                    OnPropertyChanged(nameof(BatteryText));
+                    RaiseRowFacts();
+                }
+            }
+        }
+
+        private bool _batteryCharging;
+
+        /// <summary>True while the device reports charging or charged.</summary>
+        public bool BatteryCharging
+        {
+            get => _batteryCharging;
+            set
+            {
+                if (SetProperty(ref _batteryCharging, value))
+                    RaiseRowFacts();
+            }
+        }
+
+        /// <summary>Whether the battery indicator renders at all.</summary>
+        public bool HasBattery => _batteryPercent >= 0;
+
+        /// <summary>"78%" for the row's metadata line.</summary>
+        public string BatteryText => _batteryPercent >= 0 ? $"{_batteryPercent}%" : string.Empty;
+
+        /// <summary>A picture of the battery's level, charging or not, which
+        /// stands before the percentage wherever the battery shows
+        /// (BatteryGlyphs), or nothing.</summary>
+        public string BatteryGlyph => Common.BatteryGlyphs.For(_batteryPercent, _batteryCharging);
+
+        /// <summary>The space between that picture and the percentage, or
+        /// nothing for a device with no battery.</summary>
+        public string BatteryGap => HasBattery ? " " : string.Empty;
+
+        /// <summary>The battery as the Details card reads it to a screen
+        /// reader: the percentage and what the row's line says after it
+        /// ("82%, charging"), or nothing.</summary>
+        public string BatteryLine => HasBattery ? BatteryText + LineTail : string.Empty;
+
+        private bool _isHidHideAvailable;
+
+        /// <summary>Whether HidHide is installed and available (controls IsEnabled on the toggle).</summary>
+        public bool IsHidHideAvailable
+        {
+            get => _isHidHideAvailable;
+            set => SetProperty(ref _isHidHideAvailable, value);
+        }
+
+        /// <summary>True for MIDI input devices. Drives the live piano /
+        /// CC preview on the Devices page (issue #128).</summary>
+        public bool IsMidiDevice => DeviceTypeKey == "Midi";
+
+        /// <summary>True for Sony headset head trackers (issue #188).
+        /// Collapses the raw Axes/Buttons preview (a motion-only source
+        /// has neither) and gates the repair action.</summary>
+        public bool IsHeadsetMotionDevice => DeviceTypeKey == "HeadsetMotion";
+
+        /// <summary>True for the handheld hidden buttons row (issue #343).</summary>
+        public bool IsHandheldDevice => DeviceTypeKey == "HandheldButtons";
+
+        /// <summary>True for the machine's own motion sensor row (issue #343).</summary>
+        public bool IsSystemMotionDevice => DeviceTypeKey == "SystemMotion";
+
+        /// <summary>Whether to show the Learn / Manage Hidden Buttons button
+        /// (issue #343). Owner only: a peer row's buttons are learned on the
+        /// machine that has them (the #248 lesson).</summary>
+        public bool ShowLearnHandheldButton =>
+            IsHandheldDevice
+            && !(DevicePath != null && DevicePath.StartsWith("peer://", System.StringComparison.Ordinal));
+
+        private string _handheldDaemonRunning = string.Empty;
+
+        /// <summary>Comma-joined names of vendor daemons the sweep found
+        /// running (issue #343), empty when none. Written by the device
+        /// list sync.</summary>
+        public string HandheldDaemonRunning
+        {
+            get => _handheldDaemonRunning;
+            set
+            {
+                if (SetProperty(ref _handheldDaemonRunning, value ?? string.Empty))
+                {
+                    OnPropertyChanged(nameof(HasHandheldDaemonWarning));
+                    OnPropertyChanged(nameof(HandheldDaemonWarning));
+                }
+            }
+        }
+
+        public bool HasHandheldDaemonWarning => IsHandheldDevice && !string.IsNullOrEmpty(_handheldDaemonRunning);
+
+        public string HandheldDaemonWarning => HasHandheldDaemonWarning
+            ? string.Format(Strings.Instance.Handheld_DaemonWarning_Format, _handheldDaemonRunning)
+            : string.Empty;
+
+        private string _flydigiServiceRunning = string.Empty;
+
+        /// <summary>Flydigi Space Station processes running (#395), empty
+        /// when none. Written by the device list sync for Flydigi rows.</summary>
+        public string FlydigiServiceRunning
+        {
+            get => _flydigiServiceRunning;
+            set
+            {
+                if (SetProperty(ref _flydigiServiceRunning, value ?? string.Empty))
+                {
+                    OnPropertyChanged(nameof(HasFlydigiServiceWarning));
+                    OnPropertyChanged(nameof(FlydigiServiceWarning));
+                }
+            }
+        }
+
+        public bool IsFlydigiDevice => XBOXDS4ONE.Common.Input.FlydigiServiceWatch.IsFlydigiDevice(VendorId, ProductId);
+
+        public bool HasFlydigiServiceWarning => IsFlydigiDevice && !string.IsNullOrEmpty(_flydigiServiceRunning);
+
+        public string FlydigiServiceWarning => HasFlydigiServiceWarning
+            ? string.Format(Strings.Instance.Flydigi_ServiceWarning_Format, _flydigiServiceRunning)
+            : string.Empty;
+
+        /// <summary>Whether to show the "Consume mapped inputs" toggle (real
+        /// keyboards and mice only). Consumption works by suppressing the
+        /// source at the raw/descriptor layer, which exists only for a real
+        /// Windows HID device, so an internal virtual source (a web touchpad,
+        /// the on-screen overlay) has nothing to consume and the toggle did
+        /// nothing there. Its neighbors in the same panel already carry this
+        /// term (ShowInputHidingSection, ShowInputModeSection); this was the
+        /// member of that family that missed it.</summary>
+        public bool ShowConsumeToggle =>
+            (DeviceTypeKey == "Keyboard" || DeviceTypeKey == "Mouse") && !IsInternalVirtual && !IsXBOXDS4ONEDriverRow;
+
+        /// <summary>True for XBOXDS4ONE-internal virtual sources (web controllers, web
+        /// touchpads, the on-screen touchpad overlay). Identified by a URI-scheme
+        /// DevicePath (web://, overlay://) instead of a real Windows HID path.
+        /// HidHide can't blacklist what isn't a Windows HID device, so the
+        /// "Hide from games" toggle hides itself for these sources.</summary>
+        public bool IsInternalVirtual => IsInternalVirtualPath(_devicePath);
+
+        /// <summary>Whether a path is one of XBOXDS4ONE's own, the rule of
+        /// IsInternalVirtual for a device that has no row built.</summary>
+        internal static bool IsInternalVirtualPath(string devicePath) =>
+            !string.IsNullOrEmpty(devicePath)
+            && (devicePath.StartsWith("web://", StringComparison.Ordinal)
+             || devicePath.StartsWith("overlay://", StringComparison.Ordinal)
+             || devicePath.StartsWith("midi://", StringComparison.Ordinal)
+             || devicePath.StartsWith("peer://", StringComparison.Ordinal)
+             // PC/SC readers aren't HID devices either: the checkbox was a
+             // silent no-op (fake VID/PID resolves no instance, audit M3).
+             || devicePath.StartsWith("nfc://", StringComparison.Ordinal)
+             // Microphone rows are WASAPI endpoints, not HID devices, the
+             // same non-applicability as PC/SC readers. Missing from this
+             // list, they rendered the Input Hiding section for nothing.
+             || devicePath.StartsWith("mic://", StringComparison.Ordinal)
+             // The handheld hidden-buttons row and the machine's sensor row
+             // (#343) are synthetic too: nothing for HidHide to cloak.
+             || devicePath.StartsWith("handheld://", StringComparison.Ordinal)
+             || devicePath.StartsWith("sensor://", StringComparison.Ordinal)
+             || devicePath.StartsWith("headtrack://", StringComparison.Ordinal)
+             // The OpenXR hand rows and the Logitech G-keys row are the same
+             // shape: a runtime or an SDK feeds them, and HidHide has no HID
+             // instance to cloak. Missing here, they rendered the Input Hiding
+             // section with toggles that could never do anything.
+             || devicePath.StartsWith("openxr://", StringComparison.Ordinal)
+             || devicePath.StartsWith("logigkeys://", StringComparison.Ordinal)
+             // A keyboard screen's row (#519) gathers the keys its screen
+             // engine reads, the G-keys row's case.
+             || devicePath.StartsWith("keyboardscreen://", StringComparison.Ordinal)
+             // A Falcon (#521) is read through Force Dimension's library on
+             // its WinUSB driver, so HidHide has no HID instance to cloak.
+             || devicePath.StartsWith("falcon://", StringComparison.Ordinal)
+             // The Game Telemetry row (#531) is fed by a game's packets and
+             // shared memory, with no HID instance behind it.
+             || devicePath.StartsWith("telemetry://", StringComparison.Ordinal)
+             // The Twitch Chat row (#555) is fed by a channel's chat.
+             || devicePath.StartsWith("twitch://", StringComparison.Ordinal)
+             // An analog keyboard row (#468) reads the keyboard's vendor
+             // collection. Cloaking it would hide the keyboard's analog
+             // interface from its own vendor software, which Razer's needs
+             // to make the keyboard report at all.
+             || devicePath.StartsWith("analogkb://", StringComparison.Ordinal)
+             // The Razer Chroma, Logitech LIGHTSYNC, SteelSeries GG and
+             // Razer Sensa rows (#494), and the ASUS Aura, MSI Mystic Light
+             // and Corsair iCUE rows (#557), stand for a vendor's software,
+             // not a HID device, so HidHide has no instance to cloak for them.
+             || devicePath.StartsWith("razerchroma://", StringComparison.Ordinal)
+             || devicePath.StartsWith("logilightsync://", StringComparison.Ordinal)
+             || devicePath.StartsWith("steelseriesgg://", StringComparison.Ordinal)
+             || devicePath.StartsWith("razersensa://", StringComparison.Ordinal)
+             || devicePath.StartsWith("asusaura://", StringComparison.Ordinal)
+             || devicePath.StartsWith("msimysticlight://", StringComparison.Ordinal)
+             || devicePath.StartsWith("corsairicue://", StringComparison.Ordinal)
+             // A unit row (#494) stands for one lit device no mouse or
+             // keyboard row reaches, under a path of XBOXDS4ONE's own that
+             // names no HID instance, and it has no input to hide.
+             || devicePath.StartsWith("lightunit://", StringComparison.Ordinal));
+
+        /// <summary>True for a merged row (All Keyboards, All Mice, All
+        /// Touchpads, All Consumer Controls). It stands for every device of
+        /// its kind at once and has no HID instance of its own.</summary>
+        public bool IsAggregate => IsAggregatePath(_devicePath);
+
+        /// <summary>Whether a path is a merged row's, the rule of
+        /// IsAggregate for a device that has no row built.</summary>
+        internal static bool IsAggregatePath(string devicePath) =>
+            devicePath?.StartsWith("aggregate://", StringComparison.Ordinal) == true;
+
+        /// <summary>Whether "Hide from Games" can do anything for this row.
+        /// HidHide cloaks HID instances, and a merged row has none: its path
+        /// resolves to no instance and its vendor and product ids are zero,
+        /// so the hiding pass skips it on both of its lookups. The box was
+        /// offered there anyway, took the tick, saved it, and hid nothing.
+        /// Consume Input is a separate route that does work on a merged
+        /// keyboard or mouse row, so it keeps its own rule.</summary>
+        public bool ShowHidHideToggle => !IsInternalVirtual && !IsAggregate && !IsXBOXDS4ONEDriverRow
+            && !IsTouchpadRow && !_isTouchpadMouse;
+
+        /// <summary>True for a precision touchpad's own row. Its Input Hiding
+        /// is Use Only in XBOXDS4ONE (UserDevice.TouchpadOnlyInXBOXDS4ONE): hidden
+        /// with nothing reading it, a touchpad was dead in Windows and in
+        /// XBOXDS4ONE alike, so Hide from Games leaves the row.</summary>
+        public bool IsTouchpadRow => DeviceTypeKey == "Touchpad" && !IsAggregate && !IsInternalVirtual;
+
+        private bool _isTouchpadMouse;
+
+        /// <summary>Set by the Devices page while this row is selected and it
+        /// is a precision touchpad's mouse collection. Its switch is the
+        /// touchpad's, and Hide from Games leaves it as it leaves the
+        /// touchpad's own row.</summary>
+        public bool IsTouchpadMouse
+        {
+            get => _isTouchpadMouse;
+            set
+            {
+                if (!SetProperty(ref _isTouchpadMouse, value)) return;
+                OnPropertyChanged(nameof(ShowHidHideToggle));
+                OnPropertyChanged(nameof(ShowInputHidingSection));
+            }
+        }
+
+        private bool _touchpadOnlyInXBOXDS4ONE;
+
+        /// <summary>Whether XBOXDS4ONE reads this touchpad alone, the record's
+        /// <see cref="XBOXDS4ONE.Engine.Data.UserDevice.TouchpadOnlyInXBOXDS4ONE"/>.</summary>
+        public bool TouchpadOnlyInXBOXDS4ONE
+        {
+            get => _touchpadOnlyInXBOXDS4ONE;
+            set
+            {
+                if (SetProperty(ref _touchpadOnlyInXBOXDS4ONE, value))
+                    OnPropertyChanged(nameof(ShowTouchpadCaptureStatus));
+            }
+        }
+
+        /// <summary>The capture's line under the switch, as a tablet's row
+        /// shows its own, while the switch is on.</summary>
+        public bool ShowTouchpadCaptureStatus => IsTouchpadRow && _touchpadOnlyInXBOXDS4ONE;
+
+        private XBOXDS4ONE.Engine.Tablets.TabletCaptureState _touchpadCaptureState = XBOXDS4ONE.Engine.Tablets.TabletCaptureState.Shared;
+
+        public XBOXDS4ONE.Engine.Tablets.TabletCaptureState TouchpadCaptureState
+        {
+            get => _touchpadCaptureState;
+            set { if (SetProperty(ref _touchpadCaptureState, value)) OnPropertyChanged(nameof(TouchpadInputStatus)); }
+        }
+
+        public string TouchpadInputStatus => TouchpadCaptureState switch
+        {
+            XBOXDS4ONE.Engine.Tablets.TabletCaptureState.Switching => Strings.Instance.Tablet_InputSwitching,
+            XBOXDS4ONE.Engine.Tablets.TabletCaptureState.WaitingForInput => Strings.Instance.Touchpad_InputWaiting,
+            XBOXDS4ONE.Engine.Tablets.TabletCaptureState.Captured => Strings.Instance.Tablet_InputCaptured,
+            XBOXDS4ONE.Engine.Tablets.TabletCaptureState.Failed => Strings.Instance.Touchpad_InputFailed,
+            _ => Strings.Instance.Tablet_InputShared
+        };
+
+        /// <summary>True for a row XBOXDS4ONE reads over its own WinUSB driver:
+        /// a keyboard or mouse taken from Windows (#549) or a bound TouchSense mouse
+        /// (#494). Windows sees neither as a keyboard or mouse, so there is
+        /// nothing to hide from games and nothing for the hook to consume,
+        /// and both toggles leave the row (InputService.ServedByXBOXDS4ONEDriver
+        /// skips such a row in the hiding pass whatever it holds).</summary>
+        public bool IsXBOXDS4ONEDriverRow =>
+            Services.VendorUsbDriverInstaller.IsOwnInterfacePath(_devicePath)
+            || Common.Input.WinUsbKeyboards.KeyboardTakeovers.IsTakenOver(InstanceGuid);
+
+        /// <summary>True when at least one input-hiding toggle would be shown,
+        /// or a button of a keyboard's, mouse's or precision touchpad's switch, so the "Input Hiding" section
+        /// can hide its heading along with its (now-empty) body when nothing
+        /// applies. It names the toggles and the switch rather than
+        /// restating their rules, so a row where none applies (a merged
+        /// touchpad or consumer-control row) loses the heading too.</summary>
+        public bool ShowInputHidingSection => ShowHidHideToggle || ShowConsumeToggle || _showsHidingDriverSwitch;
+
+        private bool _showsHidingDriverSwitch;
+
+        /// <summary>Set by the Devices page while this row is selected and a
+        /// button of its keyboard's or mouse's switch (#549), or of a precision
+        /// touchpad's switch, shows. The button stands in the Input Hiding
+        /// section, which a switched device keeps for it alone, since both
+        /// toggles leave such a row.</summary>
+        public bool ShowsHidingDriverSwitch
+        {
+            get => _showsHidingDriverSwitch;
+            set
+            {
+                if (!SetProperty(ref _showsHidingDriverSwitch, value)) return;
+                OnPropertyChanged(nameof(ShowInputHidingSection));
+            }
+        }
+
+        /// <summary>The takeover list changed. <see cref="IsXBOXDS4ONEDriverRow"/>
+        /// reads it, and a taken device whose WinUSB row never opened keeps its
+        /// path, so nothing else raises what follows from the list.</summary>
+        internal void NotifyTakeoverChanged()
+        {
+            OnPropertyChanged(nameof(IsXBOXDS4ONEDriverRow));
+            OnPropertyChanged(nameof(ShowHidHideToggle));
+            OnPropertyChanged(nameof(ShowConsumeToggle));
+            OnPropertyChanged(nameof(ShowInputHidingSection));
+        }
+
+        public bool IsTabletDevice => DeviceTypeKey == "Tablet";
+        public bool ShowTabletCaptureStatus => IsTabletDevice && !IsInternalVirtual;
+        private XBOXDS4ONE.Engine.Tablets.TabletCaptureState _tabletCaptureState;
+        public XBOXDS4ONE.Engine.Tablets.TabletCaptureState TabletCaptureState
+        {
+            get => _tabletCaptureState;
+            set { if (SetProperty(ref _tabletCaptureState, value)) OnPropertyChanged(nameof(TabletInputStatus)); }
+        }
+        public string TabletInputStatus => TabletCaptureState switch
+        {
+            XBOXDS4ONE.Engine.Tablets.TabletCaptureState.Switching => Strings.Instance.Tablet_InputSwitching,
+            XBOXDS4ONE.Engine.Tablets.TabletCaptureState.WaitingForInput => Strings.Instance.Tablet_InputWaiting,
+            XBOXDS4ONE.Engine.Tablets.TabletCaptureState.Captured => Strings.Instance.Tablet_InputCaptured,
+            XBOXDS4ONE.Engine.Tablets.TabletCaptureState.Failed => Strings.Instance.Tablet_InputFailed,
+            XBOXDS4ONE.Engine.Tablets.TabletCaptureState.Offline => StatusText,
+            _ => Strings.Instance.Tablet_InputShared
+        };
+
+        /// <summary>True when the "Input Mode" section (Force raw joystick mode)
+        /// should be shown. Only real gamepads. Virtual web/overlay sources are
+        /// WYSIWYG and have no SDL gamepad-mapping layer to bypass. A row whose
+        /// flag is on shows it whatever its type or path: the flag is read all
+        /// the same (a hand-edited file, a record whose type changed after it
+        /// was set), and this checkbox is the page's one control that turns it
+        /// off.</summary>
+        public bool ShowInputModeSection => _forceRawJoystickMode || (IsGamepad && !IsInternalVirtual);
+
+        /// <summary>Whether the Raw Input State section shows. A lighting or
+        /// rumble row (#494) reads no input, so it has none.</summary>
+        public bool ShowRawInputState => DeviceTypeKey != "PeripheralLighting" && DeviceTypeKey != "PeripheralHaptics";
+
+        // ─────────────────────────────────────────────
+        //  Light gun (GunCon 2 calibration)
+        // ─────────────────────────────────────────────
+
+        private string _gunCalibration = string.Empty;
+
+        /// <summary>A GunCon 2's calibration as UserDevice.GunCalibration keeps
+        /// it, "minX,maxX,minY,maxY", empty for the PC tools' starting window.
+        /// Persisted through the same channel as the hiding toggles.</summary>
+        public string GunCalibration
+        {
+            get => _gunCalibration;
+            set
+            {
+                if (SetProperty(ref _gunCalibration, value ?? string.Empty))
+                    OnPropertyChanged(nameof(GunCalibrationStatus));
+            }
+        }
+
+        private bool _gunIsWiiRemote;
+
+        /// <summary>Whether the light gun is a Wii Remote aiming with its IR
+        /// camera (#485) rather than a GunCon 2: its status line and Calibrate
+        /// tooltip speak of the sensor bar instead of a CRT's beam counts.</summary>
+        public bool GunIsWiiRemote
+        {
+            get => _gunIsWiiRemote;
+            set
+            {
+                if (SetProperty(ref _gunIsWiiRemote, value))
+                {
+                    OnPropertyChanged(nameof(GunCalibrationStatus));
+                    OnPropertyChanged(nameof(GunCalibrateTooltip));
+                }
+            }
+        }
+
+        private bool _showGunCalibration;
+
+        /// <summary>Whether the Light Gun section draws: the row is a GunCon 2
+        /// (hifihedgehog/SDL#33 Part 9) or a Wii Remote with an IR camera
+        /// (#485), on this PC. A peer row has none: the gun is calibrated on
+        /// the PC it is connected to (#248).</summary>
+        public bool ShowGunCalibration
+        {
+            get => _showGunCalibration;
+            set
+            {
+                if (SetProperty(ref _showGunCalibration, value))
+                {
+                }
+            }
+        }
+
+        /// <summary>The Light Gun section's visibility rule, static so the
+        /// tests need no view model, as <see cref="ComputeShowQuickCharge"/>
+        /// is: a gun, online or offline, on a record that is not a Remote
+        /// Link peer's.</summary>
+        internal static bool ComputeShowGunCalibration(bool isGun, string devicePath)
+            => isGun && !XBOXDS4ONE.Common.Input.RemoteLinkOutputRouter.IsPeerPath(devicePath);
+
+        private bool _gunConnectedHere;
+
+        /// <summary>Whether the gun's live device is this PC's own SDL device.
+        /// A gun relayed from another PC is calibrated on that PC, which
+        /// scales its aim before relaying it.</summary>
+        public bool GunConnectedHere
+        {
+            get => _gunConnectedHere;
+            set
+            {
+                if (SetProperty(ref _gunConnectedHere, value))
+                    OnPropertyChanged(nameof(CanCalibrateGun));
+            }
+        }
+
+        /// <summary>Whether the calibration screen can read the gun: it is
+        /// connected to this PC and online.</summary>
+        public bool CanCalibrateGun => GunConnectedHere && IsOnline;
+
+        private bool _showReadAsICade;
+
+        /// <summary>Whether the row offers "Read as iCade Controller": a
+        /// Bluetooth keyboard with IDs that the user has not marked, and not
+        /// the ION iCade cabinet, which the fork reads already
+        /// (hifihedgehog/SDL#33 Part 16, ICadePads.CanMark).</summary>
+        public bool ShowReadAsICade
+        {
+            get => _showReadAsICade;
+            set => SetProperty(ref _showReadAsICade, value);
+        }
+
+        private bool _showReadAsKeyboard;
+
+        /// <summary>Whether the row offers "Read as Keyboard": a marked pad's
+        /// joystick, or its keyboard record while the pad is away.</summary>
+        public bool ShowReadAsKeyboard
+        {
+            get => _showReadAsKeyboard;
+            set => SetProperty(ref _showReadAsKeyboard, value);
+        }
+
+        private bool _showUsioTekken;
+
+        /// <summary>Whether the row offers "Read as Tekken Sticks": a Namco
+        /// USIO drum, the board read in its Taiko layout
+        /// (hifihedgehog/SDL#33 Part 14).</summary>
+        public bool ShowUsioTekken
+        {
+            get => _showUsioTekken;
+            set => SetProperty(ref _showUsioTekken, value);
+        }
+
+        private bool _showUsioTaiko;
+
+        /// <summary>Whether the row offers "Read as Taiko Drums": a Namco
+        /// USIO stick, the board read in its Tekken layout.</summary>
+        public bool ShowUsioTaiko
+        {
+            get => _showUsioTaiko;
+            set => SetProperty(ref _showUsioTaiko, value);
+        }
+
+        private string _blissBoxLine = string.Empty;
+        /// <summary>A Bliss-Box port's line (issue #469): its player number,
+        /// the controller in it and the adapter's firmware. Empty for every
+        /// other row, and while Read Bliss-Box Adapters is off.</summary>
+        public string BlissBoxLine
+        {
+            get => _blissBoxLine;
+            set => SetProperty(ref _blissBoxLine, value ?? string.Empty);
+        }
+
+        private bool _showBlissBoxPlayer;
+        /// <summary>The port's API channel is open, so its player number can
+        /// be set.</summary>
+        public bool ShowBlissBoxPlayer
+        {
+            get => _showBlissBoxPlayer;
+            set => SetProperty(ref _showBlissBoxPlayer, value);
+        }
+
+        private bool _showDreamcastScreen;
+        /// <summary>A Dreamcast pad is in the port.</summary>
+        public bool ShowDreamcastScreen
+        {
+            get => _showDreamcastScreen;
+            set => SetProperty(ref _showDreamcastScreen, value);
+        }
+
+        private bool _showControllerPak;
+        /// <summary>An N64 controller is in the port, on an adapter with
+        /// firmware 3.0 or later, whose native channel the pak rides.</summary>
+        public bool ShowControllerPak
+        {
+            get => _showControllerPak;
+            set => SetProperty(ref _showControllerPak, value);
+        }
+
+        private bool _showNativeArrows;
+        /// <summary>A PlayStation digital pad is in a 3.x adapter's port,
+        /// whose hat cannot carry opposite directions together.</summary>
+        public bool ShowNativeArrows
+        {
+            get => _showNativeArrows;
+            set => SetProperty(ref _showNativeArrows, value);
+        }
+
+        private bool _blissBoxNativeArrows;
+        /// <summary>The port polls its pad through the native channel for the
+        /// four directions.</summary>
+        public bool BlissBoxNativeArrows
+        {
+            get => _blissBoxNativeArrows;
+            set => SetProperty(ref _blissBoxNativeArrows, value);
+        }
+
+        private bool _blissBoxIdle = true;
+        /// <summary>No player change or Controller Pak transfer holds the
+        /// port's channel, and no player change has replaced the port, so its
+        /// buttons can act.</summary>
+        public bool BlissBoxIdle
+        {
+            get => _blissBoxIdle;
+            set => SetProperty(ref _blissBoxIdle, value);
+        }
+
+        private string _keyboardScreenLine = string.Empty;
+        /// <summary>A keyboard screen's line (issue #519): what draws the
+        /// screen or why nothing does, and whose picture Logitech Gaming
+        /// Software shows when it shares one. Empty for every other row.</summary>
+        public string KeyboardScreenLine
+        {
+            get => _keyboardScreenLine;
+            set => SetProperty(ref _keyboardScreenLine, value ?? string.Empty);
+        }
+
+        private string _keyboardScreenButtonText = string.Empty;
+        /// <summary>The screen dialog's button, named for the kind of screen
+        /// the way Dreamcast Screen… is.</summary>
+        public string KeyboardScreenButtonText
+        {
+            get => _keyboardScreenButtonText;
+            set => SetProperty(ref _keyboardScreenButtonText, value ?? string.Empty);
+        }
+
+        private bool _showKeyboardScreen;
+        /// <summary>The row is a present keyboard screen, so its dialog can
+        /// open.</summary>
+        public bool ShowKeyboardScreen
+        {
+            get => _showKeyboardScreen;
+            set => SetProperty(ref _showKeyboardScreen, value);
+        }
+
+        private bool _showFlydigiScreen;
+        /// <summary>The row is a Flydigi Apex pad with a screen and a session
+        /// (#586), so its screen's dialog can open.</summary>
+        public bool ShowFlydigiScreen
+        {
+            get => _showFlydigiScreen;
+            set => SetProperty(ref _showFlydigiScreen, value);
+        }
+
+        private string _gameModLine = string.Empty;
+        /// <summary>What a DSX game mod sets on this controller (#529), shown
+        /// with Clear Mod Effects. Empty while no mod reaches it.</summary>
+        public string GameModLine
+        {
+            get => _gameModLine;
+            set => SetProperty(ref _gameModLine, value ?? string.Empty);
+        }
+
+        private string _falconLine = string.Empty;
+        /// <summary>An open Novint Falcon's line (issue #521): a homing
+        /// prompt for its first seconds, then its rate. Empty for every other
+        /// row.</summary>
+        public string FalconLine
+        {
+            get => _falconLine;
+            set => SetProperty(ref _falconLine, value ?? string.Empty);
+        }
+
+        private bool _showFalconCalibrate;
+        /// <summary>The row is an open Falcon, so its reach can be
+        /// calibrated.</summary>
+        public bool ShowFalconCalibrate
+        {
+            get => _showFalconCalibrate;
+            set => SetProperty(ref _showFalconCalibrate, value);
+        }
+
+        private string _falconCalibrationStatus = string.Empty;
+        /// <summary>The reach the Falcon uses, or how its sweep went.</summary>
+        public string FalconCalibrationStatus
+        {
+            get => _falconCalibrationStatus;
+            set => SetProperty(ref _falconCalibrationStatus, value ?? string.Empty);
+        }
+
+        private string _analogKeyboardLine = string.Empty;
+        /// <summary>An analog keyboard's line (issue #468): a Razer keyboard
+        /// that waits for Razer Synapse says so. Empty otherwise.</summary>
+        public string AnalogKeyboardLine
+        {
+            get => _analogKeyboardLine;
+            set => SetProperty(ref _analogKeyboardLine, value ?? string.Empty);
+        }
+
+        /// <summary>The beam-count window the gun's aim scales by. A Wii
+        /// Remote's window is in pointer counts no one reads, so its line says
+        /// only whether it is calibrated.</summary>
+        public string GunCalibrationStatus
+        {
+            get
+            {
+                if (_gunIsWiiRemote)
+                    return XBOXDS4ONE.Engine.GunCon2Calibration.TryParse(_gunCalibration, out _)
+                        ? Strings.Instance.Devices_WiiAimCalibrated
+                        : Strings.Instance.Devices_WiiAimDefault;
+                var c = XBOXDS4ONE.Engine.GunCon2Calibration.Parse(_gunCalibration);
+                string format = c.IsDefault
+                    ? Strings.Instance.Devices_GunWindowDefault
+                    : Strings.Instance.Devices_GunWindowCalibrated;
+                return string.Format(System.Globalization.CultureInfo.CurrentCulture, format,
+                    c.MinX, c.MaxX, c.MinY, c.MaxY);
+            }
+        }
+
+        /// <summary>What Calibrate does for this light gun.</summary>
+        public string GunCalibrateTooltip => _gunIsWiiRemote
+            ? Strings.Instance.Devices_WiiCalibrateTooltip
+            : Strings.Instance.Devices_GunCalibrateTooltip;
+
+        // ─────────────────────────────────────────────
+        //  Device path
+        // ─────────────────────────────────────────────
+
+        private string _devicePath = string.Empty;
+
+        /// <summary>File system device path (for diagnostics).</summary>
+        public string DevicePath
+        {
+            get => _devicePath;
+            set
+            {
+                if (SetProperty(ref _devicePath, value))
+                {
+                    OnPropertyChanged(nameof(IsInternalVirtual));
+                    OnPropertyChanged(nameof(IsAggregate));
+                    OnPropertyChanged(nameof(IsXBOXDS4ONEDriverRow));
+                    OnPropertyChanged(nameof(ShowHidHideToggle));
+                    OnPropertyChanged(nameof(ShowTabletCaptureStatus));
+                    OnPropertyChanged(nameof(IsTouchpadRow));
+                    OnPropertyChanged(nameof(ShowTouchpadCaptureStatus));
+                    OnPropertyChanged(nameof(ShowInputHidingSection));
+                    OnPropertyChanged(nameof(ShowInputModeSection));
+                    // ShowConsumeToggle now gates on IsInternalVirtual, which
+                    // is path-derived, so it belongs in this refresh group
+                    // with the other path-derived siblings.
+                    OnPropertyChanged(nameof(ShowConsumeToggle));
+                    OnPropertyChanged(nameof(IsBluetoothLink));
+                    RaiseRowFacts();
+                    // ShowRegisterNfcTag's controller branch now gates on
+                    // IsBluetoothLink, which is path-derived, so a link
+                    // change must refresh the button too. Same for the
+                    // Manage Voice Macros button's DualSense branch (#317).
+                    // Manage Chat Commands reads the path's peer:// prefix
+                    // (#555).
+                    OnPropertyChanged(nameof(ShowRegisterNfcTag));
+                    OnPropertyChanged(nameof(ShowManageVoicePhrases));
+                    OnPropertyChanged(nameof(ShowManageChatCommands));
+                    OnPropertyChanged(nameof(ShowLearnHandheldButton));
+                    OnPropertyChanged(nameof(DossierConnectionPath));
+                }
+            }
+        }
+
+        /// <summary>The connection path the dossier shows when there is no HidHide
+        /// instance path to display (the existing PATH row). Covers bridged devices like
+        /// the DS3, whose real transport path (BthPS3 PDO / WinUSB interface) is surfaced
+        /// through <see cref="Common.SdlDeviceWrapper.ExternalDevicePathProvider"/> even
+        /// though SDL reports no path. Empty for internal/virtual sources and when a
+        /// HidHide path already occupies the PATH row.</summary>
+        public string DossierConnectionPath =>
+            (!string.IsNullOrEmpty(_devicePath) && string.IsNullOrEmpty(_hidHideInstancePath) && !IsInternalVirtual)
+                ? _devicePath : string.Empty;
+
+        /// <summary>True when the device is known to be linked over
+        /// Bluetooth (classic {00001124}/BTHENUM, BLE {00001812}, the SDL
+        /// fork's BLE Switch 2 driver identified by VID/PID plus empty path,
+        /// or a Microsoft Xbox pad wearing a Bluetooth-mode PID), the same
+        /// classifier the slot-card transport glyph uses. The Devices page
+        /// names the link from <see cref="Link"/>, which is Bluetooth exactly
+        /// when this is true and reads the device tree for the rest. Xbox
+        /// pads over BT (XInput#N paths) answer by PID, see
+        /// <see cref="Common.DeviceTransport"/>.</summary>
+        public bool IsBluetoothLink => Common.DeviceTransport.IsBluetooth(_devicePath, _vendorId, _productId);
+
+        /// <summary>How the device reaches the PC where XBOXDS4ONE knows it:
+        /// Bluetooth as <see cref="IsBluetoothLink"/> says, or USB, PS/2 or
+        /// I2C as the device tree shows (Common.DeviceTransport.LinkOf).
+        /// None for a virtual device and one the tree does not hold. Read
+        /// again when the row comes online, since a device first seen while
+        /// it was away is not in the tree then.</summary>
+        public Common.DeviceLink Link => Common.DeviceTransport.LinkOf(_devicePath, _vendorId, _productId);
+
+        private string _hidHideInstancePath = string.Empty;
+
+        /// <summary>Resolved HID instance path used for HidHide blacklisting.</summary>
+        public string HidHideInstancePath
+        {
+            get => _hidHideInstancePath;
+            set
+            {
+                if (SetProperty(ref _hidHideInstancePath, value))
+                    OnPropertyChanged(nameof(DossierConnectionPath));
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        //  Display
+        // ─────────────────────────────────────────────
+
+        /// <summary>True if this device is recognized as a gamepad (SDL or custom mapping).</summary>
+        public bool IsGamepad => DeviceTypeKey == "Gamepad";
+
+        /// <summary>True if this device can have community mappings submitted.
+        /// Excluded: anything already mapped by SDL, and every row that a
+        /// runtime, an SDK or XBOXDS4ONE itself feeds. A mapping submission
+        /// opens a pre-filled GitHub issue about a piece of hardware, so such
+        /// a row has nothing to submit. A device on a linked PC is hardware
+        /// and keeps the button: its row carries the remote device's own
+        /// vendor id, product id and SDL GUID.</summary>
+        public bool ShowSubmitMapping => DeviceTypeKey != "Gamepad" && DeviceTypeKey != "Mouse" && DeviceTypeKey != "Keyboard" && DeviceTypeKey != "Touchpad" && DeviceTypeKey != "Tablet" && DeviceTypeKey != "Midi" && DeviceTypeKey != "Nfc" && DeviceTypeKey != "HeadsetMotion" && DeviceTypeKey != "Microphone" && DeviceTypeKey != "HandheldButtons" && DeviceTypeKey != "ConsumerControl" && DeviceTypeKey != "SystemMotion" && DeviceTypeKey != "HeadTracker" && DeviceTypeKey != "VrController" && DeviceTypeKey != "LogitechGKeys" && DeviceTypeKey != "AnalogKeyboard" && DeviceTypeKey != "WebMenus" && DeviceTypeKey != "PeripheralLighting" && DeviceTypeKey != "PeripheralHaptics" && DeviceTypeKey != "KeyboardScreenKeys" && DeviceTypeKey != "NovintFalcon" && DeviceTypeKey != "GameTelemetry" && DeviceTypeKey != "TwitchChat";
+
+        /// <summary>True for an NFC reader (issue #150): shows the "Register/Manage
+        /// NFC Tags" button, which opens the tap-to-name registration flow.
+        /// Also true for a Switch right Joy-Con / Pro Controller (issue #241),
+        /// whose own NFC reader registers tags through the same dialog. Without
+        /// this, a controller-only user could never open the dialog, so the
+        /// MCU never armed and no tag could ever be captured. The
+        /// dialog opening arms the reader via RegistrationCaptureActive.
+        /// Controller readers are gated to Bluetooth links: their NFC MCU is
+        /// a Bluetooth-only capability (SDL#15, cite-verified 2026-07-24), so
+        /// a USB-linked controller offers no registration, matching the
+        /// arming gate in InputService.RefreshSwitchNfcArming. Standalone
+        /// PC/SC readers (DeviceTypeKey == "Nfc") are USB and keep the
+        /// button.</summary>
+        public bool ShowRegisterNfcTag =>
+            (DeviceTypeKey == "Nfc"
+             || (VendorId == 0x057E && (ProductId == 0x2007 || ProductId == 0x2008 || ProductId == 0x2009)
+                 && IsBluetoothLink))
+            // Remote rows (reader or controller) keep the owner's identity,
+            // but the tap event that feeds registration never crosses the
+            // link (the wire carries resolved tag bits, not UIDs), so
+            // offering the dialog there was a dead button (#248 audit).
+            // Register on the owner.
+            && !(DevicePath != null && DevicePath.StartsWith("peer://", System.StringComparison.Ordinal));
+
+        /// <summary>Whether to show the "Map Key Lights" button (#557): a
+        /// device whose lighting path knows its lights one by one, keys
+        /// among them, for a model names can be learned for. A peer's device
+        /// is mapped on its owner, the NFC button's peer:// rule.</summary>
+        public bool ShowMapKeyLights
+            => !(DevicePath != null && DevicePath.StartsWith("peer://", System.StringComparison.Ordinal))
+               && XBOXDS4ONE.Common.Input.Peripherals.PeripheralLightMaps.ForRow(
+                   XBOXDS4ONE.Common.Input.Peripherals.PeripheralOutputs.Links.For(InstanceGuid), out _)
+                   is { HasKeys: true, Product: not null };
+
+        /// <summary>The device's lights became known, changed or went.</summary>
+        internal void RefreshKeyLights() => OnPropertyChanged(nameof(ShowMapKeyLights));
+
+        /// <summary>Whether to show the "Manage Chat Commands" button (issue
+        /// #555): the Twitch Chat row, whose words are this PC's list. A
+        /// peer's shared copy is managed on its owner, the NFC button's
+        /// peer:// rule.</summary>
+        public bool ShowManageChatCommands
+            => DeviceTypeKey == "TwitchChat"
+               && !(DevicePath != null && DevicePath.StartsWith("peer://", System.StringComparison.Ordinal));
+
+        /// <summary>Whether to show the "Manage Voice Macros" button
+        /// (issue #317): devices that carry voice phrases. Standalone
+        /// microphone rows always; a DualSense only over Bluetooth, where
+        /// its embedded mic is not a system device and the pad itself
+        /// carries the phrases (wired, its endpoint row does); and a
+        /// DualShock 4 over Bluetooth, whose headset microphone XBOXDS4ONE
+        /// reads from the pad (#528).</summary>
+        public bool ShowManageVoicePhrases
+            => (DeviceTypeKey == "Microphone"
+                || (VendorId == 0x054C && (ProductId == 0x0CE6 || ProductId == 0x0DF2)
+                    && IsBluetoothLink)
+                || (VendorId == 0x054C && (ProductId == 0x05C4 || ProductId == 0x09CC)
+                    && IsBluetoothLink && XBOXDS4ONE.Common.Input.AudioPassthroughService.EnableDs4BtMic))
+               // Same peer:// exclusion as ShowRegisterNfcTag (#248 lesson):
+               // recognition runs on the pad's OWNER; the dialog here would
+               // be a dead button. Today IsBluetoothLink happens to answer
+               // false for peer paths, but that is an accident of the
+               // transport probe, not a contract.
+               && !(DevicePath != null && DevicePath.StartsWith("peer://", System.StringComparison.Ordinal));
+
+        /// <summary>Whether to show the "NFC" capability chip in the summary:
+        /// a controller that carries an NFC reader (Switch right Joy-Con
+        /// 0x2007, combined pair 0x2008, Pro 0x2009), where NFC is a secondary
+        /// capability listed beside Rumble and Gyro. A standalone PC/SC reader
+        /// (DeviceTypeKey "Nfc") is excluded: its device type already conveys
+        /// NFC, so a chip would be redundant. Hardware capability, not the
+        /// transport-gated arming state (SDL#15), so it reads true whether the
+        /// controller is currently linked over Bluetooth or USB.</summary>
+        public bool HasNfcCapabilityChip =>
+            VendorId == 0x057E
+            && (ProductId == 0x2007 || ProductId == 0x2008 || ProductId == 0x2009);
+
+        /// <summary>Capabilities summary string for display.</summary>
+        public string CapabilitiesSummary
+        {
+            get
+            {
+                bool isTouchpadType = DeviceTypeKey == "Touchpad";
+
+                // Touchpad-only devices: skip "0 axes, 0 buttons, 0 POVs" noise.
+                // Each count reads as one or as many, "1 axis" beside "2 buttons".
+                var sb = new System.Text.StringBuilder();
+                void Append(string cap) { if (sb.Length > 0) sb.Append(", "); sb.Append(cap); }
+                if (!isTouchpadType)
+                {
+                    Append(Strings.Counted(nameof(Strings.Devices_Caps_Axes_Format), _axisCount));
+                    Append(Strings.Counted(nameof(Strings.Devices_Caps_Buttons_Format), _buttonCount));
+                    Append(Strings.Counted(nameof(Strings.Devices_Caps_Povs_Format), _povCount));
+                }
+
+                if (_hasRumble) Append(Strings.Instance.Devices_Rumble);
+                if (_hasGyro) Append(Strings.Instance.Devices_Gyro);
+                if (_hasAccel) Append(Strings.Instance.Devices_Accelerometer);
+                // Only show "Touchpad" capability on non-touchpad-type devices (e.g. DualSense gamepad).
+                if (_hasTouchpad && !isTouchpadType) Append(Strings.Instance.Btn_Touchpad);
+                // NFC reader as a secondary capability of a controller (Switch
+                // right Joy-Con / combined pair / Pro), shown beside Rumble and
+                // Gyro. A standalone PC/SC reader's own type already reads NFC,
+                // so it is not repeated as a capability chip (the touchpad
+                // pattern above). Hardware presence, not transport: the reader
+                // exists regardless of how the controller is linked.
+                if (HasNfcCapabilityChip) Append(Strings.Instance.Devices_Nfc);
+
+                return sb.Length > 0 ? sb.ToString() : Strings.Instance.Btn_Touchpad;
+            }
+        }
+
+        public override string ToString()
+        {
+            return $"{_deviceName} [{StatusText}]";
+        }
+    }
+
+    /// <summary>
+    /// A pill on a device's row on the Devices page (#574): a virtual
+    /// controller that uses the device, with its type's icon and its name,
+    /// the type and its number within the type ("Xbox #1").
+    /// </summary>
+    public class SlotBadge : ObservableObject
+    {
+        /// <summary>VC family of the slot, captured from the type-group walk
+        /// that numbers the badge. Drives the branded icon (#175 item 12).</summary>
+        public Engine.VirtualControllerType VcType { get; set; }
+
+        /// <summary>The slot's number within its type: Xbox #1, Xbox #2.</summary>
+        public int TypeNumber { get; set; }
+
+        /// <summary>Branded path geometry for the pill, null for glyph types.</summary>
+        public System.Windows.Media.Geometry TypeGeometry => SlotTypeIconMap.GeometryFor(VcType);
+
+        /// <summary>MDL2 glyph for the non-vector types, empty otherwise.</summary>
+        public string TypeGlyph => SlotTypeIconMap.GlyphFor(VcType);
+
+        /// <summary>The pill's name, the type's name in the language and the
+        /// number within the type.</summary>
+        public string Label => SlotTypeIconMap.NameFor(VcType) + " #" + TypeNumber.ToString(System.Globalization.CultureInfo.CurrentCulture);
+
+        /// <summary>The language changed: the name reads again.</summary>
+        public void RaiseLabel() => OnPropertyChanged(nameof(Label));
+
+        /// <summary>A pill is a list item, and ItemAutomationPeer.GetNameCore
+        /// falls back to the item's ToString(), so a screen reader reads the
+        /// name the pill shows.</summary>
+        public override string ToString() => Label;
+    }
+
+    /// <summary>Branded VC-type icon lookup for the slot pills (#175 phase 2
+    /// item 12). The three vector families reuse the exact geometries the
+    /// sidebar entries and Home cards wear (Common.ControllerIcons); MIDI and
+    /// KbM have no vector logo anywhere in the app and keep their MDL2
+    /// glyphs (E8D6 piano, E961 input), mirroring
+    /// MainWindow.UpdateControllerNavItemContent's type chip. A Home
+    /// card's type chip reads this map too.</summary>
+    internal static class SlotTypeIconMap
+    {
+        private static readonly System.Windows.Media.Geometry XboxGeometry = ParseFrozen(Common.ControllerIcons.XboxSvgPath);
+        private static readonly System.Windows.Media.Geometry PlayStationGeometry = ParseFrozen(Common.ControllerIcons.DS4SvgPath);
+        private static readonly System.Windows.Media.Geometry NintendoGeometry = ParseFrozen(Common.ControllerIcons.SwitchSvgPath);
+        private static readonly System.Windows.Media.Geometry ExtendedGeometry = ParseFrozen(Common.ControllerIcons.ExtendedSvgPath);
+
+        private static System.Windows.Media.Geometry ParseFrozen(string pathData)
+        {
+            var g = System.Windows.Media.Geometry.Parse(pathData);
+            g.Freeze();
+            return g;
+        }
+
+        /// <summary>Branded path geometry, or null for the glyph-only types.</summary>
+        public static System.Windows.Media.Geometry GeometryFor(Engine.VirtualControllerType type) => type switch
+        {
+            Engine.VirtualControllerType.PlayStation => PlayStationGeometry,
+            Engine.VirtualControllerType.Nintendo => NintendoGeometry,
+            Engine.VirtualControllerType.Extended => ExtendedGeometry,
+            Engine.VirtualControllerType.Midi => null,
+            Engine.VirtualControllerType.KeyboardMouse => null,
+            Engine.VirtualControllerType.Vr => null,
+            _ => XboxGeometry
+        };
+
+        /// <summary>MDL2 glyph for the types without a vector logo; empty otherwise.</summary>
+        public static string GlyphFor(Engine.VirtualControllerType type) => type switch
+        {
+            Engine.VirtualControllerType.Midi => "\uE8D6",
+            Engine.VirtualControllerType.KeyboardMouse => "\uE961",
+            Engine.VirtualControllerType.Vr => "\uF119",
+            _ => string.Empty
+        };
+
+        /// <summary>The type's name in the language, as the type bar and the
+        /// sidebar write it, so the names live once.</summary>
+        public static string NameFor(Engine.VirtualControllerType type) => type switch
+        {
+            Engine.VirtualControllerType.Xbox => Strings.Instance.ControllerType_Xbox,
+            Engine.VirtualControllerType.PlayStation => Strings.Instance.ControllerType_PlayStation,
+            Engine.VirtualControllerType.Nintendo => Strings.Instance.ControllerType_Nintendo,
+            Engine.VirtualControllerType.Extended => Strings.Instance.ControllerType_Extended,
+            Engine.VirtualControllerType.KeyboardMouse => Strings.Instance.ControllerType_KeyboardMouse,
+            Engine.VirtualControllerType.Midi => Strings.Instance.ControllerType_MIDI,
+            Engine.VirtualControllerType.Vr => Strings.Instance.ControllerType_VR,
+            _ => type.ToString(),
+        };
+    }
+}

@@ -1,0 +1,505 @@
+using System;
+using System.Buffers.Binary;
+using System.Collections.Generic;
+
+namespace XBOXDS4ONE.Engine.RemoteLink
+{
+    /// <summary>
+    /// Wire codec for the reverse output relay (issue #138). The machine running the
+    /// game (consumer) computes the full, config-applied output for a shared device
+    /// and ships a transport-agnostic SEMANTIC payload; the machine the device is
+    /// plugged into (owner) re-encodes it for the real hardware and writes it. The
+    /// owner synthesizes nothing — it is a pure transport transcoder.
+    ///
+    /// <para>Six kinds cover the effect-output channels:</para>
+    /// <list type="bullet">
+    /// <item>SonyEffect carries the transport-normalized DualSense effect report body
+    ///   (47 B DS5 / 31 B DS4): rumble + adaptive triggers + lightbar + mic/player
+    ///   LED + audio-control. Owner replays via SDL_SendGamepadEffect (re-frames
+    ///   USB 0x02 / BT 0x31 + CRC).</item>
+    /// <item>Vibration carries the full <see cref="Common.Vibration"/> (motors + impulse
+    ///   triggers + directional + condition FFB) for every non-Sony, non-vendor-wheel
+    ///   device. Owner replays via ForceFeedbackState.SetDeviceForces on the real
+    ///   SDL handle (rumble / trigger rumble / DirectInput haptic, per its caps).
+    ///   A shared Novint Falcon's frame carries its slot's settings in a
+    ///   <see cref="FalconTail"/>, and the owner hands both to the Falcon's
+    ///   haptic thread (#521).</item>
+    /// <item>Wheel carries semantic steering FFB (force/condition/periodic/range/autocenter/
+    ///   RPM LEDs) for Logitech / Fanatec / Thrustmaster wheels. Owner re-encodes with
+    ///   its own per-vendor raw-HID writer (vendor PID quantization + report sizing +
+    ///   stateful upload/play caches stay on the machine that owns the wheel).</item>
+    /// <item>HapticTone (#147) carries the consumer's HapticToneReducer output, one
+    ///   (dominant frequency Hz, amplitude 0..1) pair per rumble tick, slot volume
+    ///   already applied. Owner re-encodes with its own per-family writer (Joy-Con
+    ///   HD Rumble / Steam 0x8f / Triton 0x83 / Deck), the Wheel division of labor.</item>
+    /// <item>PlayerIndex (#191) carries the consumer's winning 1-based player number
+    ///   (smallest displayed number across the slots the pad feeds) for NON-Sony
+    ///   shared pads (Nintendo, BT DS3), whose player LED is otherwise
+    ///   machine-local. DualSense/DS4 already carry the player LED inside the
+    ///   SonyEffect body, so they never send this kind.</item>
+    /// <item>GuideLed (#209, Switch #226) carries the consumer's configured
+    ///   Guide/Home button LED brightness (0-100 percent) for a shared Xbox GIP
+    ///   pad, 2015 Steam Controller, or Switch home-LED device, whose LED is
+    ///   otherwise driven only by the owner's local hardware writers. The owner
+    ///   re-applies it through the SAME writers the local path uses
+    ///   (XboxGipGuideLedWriter / SteamHomeLedSetter / SwitchHomeLedSetter).
+    ///   Addressed to one peer device by the ship's device path, exactly as
+    ///   PlayerIndex.</item>
+    /// </list>
+    /// Audio (the speaker sample stream) is carried out of band on its own
+    /// <see cref="LinkMessageType.Audio"/> datagrams, not here.
+    /// </summary>
+    public static class OutputEffectCodec
+    {
+        public enum Kind : byte
+        {
+            SonyEffect = 1,
+            Vibration = 2,
+            Wheel = 3,
+            // HD haptic tone (#147): the consumer's HapticToneReducer output,
+            // one (dominant frequency Hz, amplitude 0..1) pair per rumble
+            // tick, slot volume already applied. The owner re-encodes it with
+            // its own per-family writer (Joy-Con HD Rumble / Steam 0x8f /
+            // Triton 0x83 / Deck), exactly the Wheel division of labor.
+            HapticTone = 4,
+            // Player-index / player-LED number (#191) for non-Sony shared pads:
+            // the consumer's winning 1-based global number (0 = unmapped; when
+            // the pad feeds several consumer slots, the smallest displayed
+            // number). The owner routes it to SetPlayerIndex (Nintendo and
+            // SInput) / SetPlayerNumber (BT DS3).
+            PlayerIndex = 5,
+            // Guide / Home button LED brightness (#209, Switch #226) for a
+            // shared Xbox GIP pad, 2015 Steam Controller, or Switch home-LED
+            // device: the consumer's configured percent (0..100). The owner
+            // re-applies via the same writers the local path uses
+            // (XboxGipGuideLedWriter.TrySetBrightness /
+            // SteamHomeLedSetter.TrySet / SwitchHomeLedSetter.TrySet).
+            // One byte, PlayerIndex's exact shape.
+            GuideLed = 6,
+        }
+
+        // ── Sony effect body ────────────────────────────────────────────────
+
+        public static byte[] EncodeSonyEffect(ReadOnlySpan<byte> effectBody)
+        {
+            var b = new byte[1 + effectBody.Length];
+            b[0] = (byte)Kind.SonyEffect;
+            effectBody.CopyTo(b.AsSpan(1));
+            return b;
+        }
+
+        // ── Full Vibration ──────────────────────────────────────────────────
+
+        /// <summary>
+        /// A Novint Falcon's settings from the consumer's slot (#521), a tail on
+        /// the Vibration frame of a shared Falcon. The owner's haptic thread
+        /// renders the force, and the feel, the buttons and the strengths are
+        /// set on the consumer's pad page, so they ride with the force. Not
+        /// assigned means the consumer's slots let the Falcon go. The strengths
+        /// are percent, the force cap is tenths of a newton. An owner from
+        /// before the tail stops reading at the condition axes and never sees
+        /// it.
+        /// </summary>
+        public readonly record struct FalconTail(bool Assigned, byte Feel, byte Spring, byte KickButton, byte Kick,
+            byte Shake, byte BraceButton, byte PreloadButton, byte Gravity, ushort ForceCapTenths, byte Overall)
+        {
+            /// <summary>The tail's first byte.</summary>
+            public const byte Tag = 0xFA;
+            /// <summary>Its length, the tag included.</summary>
+            public const int Length = 13;
+            /// <summary>The consumer's slots let the Falcon go.</summary>
+            public static readonly FalconTail Unassigned = default;
+        }
+
+        public static byte[] EncodeVibration(Vibration v) => EncodeVibration(v, null);
+
+        public static byte[] EncodeVibration(Vibration v, FalconTail? falcon)
+        {
+            var w = new Writer(64);
+            w.U8((byte)Kind.Vibration);
+            w.U16(v.LeftMotorSpeed);
+            w.U16(v.RightMotorSpeed);
+            w.U16(v.LeftTriggerMotorSpeed);
+            w.U16(v.RightTriggerMotorSpeed);
+            byte flags = (byte)((v.HasDirectionalData ? 1 : 0) | (v.HasConditionData ? 2 : 0));
+            w.U8(flags);
+            w.U32(v.EffectType);
+            w.I16(v.SignedMagnitude);
+            w.U16(v.Direction);
+            w.U32(v.Period);
+            w.U8(v.DeviceGain);
+            int axes = v.HasConditionData && v.ConditionAxes != null
+                ? Math.Min(v.ConditionAxisCount, v.ConditionAxes.Length) : 0;
+            axes = Math.Min(axes, 2);
+            w.U8((byte)axes);
+            for (int i = 0; i < axes; i++)
+            {
+                var a = v.ConditionAxes[i];
+                w.I16(a.PositiveCoefficient);
+                w.I16(a.NegativeCoefficient);
+                w.I16(a.Offset);
+                w.U32(a.DeadBand);
+                w.U32(a.PositiveSaturation);
+                w.U32(a.NegativeSaturation);
+            }
+            if (falcon is { } f)
+            {
+                w.U8(FalconTail.Tag);
+                w.U8(f.Assigned ? (byte)1 : (byte)0);
+                w.U8(f.Feel);
+                w.U8(f.Spring);
+                w.U8(f.KickButton);
+                w.U8(f.Kick);
+                w.U8(f.Shake);
+                w.U8(f.BraceButton);
+                w.U8(f.PreloadButton);
+                w.U8(f.Gravity);
+                w.U16(f.ForceCapTenths);
+                w.U8(f.Overall);
+            }
+            return w.ToArray();
+        }
+
+        // ── Wheel FFB ───────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Vehicle mode's centering for a shared wheel (#588), a tail on the
+        /// Wheel frame. The consumer composes it, since the settings, the
+        /// game's speed and the wheel's relayed position are all there, and
+        /// the owner sends it with its own writers: the level as a constant
+        /// force beside the game's, and the spring, the damper and the
+        /// friction as effects the wheel runs itself. Coefficients and
+        /// limits are of 10000. A frame with no tail, or an empty one, lets
+        /// go of any centering the wheel holds. An owner from before the
+        /// tail stops reading at the LED mask and never sees it.
+        /// </summary>
+        public readonly record struct CenteringTail(short Level, ushort SpringCoefficient, ushort SpringSaturation,
+            ushort DamperCoefficient, ushort DamperSaturation, ushort FrictionSaturation)
+        {
+            /// <summary>The tail's first byte.</summary>
+            public const byte Tag = 0xCE;
+            /// <summary>Its length, the tag included.</summary>
+            public const int Length = 13;
+
+            /// <summary>Nothing to hold on the wheel.</summary>
+            public bool IsEmpty => Level == 0 && SpringCoefficient == 0 && DamperCoefficient == 0 && FrictionSaturation == 0;
+
+            public static CenteringTail From(in XBOXDS4ONE.Engine.Steering.CenteringFrame frame) => new(
+                frame.Level, Clamp(frame.SpringCoefficient), Clamp(frame.SpringSaturation),
+                Clamp(frame.DamperCoefficient), Clamp(frame.DamperSaturation), Clamp(frame.FrictionSaturation));
+
+            private static ushort Clamp(int value) => (ushort)Math.Clamp(value, 0, 10000);
+        }
+
+        /// <summary>The semantic steering-FFB frame (the consumer's WheelFfbSig plus
+        /// rotation range and the resolved RPM-LED mask). Owner re-encodes per vendor.
+        /// <paramref name="rangeLeftToWheel"/> is flag bit 3: the owner sends the wheel
+        /// no range (#512). The range still rides the frame, so an owner from before
+        /// the bit, whose decode reads bits 0 to 2 only, sets the range it always did.
+        /// <paramref name="centering"/> rides last, and only when it is not empty.</summary>
+        public static byte[] EncodeWheel(
+            bool hasCond, bool dir, short force, short peak, int ac, uint effect, int period,
+            short pc, short nc, short off, int db, int ps, int ns, int condGain,
+            ushort rangeDeg, ushort ledMask, bool ledValid, bool rangeLeftToWheel = false,
+            CenteringTail centering = default)
+        {
+            Span<byte> frame = stackalloc byte[WheelFrameMax];
+            int length = EncodeWheel(frame, hasCond, dir, force, peak, ac, effect, period, pc, nc, off, db, ps, ns,
+                condGain, rangeDeg, ledMask, ledValid, rangeLeftToWheel, centering);
+            return frame[..length].ToArray();
+        }
+
+        /// <summary>The most a wheel frame takes: 44 bytes, and 13 more for
+        /// the centering tail.</summary>
+        public const int WheelFrameMax = 57;
+
+        /// <summary>The wheel frame written into <paramref name="into"/>, which
+        /// holds <see cref="WheelFrameMax"/> bytes. Answers its length. The
+        /// poll writes a peer's wheel frame here on every pass to compare it
+        /// with the last one sent, so it makes no array.</summary>
+        public static int EncodeWheel(Span<byte> into,
+            bool hasCond, bool dir, short force, short peak, int ac, uint effect, int period,
+            short pc, short nc, short off, int db, int ps, int ns, int condGain,
+            ushort rangeDeg, ushort ledMask, bool ledValid, bool rangeLeftToWheel = false,
+            CenteringTail centering = default)
+        {
+            int n = 0;
+            into[n++] = (byte)Kind.Wheel;
+            into[n++] = (byte)((hasCond ? 1 : 0) | (dir ? 2 : 0) | (ledValid ? 4 : 0) | (rangeLeftToWheel ? 8 : 0));
+            BinaryPrimitives.WriteInt16LittleEndian(into[n..], force); n += 2;
+            BinaryPrimitives.WriteInt16LittleEndian(into[n..], peak); n += 2;
+            BinaryPrimitives.WriteInt32LittleEndian(into[n..], ac); n += 4;
+            BinaryPrimitives.WriteUInt32LittleEndian(into[n..], effect); n += 4;
+            BinaryPrimitives.WriteInt32LittleEndian(into[n..], period); n += 4;
+            BinaryPrimitives.WriteInt16LittleEndian(into[n..], pc); n += 2;
+            BinaryPrimitives.WriteInt16LittleEndian(into[n..], nc); n += 2;
+            BinaryPrimitives.WriteInt16LittleEndian(into[n..], off); n += 2;
+            BinaryPrimitives.WriteInt32LittleEndian(into[n..], db); n += 4;
+            BinaryPrimitives.WriteInt32LittleEndian(into[n..], ps); n += 4;
+            BinaryPrimitives.WriteInt32LittleEndian(into[n..], ns); n += 4;
+            BinaryPrimitives.WriteInt32LittleEndian(into[n..], condGain); n += 4;
+            BinaryPrimitives.WriteUInt16LittleEndian(into[n..], rangeDeg); n += 2;
+            BinaryPrimitives.WriteUInt16LittleEndian(into[n..], ledMask); n += 2;
+            if (!centering.IsEmpty)
+            {
+                into[n++] = CenteringTail.Tag;
+                BinaryPrimitives.WriteInt16LittleEndian(into[n..], centering.Level); n += 2;
+                BinaryPrimitives.WriteUInt16LittleEndian(into[n..], centering.SpringCoefficient); n += 2;
+                BinaryPrimitives.WriteUInt16LittleEndian(into[n..], centering.SpringSaturation); n += 2;
+                BinaryPrimitives.WriteUInt16LittleEndian(into[n..], centering.DamperCoefficient); n += 2;
+                BinaryPrimitives.WriteUInt16LittleEndian(into[n..], centering.DamperSaturation); n += 2;
+                BinaryPrimitives.WriteUInt16LittleEndian(into[n..], centering.FrictionSaturation); n += 2;
+            }
+            return n;
+        }
+
+        // ── HD haptic tone (#147) ───────────────────────────────────────────
+
+        public static byte[] EncodeHapticTone(float toneHz, float amplitude)
+        {
+            var w = new Writer(9);
+            w.U8((byte)Kind.HapticTone);
+            w.U32(BitConverter.SingleToUInt32Bits(toneHz));
+            w.U32(BitConverter.SingleToUInt32Bits(amplitude));
+            return w.ToArray();
+        }
+
+        // ── Player index (#191) ─────────────────────────────────────────────
+
+        /// <summary>The consumer slot's 1-based global player number (0 = unmapped).
+        /// One byte suffices (16 VC slots max; the owner wraps %4 for the LED).</summary>
+        public static byte[] EncodePlayerIndex(int oneBasedSlotNumber)
+        {
+            int n = oneBasedSlotNumber < 0 ? 0 : (oneBasedSlotNumber > 255 ? 255 : oneBasedSlotNumber);
+            return new byte[] { (byte)Kind.PlayerIndex, (byte)n };
+        }
+
+        // ── Guide / Home LED brightness (#209) ──────────────────────────────
+
+        /// <summary>The consumer's configured Guide/Home LED brightness, clamped
+        /// 0-100 percent. One byte, PlayerIndex's shape; the target peer device
+        /// is addressed by the ship's device path, not the payload.</summary>
+        public static byte[] EncodeGuideLed(int percent0to100)
+        {
+            int n = percent0to100 < 0 ? 0 : (percent0to100 > 100 ? 100 : percent0to100);
+            return new byte[] { (byte)Kind.GuideLed, (byte)n };
+        }
+
+        // ── Decode ──────────────────────────────────────────────────────────
+
+        public readonly struct WheelFrame
+        {
+            public readonly bool HasCond, Dir, LedValid;
+            /// <summary>The consumer leaves the range to the wheel (#512): send none.</summary>
+            public readonly bool RangeLeftToWheel;
+            public readonly short Force, Peak, Pc, Nc, Off;
+            public readonly int Ac, Period, Db, Ps, Ns, CondGain;
+            public readonly uint Effect;
+            public readonly ushort RangeDeg, LedMask;
+            /// <summary>Vehicle mode's centering (#588), empty from a consumer
+            /// that sent none.</summary>
+            public readonly CenteringTail Centering;
+            public WheelFrame(bool hasCond, bool dir, bool ledValid, short force, short peak,
+                short pc, short nc, short off, int ac, int period, int db, int ps, int ns,
+                int condGain, uint effect, ushort rangeDeg, ushort ledMask, bool rangeLeftToWheel = false,
+                CenteringTail centering = default)
+            {
+                HasCond = hasCond; Dir = dir; LedValid = ledValid; Force = force; Peak = peak;
+                Pc = pc; Nc = nc; Off = off; Ac = ac; Period = period; Db = db; Ps = ps; Ns = ns;
+                CondGain = condGain; Effect = effect; RangeDeg = rangeDeg; LedMask = ledMask;
+                RangeLeftToWheel = rangeLeftToWheel;
+                Centering = centering;
+            }
+        }
+
+        public readonly struct OutputEffect
+        {
+            public readonly Kind Kind;
+            public readonly byte[] SonyBody;   // SonyEffect
+            public readonly Vibration Vibration; // Vibration
+            public readonly WheelFrame Wheel;  // Wheel
+            public readonly float HapticToneHz;  // HapticTone
+            public readonly float HapticToneAmp; // HapticTone
+            public readonly int PlayerIndex;     // PlayerIndex (1-based, 0 = unmapped)
+            public readonly int GuideLedPercent; // GuideLed (0-100 percent)
+            /// <summary>Vibration: a shared Falcon's settings, null from a
+            /// consumer that sent none.</summary>
+            public readonly FalconTail? Falcon;
+            public OutputEffect(Kind kind, byte[] sonyBody, Vibration vibration, WheelFrame wheel,
+                float hapticToneHz = 0f, float hapticToneAmp = 0f, int playerIndex = 0, int guideLedPercent = 0,
+                FalconTail? falcon = null)
+            {
+                Kind = kind; SonyBody = sonyBody; Vibration = vibration; Wheel = wheel;
+                HapticToneHz = hapticToneHz; HapticToneAmp = hapticToneAmp; PlayerIndex = playerIndex;
+                GuideLedPercent = guideLedPercent; Falcon = falcon;
+            }
+        }
+
+        /// <summary>A coefficient or a limit off the wire, held to its 10000.</summary>
+        private static ushort Limit(ushort value) => value > 10000 ? (ushort)10000 : value;
+
+        public static bool TryDecode(ReadOnlySpan<byte> payload, out OutputEffect effect)
+        {
+            effect = default;
+            if (payload.Length < 1) return false;
+            var kind = (Kind)payload[0];
+            try
+            {
+                switch (kind)
+                {
+                    case Kind.SonyEffect:
+                        if (payload.Length < 2 || payload.Length > 1 + 256) return false;
+                        effect = new OutputEffect(kind, payload.Slice(1).ToArray(), null, default);
+                        return true;
+
+                    case Kind.Vibration:
+                    {
+                        var r = new Reader(payload, 1);
+                        var v = new Vibration
+                        {
+                            LeftMotorSpeed = r.U16(),
+                            RightMotorSpeed = r.U16(),
+                            LeftTriggerMotorSpeed = r.U16(),
+                            RightTriggerMotorSpeed = r.U16(),
+                        };
+                        byte flags = r.U8();
+                        v.HasDirectionalData = (flags & 1) != 0;
+                        v.HasConditionData = (flags & 2) != 0;
+                        v.EffectType = r.U32();
+                        v.SignedMagnitude = r.I16();
+                        v.Direction = r.U16();
+                        v.Period = r.U32();
+                        v.DeviceGain = r.U8();
+                        int axes = r.U8();
+                        if (axes > 2) return false;
+                        if (axes > 0)
+                        {
+                            var arr = new ConditionAxisData[axes];
+                            for (int i = 0; i < axes; i++)
+                                arr[i] = new ConditionAxisData
+                                {
+                                    PositiveCoefficient = r.I16(),
+                                    NegativeCoefficient = r.I16(),
+                                    Offset = r.I16(),
+                                    DeadBand = r.U32(),
+                                    PositiveSaturation = r.U32(),
+                                    NegativeSaturation = r.U32(),
+                                };
+                            v.ConditionAxes = arr;
+                            v.ConditionAxisCount = axes;
+                        }
+                        // A Falcon's settings (#521) ride after the axes. Bytes
+                        // there without the tag and the tail's full length are
+                        // not one.
+                        FalconTail? falcon = null;
+                        if (r.Remaining >= FalconTail.Length && r.Peek() == FalconTail.Tag)
+                        {
+                            r.U8();
+                            falcon = new FalconTail(r.U8() != 0, r.U8(), r.U8(), r.U8(), r.U8(), r.U8(),
+                                r.U8(), r.U8(), r.U8(), r.U16(), r.U8());
+                        }
+                        effect = new OutputEffect(kind, null, v, default, falcon: falcon);
+                        return true;
+                    }
+
+                    case Kind.Wheel:
+                    {
+                        var r = new Reader(payload, 1);
+                        byte flags = r.U8();
+                        short force = r.I16();
+                        short peak = r.I16();
+                        int ac = r.I32();
+                        uint eff = r.U32();
+                        int period = r.I32();
+                        short pc = r.I16();
+                        short nc = r.I16();
+                        short off = r.I16();
+                        int db = r.I32();
+                        int ps = r.I32();
+                        int ns = r.I32();
+                        int cg = r.I32();
+                        ushort range = r.U16();
+                        ushort led = r.U16();
+                        // Centering (#588) rides after the LED mask. Bytes there
+                        // without the tag and the tail's full length are not one.
+                        CenteringTail centering = default;
+                        if (r.Remaining >= CenteringTail.Length && r.Peek() == CenteringTail.Tag)
+                        {
+                            r.U8();
+                            centering = new CenteringTail(r.I16(), Limit(r.U16()), Limit(r.U16()), Limit(r.U16()),
+                                Limit(r.U16()), Limit(r.U16()));
+                        }
+                        var wf = new WheelFrame(
+                            (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0,
+                            force, peak, pc, nc, off, ac, period, db, ps, ns, cg, eff, range, led,
+                            (flags & 8) != 0, centering);
+                        effect = new OutputEffect(kind, null, null, wf);
+                        return true;
+                    }
+
+                    case Kind.HapticTone:
+                    {
+                        var r = new Reader(payload, 1);
+                        float hz = BitConverter.UInt32BitsToSingle(r.U32());
+                        float amp = BitConverter.UInt32BitsToSingle(r.U32());
+                        if (!float.IsFinite(hz) || !float.IsFinite(amp)) return false;
+                        effect = new OutputEffect(kind, null, null, default,
+                            hapticToneHz: hz, hapticToneAmp: Math.Clamp(amp, 0f, 1f));
+                        return true;
+                    }
+
+                    case Kind.PlayerIndex:
+                    {
+                        if (payload.Length < 2) return false;
+                        effect = new OutputEffect(kind, null, null, default, playerIndex: payload[1]);
+                        return true;
+                    }
+
+                    case Kind.GuideLed:
+                    {
+                        if (payload.Length < 2) return false;
+                        int pct = payload[1] > 100 ? 100 : payload[1];
+                        effect = new OutputEffect(kind, null, null, default, guideLedPercent: pct);
+                        return true;
+                    }
+
+                    default:
+                        return false;
+                }
+            }
+            catch
+            {
+                effect = default;
+                return false;
+            }
+        }
+
+        // ── tiny LE serializers (bounds-checked decode) ─────────────────────
+
+        private struct Writer
+        {
+            private readonly List<byte> _b;
+            public Writer(int cap) { _b = new List<byte>(cap); }
+            public void U8(byte v) => _b.Add(v);
+            public void U16(ushort v) { _b.Add((byte)v); _b.Add((byte)(v >> 8)); }
+            public void I16(short v) => U16(unchecked((ushort)v));
+            public void U32(uint v) { _b.Add((byte)v); _b.Add((byte)(v >> 8)); _b.Add((byte)(v >> 16)); _b.Add((byte)(v >> 24)); }
+            public void I32(int v) => U32(unchecked((uint)v));
+            public byte[] ToArray() => _b.ToArray();
+        }
+
+        private ref struct Reader
+        {
+            private readonly ReadOnlySpan<byte> _s;
+            private int _p;
+            public Reader(ReadOnlySpan<byte> s, int start) { _s = s; _p = start; }
+            public int Remaining => _s.Length - _p;
+            public byte Peek() => _s[_p];
+            public byte U8() { byte v = _s[_p]; _p += 1; return v; }
+            public ushort U16() { ushort v = BinaryPrimitives.ReadUInt16LittleEndian(_s.Slice(_p, 2)); _p += 2; return v; }
+            public short I16() => unchecked((short)U16());
+            public uint U32() { uint v = BinaryPrimitives.ReadUInt32LittleEndian(_s.Slice(_p, 4)); _p += 4; return v; }
+            public int I32() => unchecked((int)U32());
+        }
+    }
+}

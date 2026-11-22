@@ -10,7 +10,7 @@ WHAT IT READS:
   products neither of those has (SIGNAL_PLUGINS), and the PIDLibrary entry
   a plugin that covers several products adds to it.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/SteelSeriesNames.g.cs:
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/SteelSeriesNames.g.cs:
 one row per product ID either reference names, with its name and where the
 name was read. OpenRGB's name comes first, from the first line that registers
 the product, since OpenRGB is the source the lighting follows. A product
@@ -33,7 +33,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "SteelSeriesNames.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "SteelSeriesNames.g.cs")
 
 STEELSERIES_VID = 0x1038
 
@@ -159,7 +159,7 @@ def main():
     out.append("//     (rivalcfg/devices), and signal-plugins at %s" % commit_of(args.signal)[:10])
     out.append("//     (Plugins/SteelSeries). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals")
     out.append("{")
     out.append("    internal static partial class SteelSeriesNames")
     out.append("    {")

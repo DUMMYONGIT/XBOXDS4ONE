@@ -1,10 +1,10 @@
 <#
 .SYNOPSIS
-  NVDA Tab pass over a PadForge page: every utterance NVDA speaks, logged.
+  NVDA Tab pass over a XBOXDS4ONE page: every utterance NVDA speaks, logged.
 
 .DESCRIPTION
   Starts a portable NVDA with a silent synthesizer and its IO log (level 12,
-  one "Speaking [...]" line per utterance), brings PadForge to the front,
+  one "Speaking [...]" line per utterance), brings XBOXDS4ONE to the front,
   optionally selects a sidebar page by its AutomationId (Nav_<Page>) and then
   a section or a group of that page (-Then Section_Sticks), sends Tab a set
   number of times, then quits NVDA. A page, a section and a group are
@@ -12,11 +12,11 @@
   them, and only Tab is sent, so the pass changes no setting. Read the log
   with tools/a11y_nvda_speech_parse.py.
 
-  Run it elevated. PadForge runs as administrator, and a portable NVDA reads
+  Run it elevated. XBOXDS4ONE runs as administrator, and a portable NVDA reads
   an elevated app only when it runs elevated too (NVDA user guide, portable
-  copy restrictions). Start PadForge first with the deploy recipe, since a
-  PadForge started from inside an elevated script exits when that script's
-  process tree ends. Output goes to OutDir, never beside PadForge.exe.
+  copy restrictions). Start XBOXDS4ONE first with the deploy recipe, since a
+  XBOXDS4ONE started from inside an elevated script exits when that script's
+  process tree ends. Output goes to OutDir, never beside XBOXDS4ONE.exe.
 
   The NVDA folder holds portable\nvda.exe and config\nvda.ini, whose settings
   are synth = silence, showWelcomeDialogAtStartup = False, askToExit = False,
@@ -27,8 +27,8 @@
   Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','tools\a11y_nvda_tab_pass.ps1','-Label','dashboard','-Page','Dashboard'
 #>
 param(
-    [string]$NvdaDir = (Join-Path $env:LOCALAPPDATA 'PadForgeStudio\tooling\nvda'),
-    [string]$OutDir = (Join-Path $env:LOCALAPPDATA 'PadForgeA11y'),
+    [string]$NvdaDir = (Join-Path $env:LOCALAPPDATA 'XBOXDS4ONEStudio\tooling\nvda'),
+    [string]$OutDir = (Join-Path $env:LOCALAPPDATA 'XBOXDS4ONEA11y'),
     [string]$Label = 'pass',
     # Sidebar page to select first (Dashboard for Home, Profiles, Devices, Pad1,
     # Settings, About). Empty: tab through whatever page is in front.
@@ -47,9 +47,9 @@ $log = Join-Path $OutDir "nvda-io-$Label.log"
 $status = Join-Path $OutDir "status-$Label.txt"
 "start $(Get-Date -Format o)" | Set-Content $status
 
-$pf = Get-Process PadForge -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
-if (-not $pf) { "PadForge is not running" | Add-Content $status; exit 1 }
-# The main window is the largest of PadForge's top-level windows.
+$pf = Get-Process XBOXDS4ONE -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+if (-not $pf) { "XBOXDS4ONE is not running" | Add-Content $status; exit 1 }
+# The main window is the largest of XBOXDS4ONE's top-level windows.
 # Process.MainWindowHandle is the first visible unowned window in Z order,
 # which can be a topmost overlay.
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
@@ -60,7 +60,7 @@ foreach ($top in [System.Windows.Automation.AutomationElement]::RootElement.Find
     $r = $top.Current.BoundingRectangle
     if (-not $r.IsEmpty -and $r.Width * $r.Height -gt $area) { $area = $r.Width * $r.Height; $h = [IntPtr]$top.Current.NativeWindowHandle }
 }
-"padforge pid=$($pf.Id) hwnd=$h" | Add-Content $status
+"XBOXDS4ONE pid=$($pf.Id) hwnd=$h" | Add-Content $status
 Add-Type @'
 using System;
 using System.Runtime.InteropServices;
@@ -70,7 +70,7 @@ public static class NvdaPassGate {
 '@
 # A modal dialog disables the main window and takes the keys, so the pass
 # would read the dialog or nothing. Name the cause and stop before NVDA starts.
-if (-not [NvdaPassGate]::IsWindowEnabled($h)) { "a dialog is open over the PadForge window: close it, then run the pass again" | Add-Content $status; exit 1 }
+if (-not [NvdaPassGate]::IsWindowEnabled($h)) { "a dialog is open over the XBOXDS4ONE window: close it, then run the pass again" | Add-Content $status; exit 1 }
 
 $nvdaExe = Join-Path $NvdaDir 'portable\nvda.exe'
 Start-Process $nvdaExe -ArgumentList @('-l', '12', "--log-file=$log", "--config-path=$(Join-Path $NvdaDir 'config')", '-m')
@@ -108,7 +108,7 @@ public static class NvdaPassWin {
     [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr h);
     // The Alt tap and the attached input queue get SetForegroundWindow past
     // the foreground lock, which refused it alone on 2026-10-06. Restore only
-    // a minimized window, since PadForge saves its size and state.
+    // a minimized window, since XBOXDS4ONE saves its size and state.
     public static void Front(IntPtr h) {
         keybd_event(0x12, 0, 0, UIntPtr.Zero);
         keybd_event(0x12, 0, 2, UIntPtr.Zero);
@@ -129,7 +129,7 @@ for ($k = 0; $k -lt 5 -and [NvdaPassWin]::GetForegroundWindow() -ne $h; $k++) {
     for ($t = 0; $t -lt 16 -and [NvdaPassWin]::GetForegroundWindow() -ne $h; $t++) { Start-Sleep -Milliseconds 25 }
 }
 Wait-Spoken (Log-Length) 1500
-"foreground_is_padforge=$([NvdaPassWin]::GetForegroundWindow() -eq $h)" | Add-Content $status
+"foreground_is_XBOXDS4ONE=$([NvdaPassWin]::GetForegroundWindow() -eq $h)" | Add-Content $status
 
 # A sidebar entry, a section and a group each offer SelectionItem
 # (NavItemsControl's peer, a RadioButton's), so each is selected without the

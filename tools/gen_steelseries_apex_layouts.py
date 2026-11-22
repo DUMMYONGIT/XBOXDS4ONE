@@ -10,7 +10,7 @@ WHAT IT READS, under OpenRGB's Controllers/SteelSeriesController:
 - SteelSeriesApexMController/SteelSeriesApexMController.cpp, keys_m[]: the
   Apex M750's 6 by 22 grid, from the bottom row up, in the same index space.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/SteelSeriesApexLayouts.g.cs.
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/SteelSeriesApexLayouts.g.cs.
 The tables are written as OpenRGB holds them and applied in
 SteelSeriesApexLayouts.cs the way SetSkuRegion applies them: the base patch,
 then the region patch. patch_lookup is a std::map built from an initializer
@@ -30,7 +30,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "SteelSeriesApexLayouts.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "SteelSeriesApexLayouts.g.cs")
 
 ROWS, COLUMNS = 6, 22
 PATCHES = [
@@ -132,7 +132,7 @@ def main():
     out.append("//     SteelSeriesApexController.cpp keys[] and SteelSeriesApexMController.cpp")
     out.append("//     keys_m[]). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals")
     out.append("{")
     out.append("    internal static partial class SteelSeriesApexLayouts")
     out.append("    {")

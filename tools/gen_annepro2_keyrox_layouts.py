@@ -10,7 +10,7 @@ WHAT IT READS:
   report.
 - RGBController/RGBControllerKeyNames.cpp: the string behind each KEY_ name.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/HidFamilies/AnnePro2KeyroxLayouts.g.cs:
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/AnnePro2KeyroxLayouts.g.cs:
 per board, each light in order with its name, its place in the board's
 frame, and its row and column.
 
@@ -27,7 +27,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies", "AnnePro2KeyroxLayouts.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies", "AnnePro2KeyroxLayouts.g.cs")
 
 ANNE_REL = "Controllers/AnnePro2Controller/RGBController_AnnePro2.cpp"
 KEYROX_REL = "Controllers/RedSquareKeyroxController/RedSquareKeyroxController/RGBController_RedSquareKeyrox.cpp"
@@ -188,7 +188,7 @@ def main():
     out.append("//     RGBController_RedSquareKeyrox.cpp keyrox_tkl, with the key names of")
     out.append("//     RGBController/RGBControllerKeyNames.cpp). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     out.append("{")
     out.append("    internal static partial class AnnePro2KeyroxLayouts")
     out.append("    {")

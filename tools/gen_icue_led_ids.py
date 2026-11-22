@@ -17,7 +17,7 @@ the usage names of that section. The script stops when the header names a
 key the table lacks, so a new key is never dropped unseen. A key with no
 keyboard-page usage maps to 0 and carries the label the chip shows, or none.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/IcueLedIds.g.cs, with
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/IcueLedIds.g.cs, with
 CRLF line endings.
 
 Run it without Python's -I switch: it imports tools/openrgb_cpp.py.
@@ -33,7 +33,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "IcueLedIds.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "IcueLedIds.g.cs")
 
 LETTERS = {chr(ord("A") + i): 0x04 + i for i in range(26)}
 DIGITS = {str(d): 0x1E + d - 1 for d in range(1, 10)}
@@ -141,7 +141,7 @@ def main():
     out.append("//     at %s (RGB.NET.Devices.Corsair/Enum/CorsairLedIdKeyboard.cs)." % rgbnet_commit[:10])
     out.append("//     Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals")
     out.append("{")
     out.append("    internal static partial class IcueLeds")
     out.append("    {")

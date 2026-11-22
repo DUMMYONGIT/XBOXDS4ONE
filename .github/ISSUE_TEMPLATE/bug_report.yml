@@ -1,5 +1,5 @@
 name: Bug Report
-description: Report a verified bug or unexpected behavior in PadForge
+description: Report a verified bug or unexpected behavior in XBOXDS4ONE
 title: "[Bug] "
 labels: ["bug"]
 body:
@@ -8,9 +8,9 @@ body:
       value: |
         ## Before You Start
 
-        Most "it does not work" reports turn out to be setup-order or configuration questions, not bugs. The PadForge issue tracker is for behavior that has already been raised in Discussions and either went unanswered or was confirmed as a bug.
+        Most "it does not work" reports turn out to be setup-order or configuration questions, not bugs. The XBOXDS4ONE issue tracker is for behavior that has already been raised in Discussions and either went unanswered or was confirmed as a bug.
 
-        If you are not certain this is a bug, open a [Q&A Discussion](https://github.com/hifihedgehog/PadForge/discussions/new?category=q-a) first. Bug reports filed without a prior Discussion link will be closed and redirected automatically.
+        If you are not certain this is a bug, open a [Q&A Discussion](https://github.com/DUMMYONGIT/XBOXDS4ONE/discussions/new?category=q-a) first. Bug reports filed without a prior Discussion link will be closed and redirected automatically.
 
         Please use this form only after a Discussion thread confirmed the behavior is a bug, or your question went unanswered after a reasonable wait.
 
@@ -19,8 +19,8 @@ body:
     attributes:
       label: Discussion link
       description: |
-        Link to the Discussion thread where this was raised as a question. The URL must point to a thread at `https://github.com/hifihedgehog/PadForge/discussions/N`. Reports without a valid link are closed automatically.
-      placeholder: "https://github.com/hifihedgehog/PadForge/discussions/123"
+        Link to the Discussion thread where this was raised as a question. The URL must point to a thread at `https://github.com/DUMMYONGIT/XBOXDS4ONE/discussions/N`. Reports without a valid link are closed automatically.
+      placeholder: "https://github.com/DUMMYONGIT/XBOXDS4ONE/discussions/123"
     validations:
       required: true
 
@@ -39,7 +39,7 @@ body:
       label: Steps to Reproduce
       description: How can we reproduce this issue?
       placeholder: |
-        1. Open PadForge
+        1. Open XBOXDS4ONE
         2. Go to...
         3. Click on...
         4. See error
@@ -49,7 +49,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: PadForge Version
+      label: XBOXDS4ONE Version
       description: Found in Settings or the title bar
       placeholder: "e.g., v2.0.0-beta6"
     validations:
@@ -91,10 +91,10 @@ body:
     attributes:
       label: Log files
       description: >-
-        Required. Reports without a log file are closed automatically. In PadForge, open Settings and find
+        Required. Reports without a log file are closed automatically. In XBOXDS4ONE, open Settings and find
         the Diagnostics card. Turn on Keep a Diagnostics Log, reproduce the problem, click Save Snapshot,
         then Open Log Folder. Drag diagnostics.log and the snapshot file into this box, and crash.log too if
-        PadForge crashed. See https://padforge.org/docs/troubleshooting/#logs-and-diagnostics
+        XBOXDS4ONE crashed. See https://padforge.org/docs/troubleshooting/#logs-and-diagnostics
       placeholder: Drag the log files here.
     validations:
       required: true
@@ -111,11 +111,11 @@ body:
       label: Pre-submission checklist
       description: All five boxes must be checked before submitting.
       options:
-        - label: I searched [existing issues](https://github.com/hifihedgehog/PadForge/issues?q=is%3Aissue) and [Discussions](https://github.com/hifihedgehog/PadForge/discussions) for the same problem.
+        - label: I searched [existing issues](https://github.com/DUMMYONGIT/XBOXDS4ONE/issues?q=is%3Aissue) and [Discussions](https://github.com/DUMMYONGIT/XBOXDS4ONE/discussions) for the same problem.
           required: true
         - label: I opened a Q&A Discussion first, and the question was not resolved as a setup issue. The Discussion link is in the field above.
           required: true
-        - label: I am running the latest PadForge release and can reproduce on a clean PadForge.xml.
+        - label: I am running the latest XBOXDS4ONE release and can reproduce on a clean XBOXDS4ONE.xml.
           required: true
         - label: This is a verified bug, not a usage question.
           required: true

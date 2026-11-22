@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using PadForge.Common.Input;
+using XBOXDS4ONE.Common.Input;
 
-// Runs PadForge's own WMI learner path outside the app (issue #343):
+// Runs XBOXDS4ONE's own WMI learner path outside the app (issue #343):
 // the firmware _WDG table, the event classes that pass the gate, then a
 // live subscription that prints every event for the given seconds.
 int seconds = args.Length > 0 && int.TryParse(args[0], out int s) ? s : 0;

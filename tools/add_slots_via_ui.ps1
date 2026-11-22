@@ -1,7 +1,7 @@
-﻿# Restore PadForge.xml backup, then add 4 more slot types via UI automation.
+# Restore XBOXDS4ONE.xml backup, then add 4 more slot types via UI automation.
 # The backup is the one prep_xml_for_capture.ps1 took, and it goes back under
 # the rules of settings_guard.ps1: only on its marker's word, with the file it
-# replaces copied to %TEMP%\PadForge_Capture first. Once it is back, the
+# replaces copied to %TEMP%\XBOXDS4ONE_Capture first. Once it is back, the
 # backup and its marker go, as a capture run's do.
 param(
     # The owner's answer to a run that stopped over a settings backup lying
@@ -12,16 +12,16 @@ param(
     [ValidateSet('Ask', 'File', 'Backup')]
     [string]$KeepSettingsFrom = 'Ask'
 )
-# Logs never go beside the exe. Only PadForge.xml and crash.log may live
+# Logs never go beside the exe. Only XBOXDS4ONE.xml and crash.log may live
 # in the deploy directory, and these transcripts were breaking that bar.
-$pfLogDir = Join-Path $env:TEMP "PadForge_Capture"
+$pfLogDir = Join-Path $env:TEMP "XBOXDS4ONE_Capture"
 if (-not (Test-Path $pfLogDir)) { New-Item -ItemType Directory -Path $pfLogDir | Out-Null }
 $logFile = Join-Path $pfLogDir "add_slots_log.txt"
 "START $(Get-Date -Format HH:mm:ss)" | Out-File $logFile -Encoding ascii
 
-$XmlPath = "C:\PadForge\PadForge.xml"
+$XmlPath = "C:\XBOXDS4ONE\XBOXDS4ONE.xml"
 $BakPath = "$XmlPath.bak-capture"
-$ExePath = "C:\PadForge\PadForge.exe"
+$ExePath = "C:\XBOXDS4ONE\XBOXDS4ONE.exe"
 
 # --- The owner's settings file ------------------------------------------------
 # The marker, the copies, and the loader and saver that every script under
@@ -44,12 +44,12 @@ if ($stop.Count -gt 0) {
     foreach ($line in $stop) { $line | Out-File $logFile -Encoding ascii -Append; Write-Host $line -ForegroundColor Red }
     exit 1
 }
-"Stopping PadForge..." | Out-File $logFile -Encoding ascii -Append
-Get-Process PadForge -EA SilentlyContinue | Stop-Process -Force
+"Stopping XBOXDS4ONE..." | Out-File $logFile -Encoding ascii -Append
+Get-Process XBOXDS4ONE -EA SilentlyContinue | Stop-Process -Force
 Start-Sleep -Seconds 3
 # Asked again now that the app is down. A save it made after the question
 # above can make two files that were the same differ. The run stops with
-# neither file touched and starts PadForge again.
+# neither file touched and starts XBOXDS4ONE again.
 $doubt = Get-BackupDoubt $XmlPath $BakPath $KeepSettingsFrom
 if ($doubt) {
     foreach ($line in (Get-BackupStopLines $XmlPath $BakPath $doubt)) { $line | Out-File $logFile -Encoding ascii -Append; Write-Host $line -ForegroundColor Red }
@@ -84,9 +84,9 @@ try {
 
     Start-Process $ExePath
     Start-Sleep -Seconds 12
-    "Launched PadForge" | Out-File $logFile -Encoding ascii -Append
+    "Launched XBOXDS4ONE" | Out-File $logFile -Encoding ascii -Append
 
-    $proc = Get-Process PadForge | Select-Object -First 1
+    $proc = Get-Process XBOXDS4ONE | Select-Object -First 1
     $root = [System.Windows.Automation.AutomationElement]::RootElement
     $pidCond = New-Object System.Windows.Automation.PropertyCondition(
         [System.Windows.Automation.AutomationElement]::ProcessIdProperty, $proc.Id)
@@ -128,7 +128,7 @@ public static class AddSlotsWin {
         [AddSlotsWin]::mouse_event(4, 0, 0, 0, [UIntPtr]::Zero)
         Start-Sleep -Milliseconds 1500
 
-        # The tiles are in Add a Controller, drawn inside PadForge's window
+        # The tiles are in Add a Controller, drawn inside XBOXDS4ONE's window
         # (#574). Driven By picks a connected pad by default, so Choose Later
         # is selected first: the slots made here take no device.
         $dialog = $null

@@ -1,9 +1,9 @@
 <#
 .SYNOPSIS
-  Runtime screen-reader audit of the running PadForge.
+  Runtime screen-reader audit of the running XBOXDS4ONE.
 
 .DESCRIPTION
-  Attaches to the PadForge window and selects each sidebar page by its
+  Attaches to the XBOXDS4ONE window and selects each sidebar page by its
   AutomationId (Nav_Dashboard, Nav_Devices, Nav_Profiles, Nav_Extras,
   Nav_Pad<N>, Nav_Settings, Nav_About). On Extras it opens each extra's page
   through its tile and goes back. On Settings it selects each group, and on a
@@ -14,7 +14,7 @@
   read what they hold, then walks the UI Automation control view and reports:
     FOCUSABLE_NO_NAME  a keyboard-focusable element with an empty name
     GLYPH_NAME         a name holding a private-use character, U+E000 to U+F8FF
-    TYPE_NAME          a name shaped like a .NET type name (PadForge.ViewModels.X),
+    TYPE_NAME          a name shaped like a .NET type name (XBOXDS4ONE.ViewModels.X),
                        text and links left out, since a credit such as
                        Nefarius.Utilities.DeviceManagement is shown text
     INPUT_NO_NAME      an Edit, ComboBox or Slider without a name
@@ -27,7 +27,7 @@
                        are two rows that read alike
     ITEM_EMPTY         an item of a plain list that shows on screen and holds
                        nothing: its content never reached UI Automation
-                       (PadForge.Common.ListItemPeers)
+                       (XBOXDS4ONE.Common.ListItemPeers)
   It covers the UI built in C# (the sidebar cards, the Add Controller entry),
   which the static XAML audit in AccessibilityXamlTests cannot see.
 
@@ -44,28 +44,28 @@
   walked in compiled C#. After the first view only the visible page is
   read, since the sidebar does not change.
 
-  Run it elevated. PadForge runs as administrator, and UI Automation does not
-  reach into an elevated process from a lower one. Start PadForge first with
-  the deploy recipe, since a PadForge started from inside an elevated script
+  Run it elevated. XBOXDS4ONE runs as administrator, and UI Automation does not
+  reach into an elevated process from a lower one. Start XBOXDS4ONE first with
+  the deploy recipe, since a XBOXDS4ONE started from inside an elevated script
   exits when that script's process tree ends. The window is brought forward
   only when another window is in front, restored only when minimized and
-  never resized, because PadForge saves its size and state. Pages, sections,
+  never resized, because XBOXDS4ONE saves its size and state. Pages, sections,
   parts and groups are selected through their SelectionItem pattern, and
   tiles and the two in-window dialogs through Invoke, as a screen reader
   works them. A click at an element's center is only the fallback for one
   that offers no pattern. Fold cards and More rows are opened and then closed
-  again, last first, so the fold state PadForge stores ends as it began.
+  again, last first, so the fold state XBOXDS4ONE stores ends as it began.
   Nothing is typed and no value is changed, so no setting changes.
 
-  Reports go to OutDir (default %LOCALAPPDATA%\PadForgeA11y), never beside
-  PadForge.exe. Exit code: the number of findings, -1 when PadForge is not
+  Reports go to OutDir (default %LOCALAPPDATA%\XBOXDS4ONEA11y), never beside
+  XBOXDS4ONE.exe. Exit code: the number of findings, -1 when XBOXDS4ONE is not
   running, -2 on an error, which the report names with its line.
 
 .EXAMPLE
   Start-Process powershell -Verb RunAs -Wait -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','tools\a11y_uia_audit.ps1','-Axe'
 #>
 param(
-    [string]$OutDir = (Join-Path $env:LOCALAPPDATA 'PadForgeA11y'),
+    [string]$OutDir = (Join-Path $env:LOCALAPPDATA 'XBOXDS4ONEA11y'),
     # Page tags to audit (Dashboard for Home, Devices, Profiles, Extras, Pad1, Settings,
     # About). Default: every page in the sidebar.
     [string[]]$Pages,
@@ -88,7 +88,7 @@ param(
     # default Axe covers the window and the pages, and the UIA walk alone
     # covers the rest.
     [switch]$AxeTabs,
-    [string]$AxeCli = (Join-Path $env:LOCALAPPDATA 'PadForgeStudio\tooling\axe-cli\AxeWindowsCLI.exe')
+    [string]$AxeCli = (Join-Path $env:LOCALAPPDATA 'XBOXDS4ONEStudio\tooling\axe-cli\AxeWindowsCLI.exe')
 )
 
 $ErrorActionPreference = 'Stop'
@@ -315,9 +315,9 @@ $SIP = [System.Windows.Automation.SelectionItemPattern]::Pattern
 $ECP = [System.Windows.Automation.ExpandCollapsePattern]::Pattern
 $INV = [System.Windows.Automation.InvokePattern]::Pattern
 
-$pf = Get-Process PadForge -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
-if (-not $pf) { Note 'PadForge is not running. Start it with the deploy recipe first.'; Save; exit -1 }
-# The main window is the largest of PadForge's top-level windows.
+$pf = Get-Process XBOXDS4ONE -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1
+if (-not $pf) { Note 'XBOXDS4ONE is not running. Start it with the deploy recipe first.'; Save; exit -1 }
+# The main window is the largest of XBOXDS4ONE's top-level windows.
 # Process.MainWindowHandle is the first visible unowned window in Z order,
 # which can be a topmost overlay with three elements.
 $win = $null
@@ -330,13 +330,13 @@ foreach ($top in $AE::RootElement.FindAll([System.Windows.Automation.TreeScope]:
 if (-not $win) { $win = $AE::FromHandle($pf.MainWindowHandle) }
 $hwnd = [IntPtr]$win.Current.NativeWindowHandle
 $clock = [Diagnostics.Stopwatch]::StartNew()
-Note "PadForge pid=$($pf.Id) hwnd=$hwnd started=$($pf.StartTime.ToString('o'))"
+Note "XBOXDS4ONE pid=$($pf.Id) hwnd=$hwnd started=$($pf.StartTime.ToString('o'))"
 # A modal dialog disables the main window, and a click on a disabled window
 # does nothing, so every page would time out. Name the cause and stop.
-if (-not [A11yWin]::IsWindowEnabled($hwnd)) { Note 'A dialog is open over the PadForge window. Close it, then run the audit again.'; Save; exit -1 }
+if (-not [A11yWin]::IsWindowEnabled($hwnd)) { Note 'A dialog is open over the XBOXDS4ONE window. Close it, then run the audit again.'; Save; exit -1 }
 
 # The Alt tap and the attached input queue let SetForegroundWindow past the
-# foreground lock (tooling memory, 2026-10-06). Skipped when PadForge is
+# foreground lock (tooling memory, 2026-10-06). Skipped when XBOXDS4ONE is
 # already in front. Restore only when minimized: SW_RESTORE would un-maximize.
 function Front {
     if ([A11yWin]::GetForegroundWindow() -eq $hwnd) { return $true }
@@ -508,14 +508,14 @@ function Invoke-Item($el) {
 # rows are opened a level at a time, since a fold can hold another, and each
 # level is walked. Axe scans the view once, with everything open, so it reads
 # what the folds hold too. What was opened is closed again, last first, so
-# the fold state PadForge stores ends as it began. Returns the last walk.
+# the fold state XBOXDS4ONE stores ends as it began. Returns the last walk.
 function Audit-Deep($root, [string]$where, [bool]$scan = $true) {
     if ($NoFolds) { $plain = Audit-View $root $where $scan; Write-Outline $plain $where; return $plain }
     $v = Audit-View $root $where $false
     $openedFolds = New-Object System.Collections.Generic.List[object]
     # The folds close again, last first, on every way out: an error that goes
     # to the trap and Ctrl+C both run the finally before the script ends, and
-    # PadForge stores the fold state it is left with.
+    # XBOXDS4ONE stores the fold state it is left with.
     try {
         for ($level = 1; $level -le 4 -and $v.Folds.Count -gt 0; $level++) {
             $n = 0

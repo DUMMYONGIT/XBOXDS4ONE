@@ -1,0 +1,758 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+
+  <!-- ═══ Common ═══ -->
+  <data name="Common_Save" xml:space="preserve"><value>Isoni</value></data>
+  <data name="Common_Delete" xml:space="preserve"><value>Amóeló</value></data>
+  <data name="Common_Add" xml:space="preserve"><value>Apachaatá</value></data>
+  <data name="Common_Copy" xml:space="preserve"><value>Kapiini</value></data>
+  <data name="Common_Ready" xml:space="preserve"><value>A mmólnetá</value></data>
+  <data name="Common_Stopped" xml:space="preserve"><value>A úkútiw</value></data>
+  <data name="Common_Running" xml:space="preserve"><value>A angang</value></data>
+  <data name="Server_FailedToStart" xml:space="preserve"><value>Ese tongeni poputá</value></data>
+  <data name="Common_Stop" xml:space="preserve"><value>Aúkú</value></data>
+  <data name="Common_Start" xml:space="preserve"><value>Poputá</value></data>
+  <data name="Common_None" xml:space="preserve"><value>Esor</value></data>
+  <data name="Common_Ms" xml:space="preserve"><value>ms</value></data>
+  <data name="Common_Min" xml:space="preserve"><value>min</value></data>
+  <data name="Common_Seconds" xml:space="preserve"><value>sekon</value></data>
+  <data name="Common_Hz" xml:space="preserve"><value>Hz</value></data>
+  <data name="Common_XBOXDS4ONE" xml:space="preserve"><value>XBOXDS4ONE</value></data>
+
+  <!-- ═══ Controller Types ═══ -->
+  <data name="ControllerType_Xbox" xml:space="preserve"><value>Xbox</value></data>
+  <data name="ControllerType_PlayStation" xml:space="preserve"><value>PlayStation</value></data>
+  <data name="ControllerType_Nintendo" xml:space="preserve"><value>Nintendo</value></data>
+  <data name="ControllerType_MIDI" xml:space="preserve"><value>MIDI</value></data>
+  <data name="ControllerType_VR" xml:space="preserve"><value>VR</value></data>
+
+  <!-- ═══ MainWindow ═══ -->
+  <data name="Main_StartingUp" xml:space="preserve"><value>XBOXDS4ONE a poputá…</value></data>
+  <data name="Main_AddController" xml:space="preserve"><value>Apachaatá eú controller</value></data>
+  <data name="AddController_Title" xml:space="preserve"><value>Apachaatá eú controller</value></data>
+  <data name="AddController_Subtitle" xml:space="preserve"><value>Fili met urumwot repwe kúna. Ewe controller epwe tolong lupwen chok ka click.</value></data>
+  <data name="AddController_DrivenBy" xml:space="preserve"><value>Emmwen seni</value></data>
+  <data name="AddController_ChooseLater" xml:space="preserve"><value>Fili mwirin</value></data>
+  <data name="AddController_DeviceLine_Format" xml:space="preserve"><value>Bluetooth, {0}</value></data>
+  <data name="AddController_Common" xml:space="preserve"><value>Mi chómmóng</value></data>
+  <data name="AddController_MoreOutputs" xml:space="preserve"><value>Pwal ekkóch output</value></data>
+  <data name="AddController_Xbox_Line" xml:space="preserve"><value>Ewe layout chómmóng urumwot lón PC ra ápilúkú.</value></data>
+  <data name="AddController_PlayStation_Line" xml:space="preserve"><value>Fán iten urumwot mi néúnéú PlayStation prompts, touchpad me lightbar.</value></data>
+  <data name="AddController_Nintendo_Line" xml:space="preserve"><value>Ewe Switch button layout, fán iten urumwot me emulator mi ápilúkú.</value></data>
+  <data name="Main_DeleteVC" xml:space="preserve"><value>Amóeló ewe virtual controller</value></data>
+  <data name="Main_ShowXBOXDS4ONE" xml:space="preserve"><value>Pwári XBOXDS4ONE</value></data>
+  <data name="Main_EngineStopped" xml:space="preserve"><value>Ewe engine a úkútiw</value></data>
+
+  <!-- ═══ MainWindow Status Messages ═══ -->
+  <data name="Status_SDL3NotFound" xml:space="preserve"><value>Esor SDL3.dll</value></data>
+  <data name="Status_SDL3NotFoundDownloadAgain" xml:space="preserve"><value>Esor SDL3.dll. Kopwe uwato XBOXDS4ONE sefán.</value></data>
+  <data name="Status_EngineStarted" xml:space="preserve"><value>Ewe engine a poputá.</value></data>
+  <data name="Status_EngineStopped" xml:space="preserve"><value>Ewe engine a úkútiw.</value></data>
+  <data name="Status_Error_Format" xml:space="preserve"><value>Osukosuk: {0}</value></data>
+
+  <!-- ═══ Dashboard ═══ -->
+  <data name="BlissBox_TypeNumber_Format" xml:space="preserve"><value>Sókkun {0}</value></data>
+  <data name="Dashboard_WebPlainLocalOnly" xml:space="preserve"><value>Ei PC chék</value></data>
+  <data name="Dashboard_NoDevice" xml:space="preserve"><value>Esor device</value></data>
+
+  <!-- ═══ Settings ═══ -->
+  <data name="Settings_Appearance" xml:space="preserve"><value>Napanap</value></data>
+  <data name="Settings_ThemeLight" xml:space="preserve"><value>Saram</value></data>
+  <data name="Settings_ThemeDark" xml:space="preserve"><value>Roch</value></data>
+  <data name="Update_Available_Format" xml:space="preserve"><value>A wor XBOXDS4ONE {0}.</value></data>
+  <data name="Update_PreReleaseAvailable_Format" xml:space="preserve"><value>A wor pre-release {0}.</value></data>
+  <data name="Update_RestartFailed_Format" xml:space="preserve"><value>XBOXDS4ONE ese tongeni poputá sefál: {0}</value></data>
+  <data name="Settings_AddDots" xml:space="preserve"><value>Apachaatá…</value></data>
+  <data name="BthPS3Uninstall_KindRadio" xml:space="preserve"><value>Bluetooth</value></data>
+  <data name="Settings_MidiStatusUnavailable" xml:space="preserve"><value>Ese wor</value></data>
+  <data name="Settings_MidiStatusNotRunning" xml:space="preserve"><value>Ese angang</value></data>
+  <data name="Settings_SteamVR" xml:space="preserve"><value>SteamVR</value></data>
+  <data name="Settings_OpenFolder" xml:space="preserve"><value>Suuki ewe folder</value></data>
+  <data name="Settings_Language" xml:space="preserve"><value>Fós</value></data>
+  <data name="Settings_LanguageDesc" xml:space="preserve"><value>Fili ewe fós ka mochen.</value></data>
+
+  <!-- ═══ About ═══ -->
+  <data name="About_Title" xml:space="preserve"><value>Usun XBOXDS4ONE</value></data>
+  <data name="About_DotNet" xml:space="preserve"><value>.NET 10</value></data>
+  <data name="About_SDL3" xml:space="preserve"><value>SDL3</value></data>
+  <data name="About_HelixToolkit" xml:space="preserve"><value>HelixToolkit</value></data>
+  <data name="About_ModernWpf" xml:space="preserve"><value>WPF UI</value></data>
+  <data name="About_MvvmToolkit" xml:space="preserve"><value>MVVM Toolkit</value></data>
+  <data name="About_ZackslyIcons" xml:space="preserve"><value>Zacksly Icon Pack</value></data>
+  <data name="About_QDollar" xml:space="preserve"><value>$Q Recognizer</value></data>
+  <data name="About_Qmk" xml:space="preserve"><value>QMK Firmware</value></data>
+  <data name="About_GestureSign" xml:space="preserve"><value>GestureSign</value></data>
+  <data name="About_HIDMaestro" xml:space="preserve"><value>HIDMaestro</value></data>
+  <data name="About_OpenXInput" xml:space="preserve"><value>OpenXInput</value></data>
+  <data name="About_HidHide" xml:space="preserve"><value>HidHide</value></data>
+  <data name="About_TestimonyScripture" xml:space="preserve"><value>“Iwe am aua kapas usun Kraist, aua pwapwa non Kraist, aua afanafan usun Kraist, aua osini usun Kraist, me aua mak anongonong won am kewe osini, pwe nöum kewe repwe sinei ngeni ian repwe apinukunuk won ren omusomusen ar kewe tipis.”</value></data>
+  <data name="About_TestimonyRef" xml:space="preserve"><value>2 Nifai 25:26</value></data>
+  <data name="About_Bs2b" xml:space="preserve"><value>bs2b</value></data>
+  <data name="About_Concentus" xml:space="preserve"><value>Concentus</value></data>
+  <data name="About_SAxense" xml:space="preserve"><value>SAxense</value></data>
+  <data name="About_DsBtHaptics" xml:space="preserve"><value>dualsense-bt-haptics</value></data>
+  <data name="About_DualSenseY" xml:space="preserve"><value>DualSenseY-v2</value></data>
+
+  <!-- ═══ Device Types ═══ -->
+
+  <data name="MacroDisconnect_SlotDevices" xml:space="preserve"><value>Ekkewe device meinisin lón ei slot</value></data>
+  <data name="MacroDisconnect_AllDevices" xml:space="preserve"><value>Ekkewe Bluetooth device meinisin</value></data>
+  <data name="MacroAction_TextBlock_Format" xml:space="preserve"><value>Makkeei "{0}"</value></data>
+  <data name="Devices_BlissBoxPlayer" xml:space="preserve"><value>Nampaan chón urumwot…</value></data>
+  <data name="BlissBoxPlayer_Title" xml:space="preserve"><value>Nampaan chón urumwot</value></data>
+  <data name="BlissBoxPlayer_Label" xml:space="preserve"><value>Chón urumwot</value></data>
+  <data name="DreamcastScreen_Mode_Label" xml:space="preserve"><value>Pwári</value></data>
+  <data name="DreamcastScreen_Mode_Adapter" xml:space="preserve"><value>Sasingin ewe adapter</value></data>
+  <data name="DreamcastScreen_Mode_ProfileName" xml:space="preserve"><value>Iten ewe profile</value></data>
+  <data name="DreamcastScreen_Mode_ProfileNumber" xml:space="preserve"><value>Nampaan ewe profile</value></data>
+  <data name="DreamcastScreen_Mode_ProfilePicture" xml:space="preserve"><value>Sasingin ewe profile</value></data>
+  <data name="DreamcastScreen_Mode_Clock" xml:space="preserve"><value>Kulók</value></data>
+  <data name="DreamcastScreen_Mode_PlayTime" xml:space="preserve"><value>Fansoun urumwot</value></data>
+  <data name="DreamcastScreen_ChoosePicture" xml:space="preserve"><value>Fili ewe sasing…</value></data>
+  <data name="DreamcastScreen_ChooseProfilePicture_Format" xml:space="preserve"><value>Fili ewe sasing fán iten {0}…</value></data>
+  <data name="DreamcastScreen_PictureFilter" xml:space="preserve"><value>Sasing (*.png, *.bmp, *.lcd, *.vms)|*.png;*.bmp;*.lcd;*.vms|File meinisin (*.*)|*.*</value></data>
+  <data name="BlissBoxPak_FileFilter" xml:space="preserve"><value>Controller Pak file (*.mpk)|*.mpk|File meinisin (*.*)|*.*</value></data>
+  <data name="BlissBoxJob_WrongController" xml:space="preserve"><value>A lamot eú N64 controller lón ewe port.</value></data>
+  <data name="BlissBoxJob_NoPak" xml:space="preserve"><value>Esor Controller Pak lón ewe controller.</value></data>
+  <data name="Status_DreamcastScreen_Format" xml:space="preserve"><value>Ewe Dreamcast screen a siwil ngeni {0}.</value></data>
+  <data name="Status_PakSaved_Format" xml:space="preserve"><value>A isoni ewe Controller Pak lón {0}.</value></data>
+  <data name="Status_PakFileFailed_Format" xml:space="preserve"><value>Ese tongeni áeá ewe file: {0}</value></data>
+  <data name="DevObj_ConsumerMediaStop" xml:space="preserve"><value>Aúkú</value></data>
+  <data name="DevObj_ConsumerBrowserSearch" xml:space="preserve"><value>Kútta</value></data>
+  <!-- ═══ Devices ═══ -->
+
+  <!-- ═══ Pad Page ═══ -->
+  <data name="Macro_CopyNameFormat" xml:space="preserve"><value>{0} (Kapi)</value></data>
+  <!-- Impulse Triggers tab (Xbox One+ family) -->
+  <data name="Pad_TriggerRouting_Source_MainLeft" xml:space="preserve"><value>Motor peliefefin</value></data>
+  <data name="Pad_TriggerRouting_Source_MainRight" xml:space="preserve"><value>Motor peliemwán</value></data>
+  <!-- Adaptive Triggers tab (DualSense / DualSense Edge only) -->
+  <data name="Pad_AT_Weapon" xml:space="preserve"><value>Pisekin maun</value></data>
+  <data name="Pad_AT_Strength" xml:space="preserve"><value>Péchékkúl</value></data>
+  <!-- Lighting tab (DS4 / DualSense / DualSense Edge) -->
+  <data name="Pad_Lighting_Hex" xml:space="preserve"><value>Hex</value></data>
+  <data name="Pad_Lighting_PlayerLed_P1" xml:space="preserve"><value>Chón urumwot 1</value></data>
+  <data name="Pad_Lighting_PlayerLed_P2" xml:space="preserve"><value>Chón urumwot 2</value></data>
+  <data name="Pad_Lighting_PlayerLed_P3" xml:space="preserve"><value>Chón urumwot 3</value></data>
+  <data name="Pad_Lighting_PlayerLed_P4" xml:space="preserve"><value>Chón urumwot 4</value></data>
+  <data name="Pad_Lighting_PlayerLed_All" xml:space="preserve"><value>Meinisin</value></data>
+
+  <!-- v3.2+ Input Reactive overlay (separate dropdown layered on top of base mode) -->
+
+  <data name="ManageProfiles_Delete" xml:space="preserve"><value>Amóeló</value></data>
+  <data name="ManageProfiles_StatusDeleted_Format" xml:space="preserve"><value>A amóeló "{0}".</value></data>
+  <data name="ImportFromDevice_UnnamedDevice" xml:space="preserve"><value>(HID device esor itan)</value></data>
+  <data name="Pad_ExtendedVid" xml:space="preserve"><value>VID</value></data>
+  <data name="Pad_ExtendedPid" xml:space="preserve"><value>PID</value></data>
+  <data name="Pad_MidiOutputPortNone" xml:space="preserve"><value>Esor</value></data>
+  <data name="Pad_KeepAwake_Motion" xml:space="preserve"><value>Apachaatá mwékútúkút</value></data>
+  <data name="Pad_CopyFrom" xml:space="preserve"><value>Kapiini seni…</value></data>
+  <data name="Pad_Half" xml:space="preserve"><value>Esópw</value></data>
+  <!-- Merge-mapping UI (Issue #61): per-source Kind dropdown + Incremental / InvertOnHold controls. -->
+  <!-- Combine UI (Issue #61): per-row CombineMode dropdown + Custom formula editor + starter presets. English placeholders pending translation. -->
+  <data name="Pad_Combine_MaxAbs_Name" xml:space="preserve"><value>Péchékkúl seni meinisin</value></data>
+  <data name="Pad_Combine_XOR_Name" xml:space="preserve"><value>Eú chék</value></data>
+  <data name="Pad_Formula_Status_Valid" xml:space="preserve"><value>✓ pwúng</value></data>
+  <data name="Pad_Formula_Chip_Half" xml:space="preserve"><value>0.5: esópw</value></data>
+  <data name="Pad_Formula_Chip_LessThan" xml:space="preserve"><value>Kis seni</value></data>
+  <data name="Pad_Formula_Chip_GreaterThan" xml:space="preserve"><value>Lap seni</value></data>
+  <data name="Pad_Formula_Chip_LessOrEqual" xml:space="preserve"><value>Kis seni are léllé</value></data>
+  <data name="Pad_Formula_Chip_GreaterOrEqual" xml:space="preserve"><value>Lap seni are léllé</value></data>
+  <data name="Pad_Formula_Chip_Equal" xml:space="preserve"><value>Léllé ngeni</value></data>
+  <data name="Pad_Formula_Chip_NotEqual" xml:space="preserve"><value>Ese léllé ngeni</value></data>
+  <data name="Pad_MouseMovement" xml:space="preserve"><value>Mwékútúkútún mouse</value></data>
+  <data name="Pad_ScrollUp" xml:space="preserve"><value>Feitá</value></data>
+  <data name="Pad_ScrollDown" xml:space="preserve"><value>Feitiw</value></data>
+
+  <!-- ═══ Macros ═══ -->
+  <data name="Macro_Name" xml:space="preserve"><value>Iit</value></data>
+  <data name="Macro_When_Header" xml:space="preserve"><value>Lupwen</value></data>
+  <data name="Macro_Expression_Recipe_Single" xml:space="preserve"><value>a chék</value></data>
+  <data name="Macro_Expression_Recipe_Both" xml:space="preserve"><value>a me b</value></data>
+  <data name="Macro_Expression_Recipe_Either" xml:space="preserve"><value>a are b</value></data>
+  <data name="Macro_Expression_Recipe_AButNotB" xml:space="preserve"><value>a nge esap b</value></data>
+  <data name="Macro_AddAction" xml:space="preserve"><value>Apachaatá eú action</value></data>
+  <data name="Macro_ActionType" xml:space="preserve"><value>Sókkun</value></data>
+  <data name="Macro_Duration" xml:space="preserve"><value>Úkúkún fansoun</value></data>
+  <data name="Macro_Repeat" xml:space="preserve"><value>Féri sefál</value></data>
+  <data name="Macro_Once" xml:space="preserve"><value>Fán eú</value></data>
+  <data name="Macro_NewMacro" xml:space="preserve"><value>Macro minefé</value></data>
+  <data name="Macro_Default_Format" xml:space="preserve"><value>Macro {0}</value></data>
+
+  <!-- ═══ Macro Action Display ═══ -->
+  <data name="MacroAction_Wait_Format" xml:space="preserve"><value>Witiwit {0} ms</value></data>
+
+
+  <!-- ═══ Macro action: Rumble ═══ -->
+  <data name="MacroAction_Type_RumbleStop" xml:space="preserve"><value>Aúkú ewe rumble</value></data>
+  <data name="MacroAction_RumbleStop" xml:space="preserve"><value>Aúkú ewe rumble</value></data>
+  <data name="MacroAction_Type_RumbleTriggerStop" xml:space="preserve"><value>Aúkú ewe trigger vibration</value></data>
+  <data name="MacroAction_RumbleTriggerStop" xml:space="preserve"><value>Aúkú ewe trigger vibration</value></data>
+  <data name="Macro_RumbleStrengthLeft_Label" xml:space="preserve"><value>Motor peliefefin</value></data>
+  <data name="Macro_RumbleStrengthRight_Label" xml:space="preserve"><value>Motor peliemwán</value></data>
+
+  <!-- ═══ POV Directions ═══ -->
+
+  <!-- ═══ Mapping ═══ -->
+
+  <!-- ═══ Touchpad Mapping Labels ═══ -->
+
+  <!-- ═══ Touchpad Gesture Mapping Labels ═══ -->
+
+  <!-- ═══ Pad Touchpad Tab ═══ -->
+
+  <!-- Stick / D-pad output card -->
+
+  <!-- Mouse Output card -->
+
+  <!-- Absolute Pointer card (#9 B-15) -->
+
+  <!-- Swipe Haptics card (discussion #219) -->
+
+  <!-- Reset-All tooltips per card -->
+
+  <!-- Per-row Reset tooltips for stick / D-pad card -->
+
+  <!-- Per-row Reset tooltips for mouse-output card -->
+  <data name="Pad_Touchpad_PointerResponse_Simple" xml:space="preserve"><value>Mecheres</value></data>
+
+  <!-- Per-row Reset tooltips for absolute-pointer card (#9 B-15) -->
+
+  <!-- Per-row Reset tooltips for swipe-haptics card -->
+
+  <!-- Per-row Reset tooltips -->
+
+  <!-- ═══ Touchpad Gesture Recorder Dialog ═══ -->
+  <data name="Recorder_NameLabel" xml:space="preserve"><value>Iit</value></data>
+  <data name="Recorder_NamePlaceholder" xml:space="preserve"><value>Átiti itan ei gesture</value></data>
+  <data name="Recorder_Error_NameEmpty" xml:space="preserve"><value>A lamot eú iit</value></data>
+  <data name="Recorder_Error_NameTooLong" xml:space="preserve"><value>A kon ttam ewe iit (esap lap seni 64 mak)</value></data>
+
+  <data name="Settings_GyroEngageStickDirection_XNeg" xml:space="preserve"><value>Peliefefin (X-)</value></data>
+  <data name="Settings_GyroEngageStickDirection_XPos" xml:space="preserve"><value>Peliemwán (X+)</value></data>
+  <data name="Settings_GyroEngageStickDirection_YNeg" xml:space="preserve"><value>Feitiw (Y-)</value></data>
+  <data name="Settings_GyroEngageStickDirection_YPos" xml:space="preserve"><value>Feitá (Y+)</value></data>
+
+  <!-- ═══ Device Object Names (gamepad) ═══ -->
+
+  <!-- ═══ Device Object Names (raw joystick) ═══ -->
+
+  <!-- ═══ Keyboard Key Names (OEM/Numpad operators: not already in VirtualKey section) ═══ -->
+
+  <!-- ═══ Profiles ═══ -->
+  <data name="Profiles_NoSlots" xml:space="preserve"><value>Esor controller</value></data>
+  <data name="Profiles_New" xml:space="preserve"><value>Minefen profile</value></data>
+  <data name="Profiles_Edit" xml:space="preserve"><value>Siwili…</value></data>
+
+  <!-- ═══ Profile Dialog ═══ -->
+  <data name="ProfileDialog_Edit" xml:space="preserve"><value>Siwili ewe profile</value></data>
+  <data name="ProfileDialog_NewTitle" xml:space="preserve"><value>Minefen profile</value></data>
+  <data name="ProfileDialog_ProfileName" xml:space="preserve"><value>Iit</value></data>
+  <data name="ProfileDialog_DefaultName" xml:space="preserve"><value>Profile minefé</value></data>
+
+  <!-- ═══ CopyFrom Dialog ═══ -->
+  <data name="CopyFrom_Title" xml:space="preserve"><value>Kapiini seni</value></data>
+  <data name="CopyFrom_Subtitle_Format" xml:space="preserve"><value>Siwili ekkewe mapping me tuning fán iten eú me eú device lón {0} ngeni an pwal eú controller.</value></data>
+  <data name="CopyFrom_MacrosSubtitle_Format" xml:space="preserve"><value>Apachaatá an pwal eú controller kewe macro ngeni {0}.</value></data>
+
+  <!-- ═══ File Dialogs ═══ -->
+  <data name="FileDialog_ExeFilter" xml:space="preserve"><value>Executables (*.exe)|*.exe|File meinisin (*.*)|*.*</value></data>
+
+  <!-- ═══ App-Level Messages ═══ -->
+  <data name="App_AlreadyRunning" xml:space="preserve"><value>XBOXDS4ONE a fen angang.</value></data>
+  <data name="App_Error" xml:space="preserve"><value>XBOXDS4ONE: Osukosuk</value></data>
+  <data name="App_UnexpectedError_Format" xml:space="preserve"><value>A fis eú osukosuk:
+
+{0}
+
+{1}</value></data>
+
+  <!-- ═══ Polling Frequency ═══ -->
+  <data name="Dashboard_PollingHz_Format" xml:space="preserve"><value>{0:F0} Hz</value></data>
+  <data name="Dashboard_PollingDash" xml:space="preserve"><value>–</value></data>
+
+  <!-- ═══ Pad: Sticks/Triggers Settings ═══ -->
+
+  <!-- ═══ Pad: Force Feedback ═══ -->
+  <data name="Pad_LeftMotorLabel" xml:space="preserve"><value>Motor peliefefin</value></data>
+  <data name="Pad_RightMotorLabel" xml:space="preserve"><value>Motor peliemwán</value></data>
+  <data name="Pad_TestRumble" xml:space="preserve"><value>Sótuni ewe rumble</value></data>
+
+  <!-- ═══ Pad: Constant Force ═══ -->
+  <data name="Pad_ConstantForce_X" xml:space="preserve"><value>X</value></data>
+  <data name="Pad_ConstantForce_Y" xml:space="preserve"><value>Y</value></data>
+
+  <!-- ═══ Pad: Reset Tooltips ═══ -->
+
+  <!-- ═══ Pad: Adaptive Triggers reset tooltips ═══ -->
+
+  <!-- ═══ Pad: Lighting reset tooltips ═══ -->
+
+  <!-- ═══ Pad: Macro Hints ═══ -->
+
+  <!-- ═══ 3D View ═══ -->
+
+  <!-- ═══ Gamepad Button Labels ═══ -->
+  <data name="Btn_L1" xml:space="preserve"><value>L1</value></data>
+  <data name="Btn_R1" xml:space="preserve"><value>R1</value></data>
+  <data name="Btn_L3" xml:space="preserve"><value>L3</value></data>
+  <data name="Btn_R3" xml:space="preserve"><value>R3</value></data>
+  <data name="Btn_PS" xml:space="preserve"><value>PS</value></data>
+  <data name="Btn_L" xml:space="preserve"><value>L</value></data>
+  <data name="Btn_R" xml:space="preserve"><value>R</value></data>
+  <data name="Btn_ZL" xml:space="preserve"><value>ZL</value></data>
+  <data name="Btn_ZR" xml:space="preserve"><value>ZR</value></data>
+  <data name="Btn_GL" xml:space="preserve"><value>GL</value></data>
+  <data name="Btn_GR" xml:space="preserve"><value>GR</value></data>
+  <data name="Btn_Steam" xml:space="preserve"><value>Steam</value></data>
+  <data name="Btn_C" xml:space="preserve"><value>C</value></data>
+  <data name="Key_HankakuZenkaku" xml:space="preserve"><value>Hankaku/Zenkaku</value></data>
+  <data name="Key_Kana" xml:space="preserve"><value>Kana</value></data>
+
+  <!-- ═══ Keyboard Key Labels ═══ -->
+  <!-- Mouse VK buttons -->
+  <!-- Common keys -->
+  <!-- Navigation -->
+  <!-- Windows keys -->
+  <!-- Numpad -->
+  <!-- Lock keys -->
+  <!-- Left/Right modifiers -->
+  <!-- Browser keys -->
+  <!-- Media keys -->
+
+  <!-- ═══ Mouse Labels ═══ -->
+
+  <!-- ═══ Extended Custom Labels ═══ -->
+
+  <!-- ═══ Macro Axis Target Labels ═══ -->
+
+  <!-- ═══ Preview Views ═══ -->
+
+  <!-- ═══ Audio Bass Rumble ═══ -->
+  <data name="Settings_AudioRumble_LeftMotor" xml:space="preserve"><value>Motor peliefefin</value></data>
+  <data name="Settings_AudioRumble_RightMotor" xml:space="preserve"><value>Motor peliemwán</value></data>
+  <!-- Shift mode (Issue #61 Phase 6 v1+) -->
+  <data name="Pad_Shift_LayerName" xml:space="preserve"><value>Iten ewe layer</value></data>
+  <data name="Pad_Shift_NameLabel" xml:space="preserve"><value>Iit</value></data>
+  <data name="Pad_Shift_HeldWith" xml:space="preserve"><value>Mi kamwéch ren</value></data>
+  <data name="Pad_Shift_PressedWith" xml:space="preserve"><value>Mi tiki ren</value></data>
+  <data name="Pad_Shift_NextLayerWith" xml:space="preserve"><value>Ewe layer mwirin ren</value></data>
+  <data name="Pad_Shift_PreviousLayerWith" xml:space="preserve"><value>Ewe layer mwmwan ren</value></data>
+  <data name="Pad_Shift_AndWith" xml:space="preserve"><value>Me ren</value></data>
+  <data name="Pad_Shift_ChooseInput" xml:space="preserve"><value>Fili eú input</value></data>
+  <data name="Pad_Shift_UnmappedControls" xml:space="preserve"><value>Controls esor mapping</value></data>
+  <data name="Pad_Shift_FallThroughToBase" xml:space="preserve"><value>Feiló ngeni Base</value></data>
+  <data name="Pad_Shift_DoNothing" xml:space="preserve"><value>Ese fori mettóch</value></data>
+  <data name="Pad_Shift_MoreHint" xml:space="preserve"><value>Mode, sókkun input, fansoun me color</value></data>
+  <data name="Pad_Shift_MoreHint_Flyout" xml:space="preserve"><value>Mode, sókkun input, fansoun, flyout me color</value></data>
+  <data name="Pad_Shift_HintNameRequired" xml:space="preserve"><value>A lamot iten ewe layer.</value></data>
+  <data name="Pad_Shift_Rename" xml:space="preserve"><value>Siwili iten ewe layer…</value></data>
+  <data name="Pad_Shift_Delete" xml:space="preserve"><value>Amóeló ewe layer</value></data>
+  <data name="Pad_Shift_DeleteConfirmTitle" xml:space="preserve"><value>Amóeló ewe shift layer</value></data>
+
+  <data name="Pad_Pointer_SensorBar_Centered" xml:space="preserve"><value>Lukanap</value></data>
+  <data name="Pad_Pointer_SensorBar_Above" xml:space="preserve"><value>Wóón ewe screen</value></data>
+  <data name="Pad_Pointer_SensorBar_Below" xml:space="preserve"><value>Fán ewe screen</value></data>
+  <data name="Pad_Audio_Test" xml:space="preserve"><value>Sótuni</value></data>
+  <data name="Pad_Audio_StopAll" xml:space="preserve"><value>Aúkú ekkewe sound meinisin</value></data>
+  <data name="MacroAction_Type_SoundStop" xml:space="preserve"><value>Aúkú ekkewe sound</value></data>
+  <data name="About_DsTester" xml:space="preserve"><value>dualsense-tester</value></data>
+  <data name="About_Ds4Audio" xml:space="preserve"><value>DS4AudioStreamer</value></data>
+  <data name="Pad_Audio_Packages_Add" xml:space="preserve"><value>Apachaatá eú package…</value></data>
+  <data name="Pad_Audio_Packages_Create" xml:space="preserve"><value>Féri eú package…</value></data>
+  <data name="Pad_Audio_Packages_Empty" xml:space="preserve"><value>Esor sound package.</value></data>
+  <data name="Pad_Audio_Packages_PickSounds" xml:space="preserve"><value>Fili ekkewe sound file fán iten ewe package</value></data>
+  <data name="Menu_Icon_None" xml:space="preserve"><value>Esor icon</value></data>
+  <data name="Menu_Icon_PickTitle" xml:space="preserve"><value>Fili eú icon</value></data>
+  <data name="IconPicker_Images" xml:space="preserve"><value>Sasing</value></data>
+  <data name="Emoji_Category_Hands" xml:space="preserve"><value>Pau</value></data>
+  <data name="Emoji_Category_Animals" xml:space="preserve"><value>Man</value></data>
+  <data name="Emoji_Category_Food" xml:space="preserve"><value>Mwéngé</value></data>
+  <data name="Emoji_Category_Travel" xml:space="preserve"><value>Sái</value></data>
+  <data name="Emoji_Category_Objects" xml:space="preserve"><value>Mettóch</value></data>
+  <data name="Emoji_Category_Symbols" xml:space="preserve"><value>Esissil</value></data>
+  <data name="Pad_Menus_IconPackages_Add" xml:space="preserve"><value>Apachaatá eú package…</value></data>
+  <data name="Pad_Menus_IconPackages_Create" xml:space="preserve"><value>Féri eú package…</value></data>
+  <data name="Pad_Menus_IconPackages_Empty" xml:space="preserve"><value>Esor icon package.</value></data>
+  <data name="Pad_Menus_IconPackages_PickImages" xml:space="preserve"><value>Fili ekkewe sasing fán iten ewe package</value></data>
+  <data name="RemoteLink_PasswordEmpty" xml:space="preserve">
+    <value>Makkeei eú password.</value>
+  </data>
+  <data name="RemoteLink_PasswordMismatch" xml:space="preserve">
+    <value>Ekkewe password rese lélléfengen.</value>
+  </data>
+  <data name="RemoteLink_StatusWrongPassword" xml:space="preserve">
+    <value>Ewe Remote Link password ese pwúng.</value>
+  </data>
+  <data name="RemoteLink_StatusStartFailed" xml:space="preserve">
+    <value>Ese tongeni poputá: {0}</value>
+  </data>
+  <data name="PickSound_Title" xml:space="preserve"><value>Fili eú sound</value></data>
+  <data name="PickSound_Subtitle" xml:space="preserve"><value>Ewe ngingi epwe tolong ren an ewe controller speaker, ika ren an ewe PC ika esor.</value></data>
+  <data name="About_NAudio" xml:space="preserve"><value>NAudio</value></data>
+  <data name="About_Vosk" xml:space="preserve"><value>Vosk</value></data>
+  <data name="About_BouncyCastle" xml:space="preserve"><value>Bouncy Castle</value></data>
+  <data name="About_BthPS3" xml:space="preserve"><value>BthPS3</value></data>
+  <data name="About_DsHidMini" xml:space="preserve"><value>DsHidMini</value></data>
+  <data name="About_NefariusDevMgmt" xml:space="preserve"><value>Nefarius.Utilities.DeviceManagement</value></data>
+  <data name="About_Libusb" xml:space="preserve"><value>libusb</value></data>
+  <data name="About_Nipplejs" xml:space="preserve"><value>nipplejs</value></data>
+  <data name="About_GameControllerDb" xml:space="preserve"><value>SDL_GameControllerDB</value></data>
+  <data name="About_Xbledctl" xml:space="preserve"><value>xbledctl</value></data>
+  <data name="About_JoyShockMapper" xml:space="preserve"><value>JoyShockMapper</value></data>
+  <data name="About_GamepadMotionHelpers" xml:space="preserve"><value>GamepadMotionHelpers</value></data>
+  <data name="About_SteamControllerSinger" xml:space="preserve"><value>SteamControllerSinger</value></data>
+  <data name="About_SteamHapticsSinger" xml:space="preserve"><value>SteamHapticsSinger</value></data>
+  <data name="About_Hitboxer" xml:space="preserve"><value>hitboxer</value></data>
+  <data name="About_SteamKit2" xml:space="preserve"><value>SteamKit2</value></data>
+  <data name="About_ProtobufNet" xml:space="preserve"><value>protobuf-net</value></data>
+  <data name="About_ZstdSharp" xml:space="preserve"><value>ZstdSharp</value></data>
+  <data name="About_Dolphin" xml:space="preserve"><value>Dolphin</value></data>
+  <data name="About_Ds4Windows" xml:space="preserve"><value>DS4Windows</value></data>
+  <data name="About_XoneXow" xml:space="preserve"><value>xone / xow</value></data>
+  <data name="About_WiimoteLib" xml:space="preserve"><value>WiimoteLib</value></data>
+  <data name="About_JoyconSinger" xml:space="preserve"><value>joycon-singer</value></data>
+  <data name="WiiPair_FamilyWii" xml:space="preserve"><value>Nintendo Wii</value></data>
+  <data name="WiiPair_Done" xml:space="preserve"><value>A wes</value></data>
+  <data name="WiiPair_FamilyDs3" xml:space="preserve"><value>Sony DualShock 3</value></data>
+  <data name="About_OpenVR" xml:space="preserve"><value>OpenVR API</value></data>
+  <data name="Vr_Status_Running" xml:space="preserve"><value>A angang</value></data>
+  <data name="MovePair_Family" xml:space="preserve"><value>PlayStation Move / Navigation</value></data>
+  <data name="SerialPair_NoPorts" xml:space="preserve"><value>Esor COM port.</value></data>
+  <data name="Nfc_NameLabel" xml:space="preserve"><value>Iit</value></data>
+  <data name="Nfc_NamePlaceholder" xml:space="preserve"><value>Átiti itan ei tag</value></data>
+  <data name="Handheld_PhaseRelease" xml:space="preserve"><value>Mutaló ewe button.</value></data>
+  <data name="Handheld_NameLabel" xml:space="preserve"><value>Iit</value></data>
+  <data name="Macro_Dreamcast_Pictures" xml:space="preserve"><value>Sasing</value></data>
+  <data name="Macro_Dreamcast_AddPicture" xml:space="preserve"><value>Apachaatá eú sasing…</value></data>
+  <data name="Workshop_SearchPlaceholder" xml:space="preserve"><value>Kútta urumwot</value></data>
+  <data name="Workshop_Games" xml:space="preserve"><value>Urumwot</value></data>
+  <data name="Workshop_NoGamesFound" xml:space="preserve"><value>Esor urumwot lón ewe Steam store.</value></data>
+  <data name="Workshop_SearchingSteam" xml:space="preserve"><value>A kútta lón Steam…</value></data>
+  <data name="Workshop_SearchConfigs" xml:space="preserve"><value>Kútta lón ekkeei config</value></data>
+  <data name="Workshop_ShowingOf_Format" xml:space="preserve"><value>A pwá {0} me lein {1}</value></data>
+  <data name="Workshop_BackToSearch" xml:space="preserve"><value>Kútta urumwot</value></data>
+  <data name="Workshop_TagAll" xml:space="preserve"><value>Meinisin</value></data>
+  <data name="Workshop_Retry" xml:space="preserve"><value>Sótuni sefál</value></data>
+  <data name="Workshop_LegacyOpenButton" xml:space="preserve"><value>Suuki lón Steam Workshop</value></data>
+  <data name="Workshop_LegacyTag" xml:space="preserve"><value>Chinnap</value></data>
+  <data name="Workshop_SaveProfile" xml:space="preserve"><value>Isoni ewe profile</value></data>
+  <data name="Workshop_SaveAndApply" xml:space="preserve"><value>Isoni me áeá</value></data>
+  <data name="Menu_Name" xml:space="preserve"><value>Iten ewe menu</value></data>
+  <data name="Menu_Half_Whole" xml:space="preserve"><value>Unusen ewe pad</value></data>
+  <data name="Menu_Half_Left" xml:space="preserve"><value>Esópw peliefefin</value></data>
+  <data name="Menu_Half_Right" xml:space="preserve"><value>Esópw peliemwán</value></data>
+  <data name="Menu_Scale" xml:space="preserve"><value>Watteen</value></data>
+  <data name="Menu_CellCenter" xml:space="preserve"><value>Lukanap</value></data>
+  <data name="Menu_Binding_None" xml:space="preserve"><value>Esor</value></data>
+  <data name="Menu_Binding_RowBound" xml:space="preserve"><value>Eú mapping are eú macro a áeá</value></data>
+  <data name="Pad_RumbleAudio_Status_Inactive" xml:space="preserve"><value>Ewe audio output ese angang.</value></data>
+  <data name="Pad_RumbleAudio_Test" xml:space="preserve"><value>Sótuni</value></data>
+  <data name="Pad_RumbleAudio_StopTest" xml:space="preserve"><value>Aúkú</value></data>
+  <data name="Tray_Exit" xml:space="preserve"><value>Towu</value></data>
+  <data name="About_Libinput" xml:space="preserve">
+    <value>libinput</value>
+  </data>
+  <data name="About_HandheldCompanion" xml:space="preserve">
+    <value>Handheld Companion</value>
+  </data>
+  <data name="About_GamepadAssetPack" xml:space="preserve">
+    <value>Gamepad-Asset-Pack</value>
+  </data>
+  <data name="About_Ds4Mac" xml:space="preserve">
+    <value>ds4mac</value>
+  </data>
+  <data name="Starter_Wasd_Name" xml:space="preserve"><value>WASD me mouse</value></data>
+  <data name="Status_StarterImported_Format" xml:space="preserve"><value>A apachaatá ewe starter profile "{0}".</value></data>
+  <data name="Pad_Audio_EqCol_Type" xml:space="preserve"><value>Sókkun</value></data>
+  <data name="Pad_Audio_EqCol_Q" xml:space="preserve"><value>Q</value></data>
+  <data name="Pad_Audio_EqImport_ReadFailed_Format" xml:space="preserve"><value>Ese tongeni álleani ena file: {0}</value></data>
+  <data name="Pad_Audio_OutputPath_SpeakerOnly" xml:space="preserve"><value>Speaker chék</value></data>
+  <data name="About_DuaLib" xml:space="preserve"><value>duaLib</value></data>
+  <data name="About_Ds5Bridge" xml:space="preserve"><value>DS5_Bridge</value></data>
+  <data name="About_QrCodeGen" xml:space="preserve"><value>QR-Code-generator</value></data>
+  <data name="About_MouseArt" xml:space="preserve"><value>Zergatul.Obs.InputOverlay</value></data>
+  <data name="Pad_AssignOffer_Dismiss" xml:space="preserve"><value>Esap iei</value></data>
+  <data name="Voice_ModeLabel" xml:space="preserve"><value>Aúseling</value></data>
+  <data name="Voice_NameLabel" xml:space="preserve"><value>Iit</value></data>
+  <data name="Menu_Macro_Missing_Format" xml:space="preserve"><value>{0} (esor ena macro)</value></data>
+  <data name="About_Interhaptics" xml:space="preserve">
+    <value>Interhaptics (Wyvrn)</value>
+  </data>
+  <data name="About_ValveCad" xml:space="preserve">
+    <value>Valve Steam Controller CAD</value>
+  </data>
+  <data name="About_Colore" xml:space="preserve">
+    <value>Colore</value>
+  </data>
+  <data name="About_Opentrack" xml:space="preserve">
+    <value>opentrack</value>
+  </data>
+  <data name="About_LegionToolkit" xml:space="preserve">
+    <value>Lenovo Legion Toolkit</value>
+  </data>
+  <data name="About_InputPlumber" xml:space="preserve">
+    <value>InputPlumber</value>
+  </data>
+  <data name="About_Linuxmotehook" xml:space="preserve">
+    <value>linuxmotehook me WiimoteHook</value>
+  </data>
+  <data name="About_PortMidiRtMidi" xml:space="preserve"><value>PortMidi / RtMidi</value></data>
+  <data name="About_AnalogKeyboardRefs" xml:space="preserve"><value>HallJoy, Soup me AnalogSense</value></data>
+  <data name="About_UsbipWin2" xml:space="preserve"><value>usbip-win2</value></data>
+  <data name="Pad_Kbm_Surfaces_MouseOnly_Name" xml:space="preserve">
+    <value>Mouse chék</value>
+  </data>
+  <data name="Pad_Kbm_Surfaces_KeyboardOnly_Name" xml:space="preserve">
+    <value>Keyboard chék</value>
+  </data>
+  <data name="Pad_Mapping_Scope_All" xml:space="preserve">
+    <value>Meinisin</value>
+  </data>
+  <data name="Menu_IconScale" xml:space="preserve"><value>Watteen ewe icon</value></data>
+  <data name="RemoteLink_AssignmentBusy" xml:space="preserve">
+    <value>A witi ewe pwal eú PC…</value>
+  </data>
+  <data name="Pad_SteeringAngleRumble_Motor" xml:space="preserve"><value>Motor</value></data>
+  <data name="Status_InstallerTimedOut" xml:space="preserve"><value>Ewe installer a chúen angang mwirin úlúngát minich.</value></data>
+  <data name="Status_SteamCmdTimedOut" xml:space="preserve"><value>steamcmd ese wes lón 60 minich.</value></data>
+  <data name="About_Nefcon" xml:space="preserve"><value>nefcon</value></data>
+  <data name="About_Kaldi" xml:space="preserve"><value>Kaldi, OpenFst, OpenBLAS me CLAPACK</value></data>
+  <data name="About_AntiMicroX" xml:space="preserve"><value>AntiMicroX</value></data>
+  <data name="About_AudioEndPointLibrary" xml:space="preserve"><value>AudioEndPointLibrary</value></data>
+  <data name="About_AutoEq" xml:space="preserve"><value>AutoEq</value></data>
+  <data name="About_AutoHotkey" xml:space="preserve"><value>AutoHotkey</value></data>
+  <data name="About_CemuhookProtocol" xml:space="preserve"><value>cemuhook-protocol</value></data>
+  <data name="About_Ds4Drv" xml:space="preserve"><value>ds4drv</value></data>
+  <data name="About_Ds4MapperTest" xml:space="preserve"><value>DS4MapperTest</value></data>
+  <data name="About_Ds5Dongle" xml:space="preserve"><value>DS5Dongle</value></data>
+  <data name="About_DualSenseSupport" xml:space="preserve"><value>DualSenseSupport</value></data>
+  <data name="About_Eden" xml:space="preserve"><value>Eden</value></data>
+  <data name="About_EdRefCard2" xml:space="preserve"><value>EDRefCard2</value></data>
+  <data name="About_FFmpeg" xml:space="preserve"><value>FFmpeg</value></data>
+  <data name="About_Fusion" xml:space="preserve"><value>Fusion</value></data>
+  <data name="About_GamepadBatteryMonitor" xml:space="preserve"><value>Gamepad Battery Monitor</value></data>
+  <data name="About_Hado" xml:space="preserve"><value>hado</value></data>
+  <data name="About_3doverstock" xml:space="preserve"><value>3doverstock</value></data>
+  <data name="About_Hidapi" xml:space="preserve"><value>HIDAPI</value></data>
+  <data name="About_IrohFlexInput" xml:space="preserve"><value>iroh / FlexInput</value></data>
+  <data name="About_Jc2Mouse" xml:space="preserve"><value>jc2mouse / joycon2cpp / joycon2mouse</value></data>
+  <data name="About_GameInput" xml:space="preserve"><value>Microsoft GameInput</value></data>
+  <data name="About_VcRuntime" xml:space="preserve"><value>Microsoft Visual C++ Runtime</value></data>
+  <data name="About_SwitchResearch" xml:space="preserve"><value>Nintendo_Switch_Reverse_Engineering</value></data>
+  <data name="About_OpenRgb" xml:space="preserve"><value>OpenRGB</value></data>
+  <data name="About_OpenTabletDriver" xml:space="preserve"><value>OpenTabletDriver</value></data>
+  <data name="About_PcscSharp" xml:space="preserve"><value>pcsc-sharp</value></data>
+  <data name="About_Psmoveapi" xml:space="preserve"><value>psmoveapi</value></data>
+  <data name="About_Ds3Research" xml:space="preserve"><value>ScpToolkit / sixad / transbt</value></data>
+  <data name="About_SipSorcery" xml:space="preserve"><value>SIPSorcery</value></data>
+  <data name="About_SpecialK" xml:space="preserve"><value>Special K</value></data>
+  <data name="About_ThumbstickDeadzones" xml:space="preserve"><value>Thumbstick Deadzones</value></data>
+  <data name="About_Touchmote" xml:space="preserve"><value>Touchmote</value></data>
+  <data name="About_TriggerEffectGenerator" xml:space="preserve"><value>TriggerEffectGenerator</value></data>
+  <data name="About_ViGEmClient" xml:space="preserve"><value>ViGEmClient</value></data>
+  <data name="About_Libwdi" xml:space="preserve"><value>libwdi</value></data>
+  <data name="About_Bluepad32" xml:space="preserve"><value>Bluepad32</value></data>
+  <data name="About_Monado" xml:space="preserve"><value>Monado</value></data>
+  <data name="About_OpenHmd" xml:space="preserve"><value>OpenHMD</value></data>
+  <data name="About_WiiBrew" xml:space="preserve"><value>WiiBrew</value></data>
+  <data name="About_X1nput" xml:space="preserve"><value>X1nput</value></data>
+  <data name="About_ChiakiNg" xml:space="preserve"><value>chiaki-ng</value></data>
+  <data name="KeyboardScreens_Configure_Arx" xml:space="preserve"><value>Arx Control…</value></data>
+  <data name="KeyboardScreens_Configure_Strike7" xml:space="preserve"><value>S.T.R.I.K.E. 7…</value></data>
+  <data name="KeyboardScreens_Kind_Arx" xml:space="preserve"><value>Arx Control</value></data>
+  <data name="KeyboardScreens_Kind_Strike7" xml:space="preserve"><value>S.T.R.I.K.E. 7</value></data>
+  <data name="KeyboardScreens_Status_Line_Format" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Status_KeyboardScreen_Format" xml:space="preserve"><value>{0} a siwil ngeni {1}.</value></data>
+  <data name="Status_FlydigiScreen_Sent" xml:space="preserve"><value>Ewe sasing a tori ewe screen an ewe controller.</value></data>
+  <data name="Common_Pixels" xml:space="preserve"><value>px</value></data>
+  <data name="DeviceType_NovintFalcon" xml:space="preserve"><value>Novint Falcon</value></data>
+  <data name="Falcon_Name_Format" xml:space="preserve"><value>Falcon {0}</value></data>
+  <data name="Falcon_Status_Line_Format" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Settings_Falcon_Title" xml:space="preserve"><value>Novint Falcon</value></data>
+  <data name="Pad_Falcon_Header" xml:space="preserve"><value>Novint Falcon</value></data>
+  <data name="Pad_More_Falcon" xml:space="preserve"><value>Kick, chechchech, brace, preload, gravity</value></data>
+  <data name="Pad_Falcon_NewtonsUnit" xml:space="preserve"><value>N</value></data>
+  <data name="Telemetry_Game_Forza" xml:space="preserve"><value>Forza Motorsport me Forza Horizon</value></data>
+  <data name="Telemetry_Game_EaSportsWrc" xml:space="preserve"><value>EA SPORTS WRC</value></data>
+  <data name="Telemetry_Game_OutGauge" xml:space="preserve"><value>BeamNG.drive me Live for Speed</value></data>
+  <data name="Telemetry_Game_ProjectCars2" xml:space="preserve"><value>Project CARS 2 me Automobilista 2</value></data>
+  <data name="Telemetry_Game_AssettoCorsa" xml:space="preserve"><value>Assetto Corsa me Assetto Corsa Competizione</value></data>
+  <data name="Telemetry_Game_TruckSimulator" xml:space="preserve"><value>Euro Truck Simulator 2 me American Truck Simulator</value></data>
+  <data name="Telemetry_Formats_KindJson" xml:space="preserve"><value>JSON</value></data>
+  <data name="Pad_AddDevice" xml:space="preserve"><value>Apachaatá eú device</value></data>
+  <data name="Pad_Transport_Bluetooth" xml:space="preserve"><value>Bluetooth</value></data>
+  <data name="Pad_Transport_Usb" xml:space="preserve"><value>USB</value></data>
+  <data name="Pad_Transport_Ps2" xml:space="preserve"><value>PS/2</value></data>
+  <data name="Pad_Transport_I2c" xml:space="preserve"><value>I2C</value></data>
+  <data name="Pad_Battery_Low" xml:space="preserve"><value>Kúkkún</value></data>
+  <data name="Pad_AudioRumble_FoldHint" xml:space="preserve"><value>Chechchech seni bass lon ngingiin ewe system</value></data>
+  <data name="Pad_TriggerRouting_FoldHint" xml:space="preserve"><value>Atoto chechchechen ekkewe motor mi lap ngeni ekkewe trigger</value></data>
+  <data name="Pad_GestureDetection_FoldHint" xml:space="preserve"><value>Ataraka ekkewe gesture won ei touchpad</value></data>
+  <data name="Pad_InBoxGestures_FoldHint" xml:space="preserve"><value>Swipe, tap, pinch, napanap</value></data>
+  <data name="Pad_IndicatorLeds_FoldHint" xml:space="preserve"><value>Saramen LED, Napanapen chón urumwot, Mute LED Mode</value></data>
+  <data name="Pad_SoundPackages_FoldHint" xml:space="preserve"><value>Zip file mi kepich ngingiin ren sound macro</value></data>
+  <data name="Pad_IconPackages_FoldHint" xml:space="preserve"><value>Zip file mi kepich image ren menu cell</value></data>
+  <data name="Pad_More_ForceFeedback" xml:space="preserve"><value>Gain ren eú me eú motor, trigger rumble, Steering Angle Rumble, Constant Force</value></data>
+  <data name="Macro_Do_Header" xml:space="preserve"><value>Féri</value></data>
+  <data name="Common_Rename" xml:space="preserve"><value>Siwili itan</value></data>
+  <data name="Menu_NewMenu" xml:space="preserve"><value>Menu minefé</value></data>
+  <data name="Menu_AddCell" xml:space="preserve"><value>Apachaatá eú cell</value></data>
+  <data name="Menu_EditCell" xml:space="preserve"><value>Siwili ewe cell</value></data>
+  <data name="Menu_Cell_Name" xml:space="preserve"><value>Iit</value></data>
+  <data name="Menu_Cell_Icon" xml:space="preserve"><value>Icon</value></data>
+  <data name="Pad_Scope_Device" xml:space="preserve"><value>Ei device</value></data>
+  <data name="Pad_RumbleAudio_CheckShakers" xml:space="preserve"><value>Sótuni ekkewe shaker</value></data>
+  <data name="Pad_SteamVr_Installed" xml:space="preserve"><value>SteamVR a wor lón ei PC</value></data>
+  <data name="Pad_SteamVr_Running" xml:space="preserve"><value>SteamVR a angang</value></data>
+  <data name="Extras_CopyAddress" xml:space="preserve"><value>Kapiini ewe address</value></data>
+  <data name="Devices_SearchPlaceholder" xml:space="preserve"><value>Kútta device</value></data>
+  <data name="Devices_Filter_All" xml:space="preserve"><value>Meinisin</value></data>
+  <data name="Devices_UsedBy_New" xml:space="preserve"><value>Minefen controller</value></data>
+  <data name="Devices_More_TestInputs" xml:space="preserve"><value>Axis, button me sensor meinisin</value></data>
+  <data name="Devices_CopyDetails" xml:space="preserve"><value>Kapiini ekkewe details</value></data>
+  <data name="Devices_Detail_Product" xml:space="preserve"><value>Pisek</value></data>
+  <data name="Devices_Detail_Type" xml:space="preserve"><value>Sókkun</value></data>
+  <data name="Devices_Detail_Link" xml:space="preserve"><value>Riri</value></data>
+  <data name="Devices_Detail_Battery" xml:space="preserve"><value>Battery</value></data>
+  <data name="Profiles_SaveHere" xml:space="preserve"><value>Isoni ewe setup iei ikei</value></data>
+  <data name="Profiles_SaveHereConfirm_Format" xml:space="preserve"><value>Kopwe siwili ewe setup mi isoon lón “{0}” ngeni ewe setup iei? Itan me an kewe urumwot repwe nómottiw.</value></data>
+  <data name="Profiles_SaveHereConfirm_Action" xml:space="preserve"><value>Siwiliti</value></data>
+  <data name="GetProfiles_Title" xml:space="preserve"><value>Angei profile</value></data>
+  <data name="GetProfiles_SaveHint" xml:space="preserve"><value>Ika ka isoni, epwe apachaatá eú profile kopwe tongeni siwili.</value></data>
+  <data name="Workshop_Becomes" xml:space="preserve"><value>Epwe wiliti</value></data>
+  <data name="Settings_SearchPlaceholder" xml:space="preserve"><value>Kútta settings</value></data>
+  <data name="Settings_More_BatteryAlerts" xml:space="preserve"><value>Pwal amúmúsúnú ewe controller, Áliwini ewe esinesin iteiten, Esinesin lupwen a unusen charge</value></data>
+  <data name="Settings_HidHideOptions_FoldHint" xml:space="preserve"><value>Ipeti device seni urumwot, Ipeti device lefilen poputá, Ekkewe application mi mwúmmwútá</value></data>
+  <data name="About_GitHub" xml:space="preserve"><value>GitHub</value></data>
+  <data name="About_SearchCredits" xml:space="preserve"><value>Kútta credits</value></data>
+  <data name="About_NoCreditMatch_Format" xml:space="preserve"><value>Esor credit a fich ngeni “{0}”.</value></data>
+  <data name="AddController_Midi_Line" xml:space="preserve"><value>Notes me control changes fán iten music software.</value></data>
+  <data name="AddController_Vr_Line" xml:space="preserve"><value>Virtual VR controller ren SteamVR.</value></data>
+  <data name="AddController_Foot" xml:space="preserve"><value>Ika kopwe siwili ewe sókkun mwirin, click ewe type chip won ewe controller. Eú chok click.</value></data>
+  <data name="AddController_VrNeedsSteamVr" xml:space="preserve"><value>A namwot SteamVR. Install seni Settings, fán Drivers.</value></data>
+  <data name="AddController_VrOnlyOne" xml:space="preserve"><value>A fen wor eú VR controller. Eú chok epwe emweni ruupw paw.</value></data>
+  <data name="AddController_Full_Format" xml:space="preserve"><value>XBOXDS4ONE a wor {0} controller, ewe ukukun mi tongeni. Amóeló eú pwe kopwe apachaatá pwal eú.</value></data>
+  <data name="Home_FirstRun_MoreTypes_Format" xml:space="preserve"><value>Pwal ekkóch sókkun: [{0}, {1}, {2} me {3}]</value></data>
+  <data name="Home_FirstRun_DeviceLine_Format" xml:space="preserve"><value>Bluetooth, battery {0}</value></data>
+  <data name="Home_FirstRun_Battery_Format" xml:space="preserve"><value>Battery {0}</value></data>
+  <data name="Search_Placeholder" xml:space="preserve"><value>Kútta settings, device me profile</value></data>
+  <data name="Search_Title" xml:space="preserve"><value>Kútta</value></data>
+  <data name="Search_Results" xml:space="preserve"><value>Mi kúna</value></data>
+  <data name="Search_Hint_Move_Format" xml:space="preserve"><value>{0} {1} pwe kopwe mwékút</value></data>
+  <data name="Search_Hint_Open_Format" xml:space="preserve"><value>{0} pwe kopwe suuki</value></data>
+  <data name="Search_Hint_Anywhere_Format" xml:space="preserve"><value>{0} seni ia meinisin</value></data>
+  <data name="Search_NoResults_Format" xml:space="preserve"><value>Esor mettóch lón XBOXDS4ONE a fich ngeni “{0}”.</value></data>
+  <data name="Search_Docs_Format" xml:space="preserve"><value>Kútta lón ewe documentation fán iten “{0}”</value></data>
+  <data name="Profiles_DeleteConfirmTitle_Format" xml:space="preserve"><value>Amóeló {0}?</value></data>
+  <data name="ProfileDialog_NewDescription" xml:space="preserve"><value>A poputá nge esor controller. Epwe load pwisin lupwen eú me lein an kewe urumwot a nóm mwmwan.</value></data>
+  <data name="ProfileDialog_NoRunningGames" xml:space="preserve"><value>Ese kúnaló pwal eú window mi suuk.</value></data>
+  <data name="Pad_Shift_BaseSubtitle" xml:space="preserve"><value>Iten, icon me color an ewe Base layer won ewe Shift Layer Flyout me lón ewe órun layer.</value></data>
+  <data name="Pad_Shift_BaseSubtitle_Flyout" xml:space="preserve"><value>Iten, icon me color an ewe Base layer won ewe Shift Layer Flyout me lón ewe órun layer, me ifa langattamen an ewe flyout pwárátá ir.</value></data>
+  <data name="WiiPair_Step1" xml:space="preserve"><value>Suuki ewe kuffun battery me tiki ewe SYNC button mi par.</value></data>
+  <data name="WiiPair_Step2" xml:space="preserve"><value>Ánómu ewe remote arap ngeni ei PC lupwen an kewe saram ra mwékút.</value></data>
+  <data name="Ds3Pair_Title" xml:space="preserve"><value>Pair eú DualShock 3</value></data>
+  <data name="MovePair_Title" xml:space="preserve"><value>Pair eú Move ika Navigation Controller</value></data>
+  <data name="SerialPair_Title" xml:space="preserve"><value>Apachaatá eú serial controller</value></data>
+  <data name="DjiPair_Title" xml:space="preserve"><value>Apachaatá eú DJI remote</value></data>
+  <data name="Telemetry_Formats_LittleEndian" xml:space="preserve"><value>Little-Endian</value></data>
+  <data name="KeyboardScreen_Subtitle" xml:space="preserve"><value>Fili met epwe pwáláló. Esor mettóch epwe siwil tori ka isoni.</value></data>
+  <data name="DreamcastScreen_Subtitle" xml:space="preserve"><value>Esor mettóch epwe tori ewe port tori ka isoni.</value></data>
+  <data name="Shell_Foot_Live_Format" xml:space="preserve"><value>Live: {0} me lein {1}</value></data>
+  <data name="Workshop_UpdatesBody" xml:space="preserve"><value>Ekkeei profile mi import a wor minefen version won ewe Steam Workshop. Import pwal seni Angei profile pwe kopwe angei ekkewe siwil.</value></data>
+  <data name="Home_Cards" xml:space="preserve"><value>Kaat</value></data>
+  <data name="Home_Cards_Detailed" xml:space="preserve"><value>Unusén</value></data>
+  <data name="Home_Cards_Compact" xml:space="preserve"><value>Kúkkún</value></data>
+  <data name="Home_Cards_Auto" xml:space="preserve"><value>Auto</value></data>
+  <data name="Home_Cards_Auto_Tooltip" xml:space="preserve"><value>Unusén lupwen ekkewe kaat ra nóm lón ewe window, kúkkún lupwen repwe pwúkú seni</value></data>
+  <data name="Common_MoreCount_Format" xml:space="preserve"><value>+{0}</value></data>
+  <data name="Pad_Row_Device" xml:space="preserve"><value>Device</value></data>
+  <data name="Pad_Row_Mode" xml:space="preserve"><value>Mode</value></data>
+  <data name="Pad_Row_Up" xml:space="preserve"><value>Wóón</value></data>
+  <data name="Pad_Row_Down" xml:space="preserve"><value>Fán</value></data>
+  <data name="Pad_Row_Modifier" xml:space="preserve"><value>Siwil</value></data>
+  <data name="Pad_Row_TrimStick" xml:space="preserve"><value>Stick ren kúkkún siwil</value></data>
+  <data name="Pad_Shift_Flyout" xml:space="preserve"><value>Flyout</value></data>
+  <data name="Pad_Shift_Flyout_Stay" xml:space="preserve"><value>Lupwen ewe layer a angang</value></data>
+  <data name="Pad_Shift_Flyout_Brief" xml:space="preserve"><value>Lón 2 sekon</value></data>
+  <data name="Pad_Shift_Flyout_Off" xml:space="preserve"><value>Ese fókkun</value></data>
+  <data name="Pad_Shift_Flyout_Tooltip" xml:space="preserve"><value>Lupwen ewe layer a angang a amwóchu ewe flyout tori an ewe layer siwil. Lón 2 sekon a pwárátá lupwen ewe layer a poputá, mwirin a mwúttiiló. Ren Ese fókkun, ei layer ese pwárátá flyout, me Base ese pwárátá lupwen ewe layer a wesiló.</value></data>
+  <data name="Pad_Shift_Flyout_Base_Tooltip" xml:space="preserve"><value>Lón 2 sekon a pwárátá iten Base lupwen eu shift layer a wesiló. Ren Ese fókkun, Base ese pwárátá flyout.</value></data>
+  <data name="Home_Stage_Defaults" xml:space="preserve"><value>Ekkewe settings ese siwil</value></data>
+  <data name="Home_Stage_Value_Format" xml:space="preserve"><value>{0} {1}</value></data>
+  <data name="Home_Stage_On_Format" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Home_Stage_LeftStick" xml:space="preserve"><value>Stick peliefefin</value></data>
+  <data name="Home_Stage_RightStick" xml:space="preserve"><value>Stick peliemwán</value></data>
+  <data name="Devices_Detail_AppGuid" xml:space="preserve"><value>App GUID</value></data>
+  <data name="Devices_Detail_SdlGuid" xml:space="preserve"><value>SDL GUID</value></data>
+  <data name="FlydigiScreen_Subtitle" xml:space="preserve"><value>Esor mettóch epwe tori ewe controller tori ka tiinnóó.</value></data>
+  <data name="FlydigiScreen_Fit_Label" xml:space="preserve"><value>Nonnom</value></data>
+  <data name="FlydigiScreen_Fit_Fill" xml:space="preserve"><value>Ourenó Ewe Screen</value></data>
+  <data name="FlydigiScreen_Fit_Fit" xml:space="preserve"><value>Pwári Unusen Ewe Sasing</value></data>
+  <data name="FlydigiScreen_Fit_Stretch" xml:space="preserve"><value>Ámmáchár Ngeni Ewe Screen</value></data>
+  <data name="FlydigiScreen_PictureFilter" xml:space="preserve"><value>Sasing (*.png, *.jpg, *.bmp, *.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.gif|File meinisin (*.*)|*.*</value></data>
+  <data name="About_ApexSenseBridge" xml:space="preserve"><value>ApexSenseBridge</value></data>
+  <data name="About_OpenFlydigi" xml:space="preserve"><value>openflydigi</value></data>
+  <data name="About_FlydigiSpaceStationMac" xml:space="preserve"><value>flydigi-space-station-mac</value></data>
+  <data name="About_FlydigiApex4Linux" xml:space="preserve"><value>flydigi-apex4-linux</value></data>
+  <data name="Common_Apply" xml:space="preserve"><value>Áeá</value></data>
+  <data name="About_RetroArch" xml:space="preserve"><value>RetroArch</value></data>
+  <data name="About_RetroArchDesc" xml:space="preserve"><value>Eú custom web pad a isoni ttamen iteiten mwichen button seni ewe kkan mi arap ngeni lón eú screen mi kon lapalap, usun ekkewe overlay an RetroArch ra mwékút ar ruu kinikin. Sia chok álleni usun documentation, esor GPL code a nóm lón.</value></data>
+</root>

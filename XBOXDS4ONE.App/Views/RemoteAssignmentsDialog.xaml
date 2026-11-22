@@ -1,0 +1,79 @@
+<views:DialogWindow AutomationProperties.IsDialog="True" x:Class="XBOXDS4ONE.Views.RemoteAssignmentsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:strings="clr-namespace:XBOXDS4ONE.Resources.Strings"
+        xmlns:common="clr-namespace:XBOXDS4ONE.Common"
+        xmlns:controls="clr-namespace:XBOXDS4ONE.Controls"
+        xmlns:views="clr-namespace:XBOXDS4ONE.Views"
+        Subtitle="{Binding RemoteLink_AssignmentDescription, Source={x:Static strings:Strings.Instance}}">
+
+    <!-- The devices this PC shares with a paired PC (#574), as the Links
+         board draws it: pick a shared device, then check the controllers
+         on the other PC it should drive. The code-behind names the other
+         PC in the title and over its controllers. The window stays open
+         beside the app, and Refresh asks the other PC again. -->
+    <views:DialogWindow.Resources>
+        <!-- A device's row is read by the device's name. -->
+        <Style x:Key="DeviceRow" TargetType="ListBoxItem" BasedOn="{StaticResource DialogRadioListItemLinks}">
+            <Setter Property="AutomationProperties.Name" Value="{Binding Name, TargetNullValue=''}"/>
+        </Style>
+    </views:DialogWindow.Resources>
+
+    <views:DialogWindow.Foot>
+        <controls:FlexLinePanel Style="{StaticResource DialogFootPanel}">
+            <Button x:Name="RefreshButton" Style="{StaticResource DialogQuietButton}"
+                    Content="{Binding Common_Refresh, Source={x:Static strings:Strings.Instance}}"
+                    Click="RefreshClicked"/>
+            <Button x:Name="CloseButton" Style="{StaticResource DialogButton}" IsCancel="True"
+                    Content="{Binding Common_Close, Source={x:Static strings:Strings.Instance}}"
+                    Click="CloseClicked"/>
+        </controls:FlexLinePanel>
+    </views:DialogWindow.Foot>
+
+    <StackPanel common:InitialFocus.First="True">
+        <TextBlock Style="{StaticResource DialogHead3}" Margin="0,0,0,8"
+                   Text="{Binding RemoteLink_SharedFromThisPc, Source={x:Static strings:Strings.Instance}}"/>
+        <Border x:Name="DevicesFrame" Style="{StaticResource DialogList}">
+            <ListBox x:Name="DevicesBox" Style="{StaticResource DialogListBox}" MaxHeight="210"
+                     ItemContainerStyle="{StaticResource DeviceRow}" DisplayMemberPath="Name"
+                     SelectionChanged="DeviceChanged"
+                     AutomationProperties.Name="{Binding RemoteLink_SharedFromThisPc, Source={x:Static strings:Strings.Instance}}"/>
+        </Border>
+
+        <!-- The other PC's controllers, and the profile it has loaded. -->
+        <StackPanel x:Name="ControllersBlock">
+            <controls:FlexLinePanel x:Name="ControllersHead" Gap="8" Margin="0,12,0,8">
+                <TextBlock x:Name="ControllersOnText" Style="{StaticResource DialogHead3}" Margin="0"/>
+                <TextBlock x:Name="ProfileText" FontSize="13" VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+            </controls:FlexLinePanel>
+            <Border Style="{StaticResource DialogList}">
+                <ScrollViewer MaxHeight="210" VerticalScrollBarVisibility="Auto" Focusable="False">
+                    <ItemsControl x:Name="SlotsList" AlternationCount="1000000" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <!-- A line over every row but the first. -->
+                                <Border x:Name="Row" MinHeight="42" Padding="12,4" BorderThickness="0,1,0,0"
+                                        BorderBrush="{DynamicResource SteelPaneLineBrush}">
+                                    <CheckBox Content="{Binding Name}" IsChecked="{Binding Assigned, Mode=OneWay}"
+                                              IsEnabled="{Binding Enabled}" VerticalAlignment="Center" Margin="-11,0,0,0"
+                                              Click="AssignmentClicked"/>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Path=(ItemsControl.AlternationIndex), RelativeSource={RelativeSource AncestorType=ContentPresenter}}" Value="0">
+                                        <Setter TargetName="Row" Property="BorderThickness" Value="0"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+        </StackPanel>
+
+        <!-- What the other PC answered when it is not a list: it is busy,
+             it refused, it did not answer. -->
+        <TextBlock x:Name="StatusText" common:LiveText.Polite="True" Margin="0,8,0,0" FontSize="13" TextWrapping="Wrap"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" Visibility="Collapsed"/>
+    </StackPanel>
+</views:DialogWindow>

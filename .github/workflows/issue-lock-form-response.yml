@@ -66,11 +66,11 @@ jobs:
           Quick checklist before filing:
 
           - Confirm you are on the latest release.
-          - Reproduce in a clean folder (no leftover `PadForge.xml`).
-          - Capture `crash.log` if one exists next to `PadForge.exe`.
+          - Reproduce in a clean folder (no leftover `XBOXDS4ONE.xml`).
+          - Capture `crash.log` if one exists next to `XBOXDS4ONE.exe`.
           - Note your Windows build (`winver`) and your controller's exact model.
           - Mention this issue number for context if it seems related, but do not assume the prior fix applies.
 
-          Thanks for using PadForge.
+          Thanks for using XBOXDS4ONE.
           EOF
           gh issue comment "$ISSUE_NUMBER" --repo "$REPO" --body-file "$COMMENT_FILE"

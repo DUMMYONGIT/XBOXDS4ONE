@@ -9,7 +9,7 @@ WHAT IT READS, under OpenRGB's Controllers/WootingKeyboardController:
   pwm_mem_map[48], where each of 24 LEDs sits in a 96-byte driver buffer.
 - RGBController/RGBControllerKeyNames.cpp: the string behind each KEY_ name.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/HidFamilies/WootingLayouts.g.cs,
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/WootingLayouts.g.cs,
 the tables as OpenRGB holds them: per type, the lights in the order SetupZones
 makes them, each with its row, column, frame buffer index and OpenRGB's name.
 
@@ -26,7 +26,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies", "WootingLayouts.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies", "WootingLayouts.g.cs")
 
 NA = 0xFFFFFFFF
 
@@ -183,7 +183,7 @@ def main():
     out.append("//     WootingV1KeyboardController.cpp, with the key names of")
     out.append("//     RGBController/RGBControllerKeyNames.cpp). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     out.append("{")
     out.append("    internal static partial class WootingLayouts")
     out.append("    {")

@@ -23,7 +23,7 @@ from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PADFORGE = os.path.dirname(HERE)
-SITE = os.path.join(os.path.dirname(PADFORGE), "padforge.org")
+SITE = os.path.join(os.path.dirname(PADFORGE), "XBOXDS4ONE.org")
 SRC = os.path.join(SITE, "wiki", "images")
 REPO_SHOTS = os.path.join(PADFORGE, "screenshots")
 SITE_ASSETS = os.path.join(SITE, "assets")

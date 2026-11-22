@@ -1,9 +1,9 @@
-"""The ASUS Aura tables OpenRGB keeps in its own formats, for PadForge (#557).
+"""The ASUS Aura tables OpenRGB keeps in its own formats, for XBOXDS4ONE (#557).
 
 OpenRGB lights the ASUS keyboards, mice and the Cerberus Mech from tables of
 its own rather than through KeyboardLayoutManager. This script reads them at
 an OpenRGB commit and writes them to
-PadForge.App/Common/Input/Peripherals/HidFamilies/AsusAuraTables.g.cs:
+XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/AsusAuraTables.g.cs:
 
 - Controllers/AsusAuraUSBController/AsusAuraKeyboardController/
   AsusAuraKeyboardLayouts.h: every std::map<int,layout_info> (one per
@@ -34,7 +34,7 @@ import openrgb_cpp as oc
 from openrgb_cpp import CppError, Expr, Node
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies", "AsusAuraTables.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies", "AsusAuraTables.g.cs")
 
 KEY_NAMES = "RGBController/RGBControllerKeyNames.cpp"
 KB = "Controllers/AsusAuraUSBController/AsusAuraKeyboardController/AsusAuraKeyboardLayouts.h"
@@ -211,7 +211,7 @@ def main():
     w("//     RGBController_AsusAuraMouse.cpp aura_mouse_zone_names and")
     w("//     RGBController_AsusCerberusKeyboard.cpp). Do not edit by hand.")
     w("// </auto-generated>")
-    w("namespace PadForge.Common.Input.Peripherals")
+    w("namespace XBOXDS4ONE.Common.Input.Peripherals")
     w("{")
     w("    internal static partial class AsusAuraTables")
     w("    {")

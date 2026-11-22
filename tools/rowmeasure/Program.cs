@@ -25,7 +25,7 @@ internal static class Program
 
     static string FindResxDir()
     {
-        const string rel = @"PadForge.App\Resources\Strings";
+        const string rel = @"XBOXDS4ONE.App\Resources\Strings";
         foreach (var start in new[] { AppContext.BaseDirectory, Directory.GetCurrentDirectory() })
         {
             var dir = new DirectoryInfo(start);

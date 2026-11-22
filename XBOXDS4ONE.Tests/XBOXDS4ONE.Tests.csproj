@@ -1,0 +1,61 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Matches XBOXDS4ONE.App's TFM (the more specific of App/Engine) so both the
+         Windows-targeted engine assembly and the WPF app assembly can be referenced
+         directly. The macro QOL tests (#112) exercise App-layer DTO round-trips and
+         the device-rewrite logic, which live in XBOXDS4ONE.App. -->
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Jint" Version="4.17.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\XBOXDS4ONE.Engine\XBOXDS4ONE.Engine.csproj" />
+    <ProjectReference Include="..\XBOXDS4ONE.App\XBOXDS4ONE.App.csproj" />
+    <ProjectReference Include="..\XBOXDS4ONE.NativeChecks\XBOXDS4ONE.NativeChecks.csproj" ReferenceOutputAssembly="false" />
+    <!-- Same pre-built SDK DLL the App references. Reference items don't
+         flow transitively, and the FFB LFE-lane tests construct
+         HMaestroFfbDecoder, whose ctor parameter is the SDK's
+         HMController type. -->
+    <Reference Include="HIDMaestro.Core">
+      <HintPath>..\XBOXDS4ONE.App\Resources\HIDMaestro\HIDMaestro.Core.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <None Update="TestData\GyroTiltReference.csv" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="TestData\Sbc\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- MSBuild copies a referenced project's satellite assemblies only for the
+       culture names it knows, and it does not know chk, tzo, nv, ksw, hyw, kos,
+       sto, cuk or apw. Every translation the app builds is copied here, so the
+       tests read each one as the app does (#505). -->
+  <Target Name="CopyEveryAppSatellite" AfterTargets="CopyFilesToOutputDirectory">
+    <ItemGroup>
+      <_XBOXDS4ONEAppAssembly Include="@(ReferencePath)" Condition="'%(Filename)%(Extension)' == 'XBOXDS4ONE.dll'" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_XBOXDS4ONEAppDirectory>@(_XBOXDS4ONEAppAssembly->'%(RootDir)%(Directory)')</_XBOXDS4ONEAppDirectory>
+    </PropertyGroup>
+    <ItemGroup>
+      <_XBOXDS4ONEAppSatellite Include="$(_XBOXDS4ONEAppDirectory)**\XBOXDS4ONE.resources.dll" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_XBOXDS4ONEAppSatellite)"
+          DestinationFiles="@(_XBOXDS4ONEAppSatellite->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

@@ -4,9 +4,9 @@
 # 0 whatever the prep did, so a run stopped for the owner's decision looked
 # like one that had prepared the file.
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-# Logs never go beside the exe. Only PadForge.xml and crash.log may live
+# Logs never go beside the exe. Only XBOXDS4ONE.xml and crash.log may live
 # in the deploy directory, and these transcripts were breaking that bar.
-$pfLogDir = Join-Path $env:TEMP "PadForge_Capture"
+$pfLogDir = Join-Path $env:TEMP "XBOXDS4ONE_Capture"
 if (-not (Test-Path $pfLogDir)) { New-Item -ItemType Directory -Path $pfLogDir | Out-Null }
 $logFile = Join-Path $pfLogDir "prep_xml_log.txt"
 "START $(Get-Date -Format 'HH:mm:ss')" | Out-File -FilePath $logFile -Encoding ascii

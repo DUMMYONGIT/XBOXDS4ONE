@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Manually-run smoke harness for the Steam Workshop network paths. Standalone (not in
-       PadForge.sln), same as the other tools/. There are no live-network tests in the
+       XBOXDS4ONE.sln), same as the other tools/. There are no live-network tests in the
        suite; run this by hand to exercise the real Steam endpoints end to end. -->
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\PadForge.SteamWorkshop\PadForge.SteamWorkshop.csproj" />
+    <ProjectReference Include="..\..\XBOXDS4ONE.SteamWorkshop\XBOXDS4ONE.SteamWorkshop.csproj" />
   </ItemGroup>
 
 </Project>

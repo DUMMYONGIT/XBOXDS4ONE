@@ -1,4 +1,4 @@
-"""Convert Valve's 2026 Steam Controller CAD into PadForge's per-part OBJs.
+"""Convert Valve's 2026 Steam Controller CAD into XBOXDS4ONE's per-part OBJs.
 
 Usage:
     pip install cadquery-ocp numpy scipy opencv-python pymupdf
@@ -39,7 +39,7 @@ in a front view and are named by position.
 
 Axes. The drawing fixes the orientation. X is width. Z is height measured
 DOWNWARD, which is why the D-pad at Z 20 lands at the top of the sheet. Y
-is depth with the front positive. PadForge wants X width, Y depth with
+is depth with the front positive. XBOXDS4ONE wants X width, Y depth with
 the front NEGATIVE, Z height up, so the map is (x, -y, -z), two sign
 flips, a rotation about X, so the winding from the face orientation flags
 is kept.
@@ -65,7 +65,7 @@ from OCP.TopLoc import TopLoc_Location
 from OCP.BRep import BRep_Tool
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DST = os.path.join(PROJ_ROOT, "PadForge.App", "3DModels", "SteamController2")
+DST = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "3DModels", "SteamController2")
 GEN = os.path.join(PROJ_ROOT, "tools")
 STEP = os.environ.get("SC2026_STEP", os.path.join(
     os.path.dirname(PROJ_ROOT), "SteamControllerHardware", "SC_solid_stp_20260429.stp"))
@@ -99,7 +99,7 @@ CAD_Z0, CAD_H = -5.8, 110.8
 # front elevation cannot see sits at Y -15 or further back.
 BACK_Y = -12.0
 
-# Control name in the drawing -> PadForge part filename.
+# Control name in the drawing -> XBOXDS4ONE part filename.
 PART = {
     "LeftTouchpadClick": "LeftPadTouch.obj",
     "RightTouchpadClick": "RightPadTouch.obj",

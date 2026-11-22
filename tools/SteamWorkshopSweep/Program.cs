@@ -1,12 +1,12 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using PadForge.SteamWorkshop;
-using PadForge.SteamWorkshop.Api;
-using PadForge.SteamWorkshop.Model;
-using PadForge.SteamWorkshop.Tests;
-using PadForge.SteamWorkshop.Translation;
-using PadForge.SteamWorkshop.Vdf;
+using XBOXDS4ONE.SteamWorkshop;
+using XBOXDS4ONE.SteamWorkshop.Api;
+using XBOXDS4ONE.SteamWorkshop.Model;
+using XBOXDS4ONE.SteamWorkshop.Tests;
+using XBOXDS4ONE.SteamWorkshop.Translation;
+using XBOXDS4ONE.SteamWorkshop.Vdf;
 using SteamKit2;
 
 // Mass wild-corpus sweep for the Workshop config translator (#9 follow-up).

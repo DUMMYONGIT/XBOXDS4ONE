@@ -1,9 +1,9 @@
 """The Razer devices OpenRGB lights outside its 90-byte report path (#557).
 
 OpenRGB's RazerController folder lights most Razer products through
-RazerController and the 90-byte feature report, which PadForge's Razer worker
+RazerController and the 90-byte feature report, which XBOXDS4ONE's Razer worker
 speaks (RazerDirectBackend). Five of its detector functions make controllers
-of their own, each with its own wire format, and PadForge lights those
+of their own, each with its own wire format, and XBOXDS4ONE lights those
 through the shared HID worker's families (HidFamilies/RazerKraken*.cs,
 RazerHanboLighting.cs, RazerArgbLighting.cs):
 
@@ -25,7 +25,7 @@ WHAT IT READS, at the pinned OpenRGB commit:
   kept product's razer_device entry, its name, transaction ID, LED ID, rows,
   columns and zones, in the order OpenRGB lists its LEDs.
 
-WHAT IT WRITES: PadForge.App/Common/Input/Peripherals/HidFamilies/RazerHidTable.g.cs,
+WHAT IT WRITES: XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/RazerHidTable.g.cs,
 with CRLF line endings.
 
 Usage:
@@ -43,7 +43,7 @@ import gen_openrgb_registrations as regs  # noqa: E402
 import openrgb_cpp as oc  # noqa: E402
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies",
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies",
                       "RazerHidTable.g.cs")
 PIN = "6b681e3c"
 FAMILY = "RazerController"
@@ -124,7 +124,7 @@ def write_cs(commit, kept, table):
     w("//     (Controllers/RazerController: RazerControllerDetect.cpp, RazerDevices.cpp")
     w("//     and RazerDevices.h). Do not edit by hand.")
     w("// </auto-generated>")
-    w("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    w("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     w("{")
     w("    internal static partial class RazerHidTable")
     w("    {")

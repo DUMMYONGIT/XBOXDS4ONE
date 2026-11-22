@@ -28,7 +28,7 @@ internal static class Program
 
     static string FindResxDir()
     {
-        const string rel = @"PadForge.App\Resources\Strings";
+        const string rel = @"XBOXDS4ONE.App\Resources\Strings";
         foreach (var start in new[] { AppContext.BaseDirectory, Directory.GetCurrentDirectory() })
         {
             var dir = new DirectoryInfo(start);
@@ -40,7 +40,7 @@ internal static class Program
             }
         }
         throw new DirectoryNotFoundException(
-            "Could not locate PadForge.App\\Resources\\Strings above the harness. " +
+            "Could not locate XBOXDS4ONE.App\\Resources\\Strings above the harness. " +
             "Run from inside the repo tree.");
     }
 

@@ -1,0 +1,81 @@
+using System.Linq;
+using XBOXDS4ONE.Common.Input.Peripherals;
+using XBOXDS4ONE.Common.Input.Peripherals.HidFamilies;
+using Xunit;
+using static XBOXDS4ONE.Tests.KeyboardFamilyTestKit;
+
+namespace XBOXDS4ONE.Tests
+{
+    /// <summary>The Lexip Np93 ALPHA against OpenRGB's LexipMouseController
+    /// (#557).</summary>
+    public class LexipMouseLightingTests
+    {
+        [Fact]
+        public void TheReport_IsOpenRgbs_AnOutputReport()
+        {
+            // 00 24 01 RR GG BB 00 64 80, 64 bytes (LexipMouseController.cpp:51-75).
+            var frame = LexipMouseLighting.Frame(0xA1B2C3);
+            Assert.Equal(64, frame.Length);
+            Assert.Equal("00 24 01 A1 B2 C3 00 64 80 00", Hex(frame, 10));
+            Assert.All(frame.Skip(9), b => Assert.Equal(0, b));
+            var model = LexipMouseLighting.Instance.Match(CollectionFor(
+                OpenRgbRegistrations.Of(LexipMouseLighting.OpenRgbFamily).Single(), output: 64));
+            var io = new FakeReportChannel { OutputReportLength = 64 };
+            var session = model.Begin(io, _ => { });
+            Assert.False(session.Feature);
+            Assert.Equal(HidLightingPaint.Sent, session.Paint(io, _ => { }, model.Map.Lights, new[] { 0xA1B2C3 }));
+            Assert.Equal(("out", Hex(frame)), (Calls(io).Single().Kind, Hex(Calls(io).Single().Bytes)));
+        }
+
+        [Fact]
+        public void TheMouseCollection_IsNotOneTheWorkerWritesWithNoAccessRight()
+        {
+            // The registration is the mouse collection, page 1 usage 2, and
+            // its frame is an output report, which a handle with no access
+            // right does not carry.
+            var registration = OpenRgbRegistrations.Of(LexipMouseLighting.OpenRgbFamily).Single();
+            Assert.Equal((0x0001, 0x02), (registration.UsagePage, registration.Usage));
+            var model = LexipMouseLighting.Instance.Match(CollectionFor(registration, output: 64));
+            Assert.False(model.HeldByWindows);
+            var held = new FakeReportChannel { OutputReportLength = 64, FeatureOnly = true };
+            var session = model.Begin(held, _ => { });
+            Assert.Equal(HidLightingPaint.Failed, session.Paint(held, _ => { }, model.Map.Lights, new[] { 1 }));
+        }
+
+        /// <summary>The registered collection is a unit whatever it declares, so
+        /// a mouse with no other collection has a row that says why it stays
+        /// dark.</summary>
+        [Fact]
+        public void TheMouseCollection_IsAUnit_WhateverItDeclares()
+        {
+            var registration = OpenRgbRegistrations.Of(LexipMouseLighting.OpenRgbFamily).Single();
+            Assert.NotNull(LexipMouseLighting.Instance.Match(CollectionFor(registration, output: 0)));
+            Assert.NotNull(LexipMouseLighting.Instance.Match(CollectionFor(registration, output: 63)));
+        }
+
+        /// <summary>A collection Windows does not hold, with room for the frame,
+        /// takes the frame, in place of the mouse collection. Any other
+        /// collection of the mouse is no unit.</summary>
+        [Fact]
+        public void AnotherCollectionWithRoomForTheFrame_IsTheUnit_InPlaceOfTheMouseCollection()
+        {
+            var registration = OpenRgbRegistrations.Of(LexipMouseLighting.OpenRgbFamily).Single();
+            var mouse = CollectionFor(registration, output: 0) with { Path = "mouse" };
+            var vendor = CollectionFor(registration, output: 65) with { Path = "vendor", UsagePage = 0xFF00, Usage = 1 };
+            var model = LexipMouseLighting.Instance.Match(vendor);
+            Assert.NotNull(model);
+            Assert.Same(model, LexipMouseLighting.Instance.Match(mouse));
+            Assert.True(model.Outranks(vendor, mouse));
+            Assert.False(model.Outranks(mouse, vendor));
+            // The mouse collection takes no output report, whatever it declares.
+            Assert.False(LexipMouseLighting.Lit(mouse with { OutputReportLength = 65 }));
+
+            Assert.Null(LexipMouseLighting.Instance.Match(vendor with { OutputReportLength = 63 }));
+            Assert.Null(LexipMouseLighting.Instance.Match(vendor with { ProductId = 0x0001 }));
+
+            // Two such collections give one unit.
+            var second = vendor with { Path = "vendor2" };
+            Assert.NotEqual(model.Outranks(vendor, second), model.Outranks(second, vendor));
+        }
+    }
+}

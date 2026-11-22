@@ -1,0 +1,96 @@
+<views:DialogWindow AutomationProperties.IsDialog="True" x:Class="XBOXDS4ONE.Views.RegisterNfcTagDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+        xmlns:strings="clr-namespace:XBOXDS4ONE.Resources.Strings"
+        xmlns:common="clr-namespace:XBOXDS4ONE.Common"
+        xmlns:controls="clr-namespace:XBOXDS4ONE.Controls"
+        xmlns:views="clr-namespace:XBOXDS4ONE.Views"
+        Title="{Binding Nfc_Title, Source={x:Static strings:Strings.Instance}}"
+        Subtitle="{Binding Nfc_Subtitle, Source={x:Static strings:Strings.Instance}}">
+
+    <!-- NFC Tags (#150, #574), as the Record board draws it: a live line
+         that says what the reader waits for and shows a tapped tag's UID,
+         the name to give the tag with Register beside it, and the tags
+         registered so far. Register is the one action that keeps
+         something, so it wears the ember fill. Close keeps nothing. -->
+    <views:DialogWindow.Resources>
+        <!-- A row is read by its tag's name: with a template of its own it
+             would be read as its type. -->
+        <Style x:Key="TagRow" TargetType="ListBoxItem" BasedOn="{StaticResource DialogListItem}">
+            <Setter Property="AutomationProperties.Name" Value="{Binding Name, TargetNullValue=''}"/>
+        </Style>
+    </views:DialogWindow.Resources>
+
+    <views:DialogWindow.Foot>
+        <controls:FlexLinePanel Style="{StaticResource DialogFootPanel}">
+            <Button Style="{StaticResource DialogButton}" IsCancel="True"
+                    Content="{Binding Common_Close, Source={x:Static strings:Strings.Instance}}"/>
+        </controls:FlexLinePanel>
+    </views:DialogWindow.Foot>
+
+    <StackPanel>
+        <!-- The flame is the wait color until a tag is read and ember once
+             one is. The line is a live region: a screen reader says each
+             new state. -->
+        <Border Style="{StaticResource DialogLiveBox}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Path x:Name="LiveFlame" FlowDirection="LeftToRight" Data="{StaticResource FlameOuterGeometry}"
+                      Width="13" Height="16" Stretch="Uniform" VerticalAlignment="Center"
+                      Fill="{DynamicResource WaitBrush}"/>
+                <TextBlock x:Name="StatusText" Grid.Column="1" Margin="10,0" TextWrapping="Wrap" VerticalAlignment="Center"
+                           common:LiveText.Polite="True"/>
+                <TextBlock x:Name="UidText" Grid.Column="2" Style="{StaticResource DialogFigureNote}"/>
+            </Grid>
+        </Border>
+
+        <controls:SettingRow MinHeight="44" Margin="0,8,0,0">
+            <TextBlock Style="{StaticResource DialogLabelNarrow}"
+                       Text="{Binding Nfc_NameLabel, Source={x:Static strings:Strings.Instance}}"/>
+            <ui:TextBox x:Name="NameBox" Style="{StaticResource DialogTextBox}" controls:SettingRow.Fills="True"
+                        PlaceholderText="{Binding Nfc_NamePlaceholder, Source={x:Static strings:Strings.Instance}}"
+                        AutomationProperties.Name="{Binding Nfc_NameLabel, Source={x:Static strings:Strings.Instance}}"
+                        KeyDown="NameBox_KeyDown"/>
+            <Button x:Name="RegisterBtn" Style="{StaticResource DialogPrimaryButton}" Margin="10,0,0,0" IsEnabled="False"
+                    Content="{Binding Nfc_RegisterButton, Source={x:Static strings:Strings.Instance}}"
+                    Click="RegisterButton_Click"/>
+        </controls:SettingRow>
+
+        <!-- The registered tags. With none, the heading and the list are
+             left out. -->
+        <StackPanel x:Name="TagsBlock">
+            <TextBlock Style="{StaticResource DialogHead3}"
+                       Text="{Binding Nfc_RegisteredTagsHeader, Source={x:Static strings:Strings.Instance}}"/>
+            <Border Style="{StaticResource DialogList}">
+                <ListBox x:Name="TagListBox" Style="{StaticResource DialogListBox}" MaxHeight="240"
+                         ItemContainerStyle="{StaticResource TagRow}"
+                         AutomationProperties.Name="{Binding Nfc_RegisteredTagsHeader, Source={x:Static strings:Strings.Instance}}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Grid.Column="1" Margin="12,0" Text="{Binding Uid}" Style="{StaticResource DialogFigureNote}"/>
+                                <!-- Remove takes the tag off at once, with
+                                     no confirm: tapping it again registers
+                                     it again. -->
+                                <Button Grid.Column="2" Style="{StaticResource DialogSmallQuietButton}"
+                                        Content="{Binding Common_Remove, Source={x:Static strings:Strings.Instance}}"
+                                        Click="RemoveButton_Click" Tag="{Binding Uid}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+        </StackPanel>
+    </StackPanel>
+</views:DialogWindow>

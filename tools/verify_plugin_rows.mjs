@@ -1,10 +1,10 @@
 // Runs SignalRGB plugins against a stand-in device and prints every frame each one sends,
-// so tools/verify_plugin_rows.py can hold them against PadForge's rows. Reading a plugin misses
+// so tools/verify_plugin_rows.py can hold them against XBOXDS4ONE's rows. Reading a plugin misses
 // what it does at run time, such as a helper that reads its index as hexadecimal.
 //
 //   node tools/verify_plugin_rows.mjs GITHUB_FOLDER rows.tsv > ran.jsonl
 //
-// rows.tsv comes from PluginRowFramesDump in PadForge.Tests. The clones are signal-plugins-beta,
+// rows.tsv comes from PluginRowFramesDump in XBOXDS4ONE.Tests. The clones are signal-plugins-beta,
 // signal-plugins and srgbmods-qmk-plugins under GITHUB_FOLDER. A plugin only on a branch comes out
 // of git at the commits tools/gen_plugin_key_tables.py reads. Each plugin renders three times, the
 // last two with nothing changed and two seconds apart, which shows whether it keeps sending.

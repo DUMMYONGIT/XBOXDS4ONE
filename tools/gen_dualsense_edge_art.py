@@ -42,8 +42,8 @@ import shutil
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC_DIR = os.path.join(ROOT, "PadForge.App", "2DModels", "DualSense")
-DST_DIR = os.path.join(ROOT, "PadForge.App", "2DModels", "DUALSENSEEDGE")
+SRC_DIR = os.path.join(ROOT, "XBOXDS4ONE.App", "2DModels", "DualSense")
+DST_DIR = os.path.join(ROOT, "XBOXDS4ONE.App", "2DModels", "DUALSENSEEDGE")
 PACK = os.path.join(os.path.dirname(ROOT), "Gamepad-Asset-Pack",
                     "Controller Asset Pack", "DualSense Controller Image",
                     "Default", "Templates", "White")

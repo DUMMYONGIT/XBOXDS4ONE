@@ -1,11 +1,11 @@
 """The light tables of OpenRGB families that lay out their lights without the
-keyboard layout manager, for PadForge (#557).
+keyboard layout manager, for XBOXDS4ONE (#557).
 
 Six of OpenRGB's families keep each light's name, its index in the family's
 frames and its place on a grid in tables of their own. This script reads those
 tables from OpenRGB at a commit and writes them, one generated file per
 family, beside the family's class in
-PadForge.App/Common/Input/Peripherals/HidFamilies/:
+XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/:
 
 - MsiLaptopLighting.g.cs from Controllers/MSILaptopController/
   MSILaptopControllerDetect.cpp: the per-key keyboard's LEDs and grid, the
@@ -40,7 +40,7 @@ import openrgb_cpp as oc  # noqa: E402
 from openrgb_cpp import CppError, Expr, Node  # noqa: E402
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT_DIR = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies")
+OUT_DIR = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies")
 
 KEY_NAMES = "RGBController/RGBControllerKeyNames.cpp"
 C = "Controllers/"
@@ -146,7 +146,7 @@ class Writer:
             "//     %s (%s)." % (commit[:10], summary),
             "//     Do not edit by hand.",
             "// </auto-generated>",
-            "namespace PadForge.Common.Input.Peripherals",
+            "namespace XBOXDS4ONE.Common.Input.Peripherals",
             "{",
             "    internal sealed partial class %s" % cls,
             "    {",

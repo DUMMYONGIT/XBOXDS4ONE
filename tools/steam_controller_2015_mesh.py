@@ -1,4 +1,4 @@
-"""Convert Valve's 2015 Steam Controller CAD into PadForge's per-part OBJs.
+"""Convert Valve's 2015 Steam Controller CAD into XBOXDS4ONE's per-part OBJs.
 
 Source: Valve's March 2016 "SteamControllerWorkshop03" archive, the STEP
 file in it, CC BY-NC-SA 4.0. It is a 50-solid assembly in millimeters
@@ -50,9 +50,9 @@ STEP = os.environ.get(
     "SC2015_STEP",
     r"C:/tmp/sc2015step/MM06181.rev01.01.SteamControllerWorkshop03.stp")
 DST = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                   "PadForge.App", "3DModels", "SteamController")
+                   "XBOXDS4ONE.App", "3DModels", "SteamController")
 
-# STEP solid name -> (PadForge part file, MinSize mm). Several solids fold
+# STEP solid name -> (XBOXDS4ONE part file, MinSize mm). Several solids fold
 # into one file: the four case shells are MainBody, the stick cap is a
 # knurled grip on a base, the Steam button is a plastic body with a label
 # solid.
@@ -234,7 +234,7 @@ def write_obj(path, verts, norms, faces, name):
     """Valve's CAD is X width, Y height up, Z depth with the FRONT at
     POSITIVE Z. Measured, not assumed: the pad covers, ABXY caps and the
     stick cap all sit at Z +3 to +24.5, the battery door at Z -29 to +1.
-    PadForge is X width, Y depth with the front NEGATIVE, Z height. So
+    XBOXDS4ONE is X width, Y depth with the front NEGATIVE, Z height. So
     Y = -Z and Z = Y, a rotation about X, not a mirror, and the B-rep
     winding is left alone. Normals take the same map.
 

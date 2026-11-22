@@ -1,7 +1,7 @@
 // Ds4InputDump — read raw HID input reports from a Sony controller
 // (virtual DS4 / DualSense or a real one) and print decoded fields:
 // sticks, triggers, touchpad fingers, gyro, accel, battery. Built to
-// verify PadForge's Sony Report 0x01 packer without DS4Windows' AppData
+// verify XBOXDS4ONE's Sony Report 0x01 packer without DS4Windows' AppData
 // footprint or DS4MapperTest's profile system.
 //
 // Usage:
@@ -47,7 +47,7 @@ internal static class Program
         var devices = EnumerateSonyDevices();
         if (devices.Count == 0)
         {
-            Console.WriteLine("No Sony controller found. Make sure PadForge has a PlayStation slot");
+            Console.WriteLine("No Sony controller found. Make sure XBOXDS4ONE has a PlayStation slot");
             Console.WriteLine("active, or plug in a real DS4 / DualSense.");
             return 1;
         }

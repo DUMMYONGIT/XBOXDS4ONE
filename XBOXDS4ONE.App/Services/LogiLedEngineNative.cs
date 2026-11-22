@@ -1,0 +1,276 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Runtime.InteropServices;
+using Microsoft.Win32;
+
+namespace XBOXDS4ONE.Services
+{
+    /// <summary>
+    /// Production native layer for the LED SDK worker
+    /// (<see cref="XBOXDS4ONE.Common.Input.Peripherals.LedSdkBackend"/>, #494):
+    /// replicates the LogitechLedEnginesWrapper.dll shim (#382). The shim's
+    /// entire loader, proven by its PE imports and string table, is a
+    /// registry read of the CLSID ServerBinary default value, a version
+    /// check, LoadLibraryW, and GetProcAddress of the undecorated cdecl
+    /// LogiLed names. This class does the same from managed code, so
+    /// XBOXDS4ONE redistributes nothing of Logitech's.
+    ///
+    /// Marshaling facts from the references: every function is __cdecl
+    /// (the official header's manglings carry YA in both bitnesses), and
+    /// returns are 1-byte C++ bool, marshaled here as U1 to avoid the
+    /// 4-byte BOOL width mismatch the C# reference wrappers silently
+    /// carry. LogiLedInitWithName takes an ANSI char*, per the mangling
+    /// (QEBD) and the Rust binding's CString call site. Optional exports
+    /// (InitWithName, SetTargetDevice, Save, Restore,
+    /// SetLightingForTargetZone, SetLightingForKeyWithKeyName) degrade per
+    /// export: old engines carry only
+    /// 13 exports (proven by PE parse), and a missing optional must not kill
+    /// the feature.
+    ///
+    /// Single-caller contract: the service worker owns every call here,
+    /// the serialization discipline all references keep.
+    /// </summary>
+    internal sealed class LogiLedEngineNative : XBOXDS4ONE.Common.Input.Peripherals.ILogiLedNative
+    {
+        // The key the wrapper shim reads (its only embedded wide string,
+        // identical across both wrapper generations), and the same key
+        // Aurora and Artemis read from HKLM's 64-bit view. Default value.
+        internal const string ServerBinaryKey =
+            @"SOFTWARE\Classes\CLSID\{a6519e67-7632-4375-afdf-caa889744403}\ServerBinary";
+
+        // Aurora validates the registered engine by FileDescription
+        // before trusting it (LgsInstallationUtils.cs:48-64).
+        internal const string EngineFileDescription = "Logitech Gaming LED SDK";
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern IntPtr LoadLibraryExW(string path, IntPtr file, uint flags);
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Ansi, BestFitMapping = false)]
+        private static extern IntPtr GetProcAddress(IntPtr module, string name);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool FreeLibrary(IntPtr module);
+
+        // The engine lives in G HUB's or LGS's own directory and may pull
+        // dependencies from there; the altered search path makes the
+        // engine's directory part of its dependency resolution.
+        private const uint LoadWithAlteredSearchPath = 0x00000008;
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate byte BoolFn();
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate byte InitWithNameFn(IntPtr ansiName);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate byte SetTargetFn(int targetDevice);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate byte SetLightingFn(int redPct, int greenPct, int bluePct);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate byte SetZoneFn(int deviceType, int zone, int redPct, int greenPct, int bluePct);
+        // LogiLed::KeyName is an int-sized enum (W4 in the header's mangling,
+        // logitech-led-sdk-rs bindings-x86_64.rs), passed as int the way
+        // RGB.NET calls it (_LogitechGSDK.cs:140-141).
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate byte SetKeyFn(int keyName, int redPct, int greenPct, int bluePct);
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate void VoidFn();
+
+        private IntPtr _module;
+        private BoolFn _init;
+        private InitWithNameFn _initWithName;
+        private SetTargetFn _setTarget;
+        private BoolFn _save;
+        private BoolFn _restore;
+        private SetLightingFn _setLighting;
+        private SetZoneFn _setZone;
+        private SetKeyFn _setKey;
+        private VoidFn _shutdown;
+
+        /// <summary>The process names every reference gates on: G HUB's
+        /// agent, then both LGS-era hosts.</summary>
+        internal static readonly string[] HostProcesses = { "lghub_agent", "lgs", "LCore" };
+
+        /// <summary>The first of <see cref="HostProcesses"/> running, or
+        /// null, from one walk of the process list. It took a walk per name,
+        /// three while G HUB is closed, at 230 to 290 ms each on a PC with
+        /// about 480 processes.</summary>
+        internal static string RunningHost()
+            => FirstRunning(XBOXDS4ONE.Common.Input.ProcessPresence.RunningAmong(HostProcesses));
+
+        /// <summary>The first of <see cref="HostProcesses"/>, in their order,
+        /// that <paramref name="running"/> holds, or null.</summary>
+        internal static string FirstRunning(ICollection<string> running)
+        {
+            foreach (string name in HostProcesses)
+                if (running.Contains(name)) return name;
+            return null;
+        }
+
+        public bool SoftwarePresent() => RunningHost() != null;
+
+        public bool TryLoad(out string detail)
+        {
+            if (XBOXDS4ONE.Engine.Common.VendorProgramGate.Refuses)
+            {
+                detail = "the test host loads no vendor engine";
+                return false;
+            }
+            if (_module != IntPtr.Zero) { detail = "already loaded"; return true; }
+
+            string path = null;
+            try
+            {
+                using var key = Registry.LocalMachine.OpenSubKey(ServerBinaryKey);
+                path = key?.GetValue(null)?.ToString();
+            }
+            catch { }
+            if (string.IsNullOrEmpty(path)) { detail = "ServerBinary key absent"; return false; }
+            if (!File.Exists(path)) { detail = $"engine missing: {path}"; return false; }
+
+            try
+            {
+                string desc = FileVersionInfo.GetVersionInfo(path).FileDescription;
+                if (!string.Equals(desc, EngineFileDescription, StringComparison.Ordinal))
+                {
+                    detail = $"engine description '{desc}' unexpected";
+                    return false;
+                }
+            }
+            catch { detail = "engine version info unreadable"; return false; }
+
+            IntPtr module = LoadLibraryExW(path, IntPtr.Zero, LoadWithAlteredSearchPath);
+            if (module == IntPtr.Zero)
+            {
+                detail = $"LoadLibrary failed ({Marshal.GetLastWin32Error()}) for {path}";
+                return false;
+            }
+
+            T Resolve<T>(string name) where T : class
+            {
+                IntPtr fn = GetProcAddress(module, name);
+                return fn == IntPtr.Zero ? null : Marshal.GetDelegateForFunctionPointer<T>(fn) as T;
+            }
+
+            var init = Resolve<BoolFn>("LogiLedInit");
+            var setLighting = Resolve<SetLightingFn>("LogiLedSetLighting");
+            var shutdown = Resolve<VoidFn>("LogiLedShutdown");
+            if (init == null || setLighting == null || shutdown == null)
+            {
+                FreeLibrary(module);
+                detail = "required LogiLed exports missing";
+                return false;
+            }
+
+            _module = module;
+            _init = init;
+            _setLighting = setLighting;
+            _shutdown = shutdown;
+            _initWithName = Resolve<InitWithNameFn>("LogiLedInitWithName");
+            _setTarget = Resolve<SetTargetFn>("LogiLedSetTargetDevice");
+            _save = Resolve<BoolFn>("LogiLedSaveCurrentLighting");
+            _restore = Resolve<BoolFn>("LogiLedRestoreLighting");
+            // The 9.00 header's zone call (logitech-led-sdk-rs
+            // bindings-x86_64.rs:354, RGB.NET _LogitechGSDK.cs:146).
+            _setZone = Resolve<SetZoneFn>("LogiLedSetLightingForTargetZone");
+            // The per-key call RGB.NET paints per-key boards with
+            // (PerKey/LogitechPerKeyUpdateQueue.cs:31-41), one of the names
+            // the SDK's own LogitechLedEnginesWrapper.dll resolves in the
+            // engine.
+            _setKey = Resolve<SetKeyFn>("LogiLedSetLightingForKeyWithKeyName");
+            detail = $"loaded {path}";
+            return true;
+        }
+
+        public bool Init()
+        {
+            try
+            {
+                if (_initWithName != null)
+                {
+                    IntPtr name = Marshal.StringToHGlobalAnsi("XBOXDS4ONE");
+                    try { return _initWithName(name) != 0; }
+                    finally { Marshal.FreeHGlobal(name); }
+                }
+                return _init != null && _init() != 0;
+            }
+            catch { return false; }
+        }
+
+        public bool SetTarget(int deviceTypeMask)
+        {
+            try { return _setTarget == null || _setTarget(deviceTypeMask) != 0; }
+            catch { return false; }
+        }
+
+        public bool Restore()
+        {
+            try { return _restore == null || _restore() != 0; }
+            catch { return false; }
+        }
+
+        public bool ZoneCallsAvailable => _setZone != null;
+
+        public bool TargetCallsAvailable => _setTarget != null;
+
+        public bool KeyCallsAvailable => _setKey != null;
+
+        public bool SetLightingForKeyWithKeyName(int keyName, int rPct, int gPct, int bPct)
+        {
+            var fn = _setKey;
+            if (fn == null) return false;
+            try { return fn(keyName, rPct, gPct, bPct) != 0; }
+            catch { return false; }
+        }
+
+        public bool SetLightingForTargetZone(int deviceType, int zone, int rPct, int gPct, int bPct)
+        {
+            var fn = _setZone;
+            if (fn == null) return false;
+            try { return fn(deviceType, zone, rPct, gPct, bPct) != 0; }
+            catch { return false; }
+        }
+
+        public bool SaveCurrent()
+        {
+            try { return _save == null || _save() != 0; }
+            catch { return false; }
+        }
+
+        public bool SetLighting(int rPct, int gPct, int bPct)
+        {
+            var fn = _setLighting;
+            if (fn == null) return false;
+            try { return fn(rPct, gPct, bPct) != 0; }
+            catch { return false; }
+        }
+
+        public void RestoreAndShutdown()
+        {
+            // Restore FIRST, then shutdown, each swallowed: the RGB.NET
+            // dispose shape, adopted because its author does not trust
+            // Shutdown to restore and knows both calls can fail.
+            try { _restore?.Invoke(); } catch { }
+            try { _shutdown?.Invoke(); } catch { }
+        }
+
+        public void Unload()
+        {
+            // Null the delegates BEFORE freeing so a stray call lands on
+            // a null check instead of a freed code page (the RGB.NET
+            // UnloadLogitechGSDK discipline).
+            _init = null;
+            _initWithName = null;
+            _setTarget = null;
+            _save = null;
+            _restore = null;
+            _setLighting = null;
+            _setZone = null;
+            _setKey = null;
+            _shutdown = null;
+            if (_module != IntPtr.Zero)
+            {
+                try { FreeLibrary(_module); } catch { }
+                _module = IntPtr.Zero;
+            }
+        }
+    }
+}

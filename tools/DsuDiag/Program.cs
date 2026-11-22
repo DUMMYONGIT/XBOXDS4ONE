@@ -2,7 +2,7 @@ using System.Buffers.Binary;
 using System.Net;
 using System.Net.Sockets;
 
-// DSU/Cemuhook diagnostic client. Connects to PadForge's DSU server and
+// DSU/Cemuhook diagnostic client. Connects to XBOXDS4ONE's DSU server and
 // reads the same six motion floats an emulator reads, after grip rotation
 // and after the DSU sign convention, so what prints here is what the game
 // gets.
@@ -50,7 +50,7 @@ try
 }
 catch (SocketException)
 {
-    Console.WriteLine("ERROR: No response from server. Is PadForge running with DSU enabled?");
+    Console.WriteLine("ERROR: No response from server. Is XBOXDS4ONE running with DSU enabled?");
     return;
 }
 

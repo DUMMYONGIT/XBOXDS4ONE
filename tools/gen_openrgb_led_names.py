@@ -6,7 +6,7 @@ WHAT IT READS, at the OpenRGB commit the clone is on:
   in TABLES below, in order, each entry a KEY_EN_ name or a string literal.
   Lines OpenRGB has commented out are left out, as the compiler leaves them.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/HidFamilies/OpenRgbLedNames.g.cs:
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/OpenRgbLedNames.g.cs:
 one string array per table, the names as OpenRGB's controller names its LEDs,
 in the order its frames carry their colors.
 
@@ -23,7 +23,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies",
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies",
                       "OpenRgbLedNames.g.cs")
 
 HX = "Controllers/HyperXKeyboardController/"
@@ -132,7 +132,7 @@ def main():
     out.append("//     %s (the led_names arrays of the HyperX, Ducky and Cougar keyboard" % commit[:10])
     out.append("//     controllers, with RGBController/RGBControllerKeyNames.cpp). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals")
     out.append("{")
     out.append("    internal static partial class OpenRgbLedNames")
     out.append("    {")

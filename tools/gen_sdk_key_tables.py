@@ -21,7 +21,7 @@ stops when the header names a key the tables lack, so a new key is never
 dropped unseen. A name with no usage (a macro key, Fn, a G-key, a logo) maps
 to 0 and is labeled in the C#.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/SdkKeyTables.g.cs, with
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/SdkKeyTables.g.cs, with
 CRLF line endings.
 
 Run it without Python's -I switch: it imports tools/openrgb_cpp.py.
@@ -38,7 +38,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "SdkKeyTables.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "SdkKeyTables.g.cs")
 
 # HID Usage Tables 1.6, section 10, Keyboard/Keypad page 0x07.
 LETTERS = {chr(ord("A") + i): 0x04 + i for i in range(26)}
@@ -215,7 +215,7 @@ def main():
     out.append("//     SDK 9.00 (LED/Include/LogitechLEDLib.h, SHA-256 %s)." % logi_sha[:16])
     out.append("//     Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals")
     out.append("{")
     out.append("    internal static partial class ChromaLayouts")
     out.append("    {")

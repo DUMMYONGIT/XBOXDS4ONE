@@ -9,7 +9,7 @@ WHAT IT READS, under OpenRGB's Controllers/ValkyrieKeyboardController:
   each light's color goes out with, in light order.
 - RGBController/RGBControllerKeyNames.cpp: the string behind each KEY_ name.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/HidFamilies/ValkyrieLayouts.g.cs:
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/ValkyrieLayouts.g.cs:
 per board, each light in order with its name, key code, row and column.
 
 Run it without Python's -I switch: it imports tools/openrgb_cpp.py.
@@ -25,7 +25,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies", "ValkyrieLayouts.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies", "ValkyrieLayouts.g.cs")
 
 RGB_REL = "RGBController_ValkyrieKeyboard.cpp"
 CTL_REL = "ValkyrieKeyboardController.h"
@@ -145,7 +145,7 @@ def main():
     out.append("//     ValkyrieKeyboardController.h, with the key names of")
     out.append("//     RGBController/RGBControllerKeyNames.cpp). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     out.append("{")
     out.append("    internal static partial class ValkyrieLayouts")
     out.append("    {")

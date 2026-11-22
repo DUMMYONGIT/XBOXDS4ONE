@@ -1,7 +1,7 @@
-"""Holds the frames SignalRGB's plugins send against the frames PadForge's rows send.
+"""Holds the frames SignalRGB's plugins send against the frames XBOXDS4ONE's rows send.
 
     set PADFORGE_PLUGIN_ROWS_TSV=C:\\tmp\\rows.tsv
-    dotnet test PadForge.Tests --filter FullyQualifiedName~PluginRowFramesDump
+    dotnet test XBOXDS4ONE.Tests --filter FullyQualifiedName~PluginRowFramesDump
     node tools/verify_plugin_rows.mjs GITHUB_FOLDER C:/tmp/rows.tsv > C:/tmp/ran.jsonl
     python tools/verify_plugin_rows.py C:/tmp/rows.tsv C:/tmp/ran.jsonl [--starts]
 
@@ -42,8 +42,8 @@ EXPLAINED = {
     "GMMK/GMMK_3_QMK_Keyboard.js|12": "the plugin's numbers run off the firmware's list",
     "GMMK/GMMK_3_QMK_Keyboard.js|14": "the plugin's numbers run off the firmware's list",
     "GMMK/GMMK_3_QMK_Keyboard.js|16": "the plugin has the firmware's # and Enter crossed",
-    "Alienware/Alienware_Monitor_Gen2_Controller.js": "byte 0: PadForge sends report ID 0 as OpenRGB does, the plugin leaves FF",
-    "Corsair/Corsair_Nexus_Screen.js": "PadForge fills the screen, the plugin every other pixel",
+    "Alienware/Alienware_Monitor_Gen2_Controller.js": "byte 0: XBOXDS4ONE sends report ID 0 as OpenRGB does, the plugin leaves FF",
+    "Corsair/Corsair_Nexus_Screen.js": "XBOXDS4ONE fills the screen, the plugin every other pixel",
     "OEM/OEM_Keyboard_Wireless_Controller.js": "the plugin's checksum loop runs off its array and gives 0",
     "Keychron/C Series/Pro/Keychron_C1_Pro_QMK_ANSI_Keyboard.js": "the plugin's product test names the K1 Pro and always picks ISO",
 }

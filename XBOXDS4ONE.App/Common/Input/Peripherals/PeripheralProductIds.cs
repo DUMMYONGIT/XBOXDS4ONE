@@ -1,0 +1,154 @@
+using System;
+
+namespace XBOXDS4ONE.Common.Input.Peripherals
+{
+    /// <summary>
+    /// Product IDs that name the kind of a Razer or SteelSeries device
+    /// (#494). A mouse reports a keyboard collection for keys bound to
+    /// keystrokes, and a keyboard a mouse collection for keys bound to
+    /// clicks, so Windows lists two rows for one device, and a row's own kind
+    /// can name the wrong Chroma category or GameSense type. Where these
+    /// lists hold the product ID, it decides. A device they lack goes by its
+    /// row's kind.
+    /// </summary>
+    internal static class PeripheralProductIds
+    {
+        /// <summary>Every USB_PID in openrazer
+        /// daemon/openrazer_daemon/hardware/mouse.py, the wireless receivers
+        /// included, and the mice OpenRGB lights at c6fc8016 that openrazer
+        /// does not list (#557): the Basilisk V4 Pro, 00E2 wired and 00E3
+        /// wireless (Controllers/RazerController/RazerDevices.h:168-169), the
+        /// Mouse Dock Pro, 00A4, a receiver whose rows carry the input of the
+        /// mouse paired to it (RazerDevices.h:278, RazerControllerDetect.cpp:42-82),
+        /// the Mamba Hyperflux 0069, the Naga Classic 0093 and the Naga Pro V3,
+        /// 00E7 wired and 00E8 wireless (RazerControllerDetect.cpp:399, 402,
+        /// 411-412).</summary>
+        internal static readonly ushort[] RazerMice =
+        {
+            0x0013, 0x0015, 0x0016, 0x001F, 0x0020, 0x0024, 0x0025, 0x0029, 0x002E, 0x002F,
+            0x0032, 0x0034, 0x0036, 0x0037, 0x0038, 0x0039, 0x003E, 0x003F, 0x0040, 0x0041,
+            0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0048, 0x004C, 0x004F, 0x0050, 0x0053,
+            0x0054, 0x0059, 0x005A, 0x005B, 0x005C, 0x005E, 0x0060, 0x0062, 0x0064, 0x0065,
+            0x0067, 0x006A, 0x006B, 0x006C, 0x006E, 0x006F, 0x0070, 0x0071, 0x0072, 0x0073,
+            0x0077, 0x0078, 0x007A, 0x007B, 0x007C, 0x007D, 0x0080, 0x0083, 0x0084, 0x0085,
+            0x0086, 0x0088, 0x008A, 0x008C, 0x008D, 0x008F, 0x0090, 0x0091, 0x0094, 0x0095,
+            0x0096, 0x0098, 0x0099, 0x009A, 0x009C, 0x009E, 0x009F, 0x00A1, 0x00A3, 0x00A5,
+            0x00A6, 0x00A7, 0x00A8, 0x00AA, 0x00AB, 0x00AF, 0x00B0, 0x00B2, 0x00B3, 0x00B4,
+            0x00B6, 0x00B7, 0x00B8, 0x00B9, 0x00BE, 0x00BF, 0x00C0, 0x00C1, 0x00C2, 0x00C3,
+            0x00C4, 0x00C5, 0x00C7, 0x00C8, 0x00CB, 0x00CC, 0x00CD, 0x00D0, 0x00D1, 0x00D3,
+            0x00D4, 0x00D6, 0x00D7, 0x00A4, 0x00E2, 0x00E3, 0x0069, 0x0093, 0x00E7, 0x00E8,
+        };
+
+        /// <summary>Every USB_PID in openrazer keyboards.py, the keypads
+        /// included, and the keyboards OpenRGB lights at c6fc8016 that
+        /// openrazer does not list (#557): the BlackWidow V4 Pro 75%, 02B3
+        /// wired and 02B4 wireless, the BlackWidow V4 Low Profile TKL, 02D4
+        /// wired and 02D2 wireless, and the Huntsman V3 HE Magnetic Mini, 02E4
+        /// (RazerControllerDetect.cpp:274-275, 280-281, 303).</summary>
+        internal static readonly ushort[] RazerKeyboards =
+        {
+            0x010D, 0x010E, 0x010F, 0x0111, 0x0113, 0x0118, 0x011A, 0x011B, 0x011C, 0x0201,
+            0x0202, 0x0203, 0x0204, 0x0205, 0x0207, 0x0208, 0x0209, 0x020F, 0x0210, 0x0211,
+            0x0214, 0x0216, 0x0217, 0x021A, 0x021E, 0x021F, 0x0220, 0x0221, 0x0224, 0x0225,
+            0x0226, 0x0227, 0x0228, 0x022A, 0x022B, 0x022C, 0x022D, 0x022F, 0x0232, 0x0233,
+            0x0234, 0x0235, 0x0237, 0x0239, 0x023A, 0x023B, 0x023F, 0x0240, 0x0241, 0x0243,
+            0x0244, 0x0245, 0x0246, 0x024A, 0x024B, 0x024C, 0x024D, 0x024E, 0x0252, 0x0253,
+            0x0255, 0x0256, 0x0257, 0x0258, 0x0259, 0x025A, 0x025C, 0x025D, 0x025E, 0x0266,
+            0x0268, 0x0269, 0x026A, 0x026B, 0x026C, 0x026D, 0x026E, 0x026F, 0x0270, 0x0271,
+            0x0276, 0x0279, 0x027A, 0x0282, 0x0287, 0x028A, 0x028B, 0x028C, 0x028D, 0x028F,
+            0x0290, 0x0292, 0x0293, 0x0294, 0x0295, 0x0296, 0x0298, 0x029D, 0x029E, 0x029F,
+            0x02A0, 0x02A1, 0x02A2, 0x02A3, 0x02A5, 0x02A6, 0x02A7, 0x02B0, 0x02B6, 0x02B8,
+            0x02B9, 0x02BA, 0x02C5, 0x02C6, 0x02C7, 0x02CF, 0x02D5, 0x02D7, 0x0A24, 0x02B3,
+            0x02B4, 0x02D2, 0x02D4, 0x02E4,
+        };
+
+        /// <summary>The Razer devices that are neither a mouse nor a
+        /// keyboard and that XBOXDS4ONE lights through their own report (#557):
+        /// mousepads, headsets, headset stands, docks, stands, speakers, light
+        /// kits, a microphone and the Core enclosures. Every product of
+        /// openrazer's accessory, mouse mat, core and headset files that
+        /// OpenRGB's RazerController drives with the 90-byte report, and those
+        /// OpenRGB alone drives so (RazerControllerDetect.cpp at c6fc8016). A
+        /// device with no input row gets a row of its own
+        /// (<see cref="PeripheralUnitRow"/>).</summary>
+        internal static readonly ushort[] RazerAccessories =
+        {
+            0x0068, 0x007E, 0x0215, 0x0517, 0x0518, 0x0532, 0x054A, 0x0C00, 0x0C01, 0x0C02,
+            0x0C04, 0x0C05, 0x0C06, 0x0C08, 0x0F03, 0x0F07, 0x0F08, 0x0F09, 0x0F0D, 0x0F0E,
+            0x0F13, 0x0F19, 0x0F1A, 0x0F1B, 0x0F1D, 0x0F20, 0x0F21, 0x0F2B, 0x0F52,
+        };
+
+        /// <summary>The accessories that are mousepads, the Chroma SDK's
+        /// mousepad category (RzChromaSDKDefines.h, "Mouse mat", at
+        /// CSDK_ChromaModSample fe641c4): the Firefly, Goliathus and Strider
+        /// mats and the Firefly HyperFlux (OpenRGB RazerDevices.h:265-271
+        /// and 283).</summary>
+        internal static readonly ushort[] RazerMousepads =
+        {
+            0x0068, 0x0C00, 0x0C01, 0x0C02, 0x0C04, 0x0C05, 0x0C06, 0x0C08,
+        };
+
+        /// <summary>The accessories that are headsets, the Chroma SDK's
+        /// headset category (RzChromaSDKDefines.h, "Headsets"): the Tiamat
+        /// 7.1 V2 and the Kraken Kitty Edition (OpenRGB RazerDevices.h:236
+        /// and 250). 0x0F21 is no headset here, though line 237 of that file
+        /// names it the Kraken Kitty Black Edition: no device of OpenRGB's
+        /// table uses that name, the table lists it as the Thunderbolt 4
+        /// Dock Chroma (RazerDevices.cpp:9704), and openrazer agrees
+        /// (driver/razeraccessory_driver.h:34).</summary>
+        internal static readonly ushort[] RazerHeadsets = { 0x0F03, 0x0F19 };
+
+        /// <summary>The Aerox, Rival and Sensei detectors in OpenRGB
+        /// Controllers/SteelSeriesController/SteelSeriesControllerDetect.cpp,
+        /// with every product_id in rivalcfg's devices.</summary>
+        internal static readonly ushort[] SteelSeriesMice =
+        {
+            0x1362, 0x1366, 0x1369, 0x136D, 0x136F, 0x1378, 0x137A, 0x1380, 0x1384, 0x1390,
+            0x1392, 0x1394, 0x1700, 0x1702, 0x1704, 0x1706, 0x1707, 0x1708, 0x170A, 0x170B,
+            0x170C, 0x170E, 0x1710, 0x1712, 0x1714, 0x1716, 0x1718, 0x171A, 0x171C, 0x171E,
+            0x1720, 0x1722, 0x1724, 0x1726, 0x1729, 0x172B, 0x172E, 0x1730, 0x1736, 0x1810,
+            0x1814, 0x1816, 0x1824, 0x182A, 0x182C, 0x182E, 0x1830, 0x1832, 0x1834, 0x1836,
+            0x1838, 0x183A, 0x183C, 0x183E, 0x1840, 0x1842, 0x1848, 0x184A, 0x184C, 0x184D,
+            0x1850, 0x1852, 0x1854, 0x1856, 0x1858, 0x185A, 0x185C, 0x185E, 0x1860, 0x1862,
+            0x1870, 0x1872, 0x1874, 0x1876, 0x1878, 0x187A, 0x1890, 0x233A,
+        };
+
+        /// <summary>The Apex detectors in OpenRGB
+        /// SteelSeriesControllerDetect.cpp.</summary>
+        internal static readonly ushort[] SteelSeriesKeyboards =
+        {
+            0x0616, 0x1202, 0x1206, 0x1610, 0x1612, 0x1614, 0x1618, 0x161A, 0x161C, 0x1620,
+            0x1622, 0x1628, 0x1630, 0x1632, 0x1634, 0x1640, 0x1642, 0x1644, 0x1646,
+        };
+
+        /// <summary>The headsets OpenRGB's SteelSeries detectors light: the
+        /// Siberia 350, the Arctis Nova 3 and the Arctis 5's two product IDs
+        /// (Controllers/SteelSeriesController/SteelSeriesDevices.h:69-72,
+        /// SteelSeriesControllerDetect.cpp:522-525), and the Arctis Pro and its
+        /// GameDAC, which SignalRGB's plugins light.</summary>
+        internal static readonly ushort[] SteelSeriesHeadsets = { 0x1229, 0x1250, 0x1252, 0x1280, 0x12AA, 0x12EC };
+
+        /// <summary>The QCK Prism Cloth mousemats OpenRGB's SteelSeries
+        /// detectors light (SteelSeriesDevices.h:77-85,
+        /// SteelSeriesControllerDetect.cpp:530-538), and the QcK Prism of
+        /// 0x1507, which SignalRGB's plugin lights.</summary>
+        internal static readonly ushort[] SteelSeriesMousemats =
+        {
+            0x1507, 0x150A, 0x150D, 0x1514, 0x1516, 0x1518, 0x151A, 0x151C, 0x151E, 0x1520, 0x3769,
+        };
+
+        /// <summary>The Arena 7 and Arena 9 speakers, which SignalRGB's plugins
+        /// light (signal-plugins Steelseries_Arena_7_Speakers.js:3,
+        /// Steelseries_Arena_9_Speakers.js:3).</summary>
+        internal static readonly ushort[] SteelSeriesSpeakers = { 0x1A00, 0x1A05 };
+
+        /// <summary>Whether a row lights as a keyboard: by its product ID
+        /// where a list holds it, else by the row's own kind.</summary>
+        internal static bool LightsAsKeyboard(ushort productId, int capType, ushort[] mice, ushort[] keyboards)
+        {
+            if (Array.IndexOf(mice, productId) >= 0) return false;
+            if (Array.IndexOf(keyboards, productId) >= 0) return true;
+            return PeripheralLinker.IsKeyboard(capType);
+        }
+    }
+}

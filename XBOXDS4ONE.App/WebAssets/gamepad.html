@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>XBOXDS4ONE - Browser Gamepad</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#0a0e15">
+    <link rel="stylesheet" href="/css/xboxds4one.css">
+    <style>
+        /* The browser gamepad page in the program's colors (#574): the
+           shared bar, then each forwarded pad as a card. */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; background: var(--ground); color: var(--text-1); font-family: var(--font); font-size: 15px; line-height: 1.4; min-height: 100vh; }
+        main { padding: 18px 20px 24px; max-width: 720px; margin: 0 auto; }
+        #prompt { text-align: center; padding: 40px 16px; color: var(--text-1); font-size: 18px; font-weight: 600; line-height: 1.5; }
+        #prompt small { display: block; margin-top: 12px; font-size: 13px; font-weight: 400; color: var(--text-2); }
+        .pad { background: var(--card); border: 1px solid var(--card-edge); border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; }
+        .pad-name { font-weight: 600; color: var(--text-1); }
+        .pad-meta { font-size: 13px; color: var(--text-2); margin-top: 4px; word-break: break-word; }
+        .pad-note { font-size: 13px; color: var(--wait); margin-top: 4px; }
+        .pad-note:empty { display: none; }
+        #lock { font-size: 13px; color: var(--text-3); margin-top: 16px; }
+        .how { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--line-soft); font-size: 13px; color: var(--text-2); line-height: 1.6; }
+        .how b { color: var(--text-1); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="pf-bar">
+        <a href="/">&larr; Layouts</a>
+        <span class="pf-title">Browser Gamepad</span>
+        <span id="status" class="pf-status">Connecting...</span>
+        <span id="fsMount"></span>
+    </div>
+    <main>
+        <div id="prompt">
+            Press a button on your controller.
+            <small>Browsers hide a controller until you press something on it. A pad paired to this phone, or the pad built into this handheld, then shows here and XBOXDS4ONE sees it as a controller on the PC.</small>
+        </div>
+        <div id="pads"></div>
+        <div id="lock"></div>
+        <div class="how">
+            <b>Two or more pads</b> on one device each become their own controller. <b>Extra buttons</b> beyond the standard seventeen appear on the paddle and Misc slots, up to ten, and you map them like any other button. A pad the browser did not recognize is forwarded raw: up to 21 buttons and six axes, each axis as the browser reports it. XBOXDS4ONE notes where each axis sat when the pad connected and returns it there if the page goes quiet. <b>Rumble</b> goes to the pad when its browser can drive it, otherwise to the phone's vibrator where the browser offers one. iPhone Safari offers neither, so a pad forwarded from an iPhone gets no rumble. Each pad's row says where its rumble goes. XBOXDS4ONE checks in with this page once a second. If the page stops answering for a few seconds, XBOXDS4ONE releases everything on the pad and ignores the pad until the page answers again.
+        </div>
+    </main>
+    <script src="/js/fullscreen.js"></script>
+    <script src="/js/gamepad_client.js"></script>
+</body>
+</html>

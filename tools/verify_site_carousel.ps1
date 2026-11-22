@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Proves the padforge.org finish carousel actually advances, in a real browser.
+    Proves the XBOXDS4ONE.org finish carousel actually advances, in a real browser.
 .DESCRIPTION
     Headless cannot answer this. A headless page reports document.hidden true,
     and the carousel deliberately pauses when hidden, so a headless render shows
@@ -10,7 +10,7 @@
 #>
 
 param(
-    [string]$Url = "file:///C:/Users/sonic/OneDrive/Documents/GitHub/padforge.org/index.html#finish",
+    [string]$Url = "file:///C:/Users/sonic/OneDrive/Documents/GitHub/XBOXDS4ONE.org/index.html#finish",
     [int]$GapSeconds = 11
 )
 
@@ -33,10 +33,10 @@ public class VW {
 
 $edge = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 if (-not (Test-Path $edge)) { $edge = "C:\Program Files\Microsoft\Edge\Application\msedge.exe" }
-$profileDir = Join-Path $env:TEMP "PadForge_CarouselCheck"
+$profileDir = Join-Path $env:TEMP "XBOXDS4ONE_CarouselCheck"
 
 Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" -EA SilentlyContinue |
-    Where-Object { $_.CommandLine -like "*PadForge_CarouselCheck*" } |
+    Where-Object { $_.CommandLine -like "*XBOXDS4ONE_CarouselCheck*" } |
     ForEach-Object { Stop-Process -Id $_.ProcessId -Force -EA SilentlyContinue }
 Start-Sleep -Milliseconds 800
 
@@ -45,7 +45,7 @@ Start-Sleep -Seconds 9
 
 $hwnd = [IntPtr]::Zero
 foreach ($procId in @(Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" -EA SilentlyContinue |
-        Where-Object { $_.CommandLine -like "*PadForge_CarouselCheck*" } |
+        Where-Object { $_.CommandLine -like "*XBOXDS4ONE_CarouselCheck*" } |
         Select-Object -ExpandProperty ProcessId)) {
     $ep = Get-Process -Id $procId -EA SilentlyContinue
     if ($ep -and $ep.MainWindowHandle -ne [IntPtr]::Zero) { $hwnd = $ep.MainWindowHandle; break }
@@ -76,7 +76,7 @@ Shot "C:\tmp\carousel_t1.png"
 Write-Host "captured t1 (+${GapSeconds}s)"
 
 Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" -EA SilentlyContinue |
-    Where-Object { $_.CommandLine -like "*PadForge_CarouselCheck*" } |
+    Where-Object { $_.CommandLine -like "*XBOXDS4ONE_CarouselCheck*" } |
     ForEach-Object { Stop-Process -Id $_.ProcessId -Force -EA SilentlyContinue }
 
 $a = (Get-FileHash "C:\tmp\carousel_t0.png").Hash

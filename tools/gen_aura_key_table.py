@@ -15,7 +15,7 @@ for a light that is no keyboard-page key its kind and label. The script stops
 when the mapping names an LED the table lacks, so a new key is never dropped
 unseen.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/AuraKeys.g.cs, with CRLF
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/AuraKeys.g.cs, with CRLF
 line endings.
 
 Run it without Python's -I switch: it imports tools/openrgb_cpp.py.
@@ -31,7 +31,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "AuraKeys.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "AuraKeys.g.cs")
 
 # RGB.NET LedId name (without "Keyboard_") -> HID usage, Keyboard/Keypad page.
 USAGE = {
@@ -151,7 +151,7 @@ def main():
     out.append("//     (RGB.NET.Devices.Asus: Enum/AsusLedId.cs and Keyboard/AsusKeyboardLedMapping.cs,")
     out.append("//     LedMappings.KeyboardMapping). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals")
     out.append("{")
     out.append("    internal static partial class AuraLights")
     out.append("    {")

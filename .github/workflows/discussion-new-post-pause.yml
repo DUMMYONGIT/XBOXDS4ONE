@@ -17,7 +17,7 @@
 #
 # Archive: before a discussion is deleted, the delete step and the sweep
 # both save it with its replies as one Markdown file in the private
-# repository PadForge-discussion-archive, never in this public one. The
+# repository XBOXDS4ONE-discussion-archive, never in this public one. The
 # owner's notice is left out of the file and every other comment is kept.
 # A discussion that could not be saved is not deleted, and that includes
 # one with more than 50 comments, or a comment with more than 50 replies,
@@ -58,12 +58,12 @@ permissions:
   contents: read
 
 env:
-  MARKER: '<!-- padforge-new-discussion-pause -->'
+  MARKER: '<!-- XBOXDS4ONE-new-discussion-pause -->'
   # What the marker becomes on a notice whose discussion was kept. It does
   # not contain MARKER, so nothing reads it as a pause.
-  KEPT: '<!-- padforge-new-discussion-kept -->'
+  KEPT: '<!-- XBOXDS4ONE-new-discussion-kept -->'
   # The private repository removed discussions are saved to
-  ARCHIVE: ${{ github.repository_owner }}/PadForge-discussion-archive
+  ARCHIVE: ${{ github.repository_owner }}/XBOXDS4ONE-discussion-archive
 
 jobs:
   pause:
@@ -89,7 +89,7 @@ jobs:
           body=$(cat <<'NOTICE'
           Thanks for posting. New discussions are paused for now while work on the next release is underway, so this one is locked and will be removed in about an hour. Replies to existing discussions are still open. Please post it again once the pause lifts.
 
-          <!-- padforge-new-discussion-pause -->
+          <!-- XBOXDS4ONE-new-discussion-pause -->
           NOTICE
           )
           gh api graphql \

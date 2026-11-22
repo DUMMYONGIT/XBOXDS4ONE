@@ -1,4 +1,4 @@
-"""Read C++ data out of OpenRGB's source for PadForge's generators (#557).
+"""Read C++ data out of OpenRGB's source for XBOXDS4ONE's generators (#557).
 
 OpenRGB keeps its device tables as C++ initializers. This module reads them
 the way a compiler would for the plain cases those tables use: it drops

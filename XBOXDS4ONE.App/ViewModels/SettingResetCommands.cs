@@ -1,0 +1,1783 @@
+using System;
+using System.Collections.Generic;
+using CommunityToolkit.Mvvm.Input;
+using XBOXDS4ONE.Common;
+using XBOXDS4ONE.Common.Input;
+using XBOXDS4ONE.Engine;
+using XBOXDS4ONE.Engine.Data;
+using XBOXDS4ONE.Engine.Menus;
+
+namespace XBOXDS4ONE.ViewModels
+{
+    public partial class SettingsViewModel
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        private RelayCommand<string> _resetCardCommand;
+
+        /// <summary>A card's Reset All on the Settings page (#574): every setting
+        /// the card shows goes back to its default through its own reset.</summary>
+        public RelayCommand<string> ResetCardCommand =>
+            _resetCardCommand ??= new RelayCommand<string>(ResetCard, card => CardSettings(card).Count > 0);
+
+        /// <summary>The settings each card's Reset All puts back, in the card's order.</summary>
+        internal static IReadOnlyList<string> CardSettings(string card) => card switch
+        {
+            "Window" => new[] { nameof(MinimizeToTray), nameof(CloseToTray), nameof(AlwaysShowTrayIcon), nameof(StartMinimized), nameof(StartAtLogin) },
+            "Updates" => new[] { nameof(CheckForUpdatesAutomatically), nameof(InstallUpdatesAutomatically), nameof(IncludePreReleaseUpdates) },
+            "InputEngine" => new[] { nameof(AutoStartEngine), nameof(EnablePollingOnFocusLoss), nameof(PollingRateHz), nameof(HmInactivityDestroyTimeoutSeconds) },
+            "AssignmentPrompts" => new[] { nameof(AssignOfferNewDevice), nameof(AssignOfferEmptySlot), nameof(AssignOfferHome) },
+            "BatteryAlerts" => new[] { nameof(BatteryNotifyEnabled), nameof(BatteryNotifyThreshold), nameof(BatteryNotifyVibrate), nameof(BatteryNotifyRepeatMinutes), nameof(BatteryNotifyFull) },
+            "Hardware" => new[] { nameof(FlydigiEnhancedProtocol), nameof(GKeysEnabled), nameof(AnalogKeyboardsEnabled), nameof(BlissBoxEnabled), nameof(HandheldButtonsEnabled), nameof(KeyboardScreensEnabled), nameof(NovintFalconEnabled) },
+            _ => Array.Empty<string>(),
+        };
+
+        private void ResetCard(string card)
+        {
+            foreach (string name in CardSettings(card)) ResetSetting(name);
+        }
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(SelectedThemeIndex) or
+            nameof(SelectedLanguage) or
+            nameof(AutoStartEngine) or
+            nameof(MinimizeToTray) or
+            nameof(CloseToTray) or
+            nameof(AlwaysShowTrayIcon) or
+            nameof(CheckForUpdatesAutomatically) or
+            nameof(InstallUpdatesAutomatically) or
+            nameof(IncludePreReleaseUpdates) or
+            nameof(StartMinimized) or
+            nameof(StartAtLogin) or
+            nameof(EnablePollingOnFocusLoss) or
+            nameof(FlydigiEnhancedProtocol) or
+            nameof(GKeysEnabled) or
+            nameof(AnalogKeyboardsEnabled) or
+            nameof(BlissBoxEnabled) or
+            nameof(KeyboardScreensEnabled) or
+            nameof(NovintFalconEnabled) or
+            nameof(PollingRateHz) or
+            nameof(HmInactivityDestroyTimeoutSeconds) or
+            nameof(AssignOfferNewDevice) or
+            nameof(AssignOfferEmptySlot) or
+            nameof(AssignOfferHome) or
+            nameof(HandheldButtonsEnabled) or
+            nameof(BatteryNotifyEnabled) or
+            nameof(BatteryNotifyThreshold) or
+            nameof(BatteryNotifyVibrate) or
+            nameof(BatteryNotifyRepeatMinutes) or
+            nameof(BatteryNotifyFull) or
+            nameof(EnableInputHiding) or
+            nameof(KeepHidHideCloaksBetweenLaunches) or
+            nameof(SteamVrInstallDir) or
+            nameof(EnableCommunityConfigLookup) or
+            nameof(ShowLegacyWorkshopConfigs) or
+            nameof(DiagnosticsLoggingEnabled) or
+            nameof(EnableAutoProfileSwitching) or
+            nameof(EnableExternalControl) or
+            nameof(IdentityProtectionModeIndex);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(SelectedThemeIndex):
+                {
+                    SelectedThemeIndex = 2;
+                    break;
+                }
+                case nameof(SelectedLanguage):
+                {
+                    ResetLanguageToSystemDefault();
+                    break;
+                }
+                case nameof(AutoStartEngine):
+                {
+                    AutoStartEngine = true;
+                    break;
+                }
+                case nameof(MinimizeToTray):
+                {
+                    MinimizeToTray = false;
+                    break;
+                }
+                case nameof(CloseToTray):
+                {
+                    CloseToTray = false;
+                    break;
+                }
+                case nameof(AlwaysShowTrayIcon):
+                {
+                    AlwaysShowTrayIcon = false;
+                    break;
+                }
+                case nameof(CheckForUpdatesAutomatically):
+                {
+                    CheckForUpdatesAutomatically = true;
+                    break;
+                }
+                case nameof(InstallUpdatesAutomatically):
+                {
+                    InstallUpdatesAutomatically = false;
+                    break;
+                }
+                case nameof(IncludePreReleaseUpdates):
+                {
+                    IncludePreReleaseUpdates = false;
+                    break;
+                }
+                case nameof(StartMinimized):
+                {
+                    StartMinimized = false;
+                    break;
+                }
+                case nameof(StartAtLogin):
+                {
+                    StartAtLogin = false;
+                    break;
+                }
+                case nameof(EnablePollingOnFocusLoss):
+                {
+                    EnablePollingOnFocusLoss = true;
+                    break;
+                }
+                case nameof(FlydigiEnhancedProtocol):
+                {
+                    FlydigiEnhancedProtocol = true;
+                    break;
+                }
+                case nameof(GKeysEnabled):
+                {
+                    // Off is the default: it loads a third-party library.
+                    GKeysEnabled = false;
+                    break;
+                }
+                case nameof(AnalogKeyboardsEnabled):
+                {
+                    // Off is the default: the polled keyboards share their
+                    // configurator's channel.
+                    AnalogKeyboardsEnabled = false;
+                    break;
+                }
+                case nameof(BlissBoxEnabled):
+                {
+                    // Off is the default: the API shares the channel the
+                    // Bliss-Box API Tool and DeviceBuddy use.
+                    BlissBoxEnabled = false;
+                    break;
+                }
+                case nameof(KeyboardScreensEnabled):
+                {
+                    // Off is the default: it loads other vendors' libraries.
+                    KeyboardScreensEnabled = false;
+                    break;
+                }
+                case nameof(NovintFalconEnabled):
+                {
+                    // Off is the default: the Falcon moves on its own.
+                    NovintFalconEnabled = false;
+                    break;
+                }
+                case nameof(PollingRateHz):
+                {
+                    PollingRateHz = XBOXDS4ONE.Common.Input.InputManager.DefaultPollingRateHz;
+                    break;
+                }
+                case nameof(HmInactivityDestroyTimeoutSeconds):
+                {
+                    HmInactivityDestroyTimeoutSeconds = 60;
+                    break;
+                }
+                case nameof(AssignOfferNewDevice):
+                {
+                    AssignOfferNewDevice = true;
+                    break;
+                }
+                case nameof(AssignOfferEmptySlot):
+                {
+                    AssignOfferEmptySlot = true;
+                    break;
+                }
+                case nameof(AssignOfferHome):
+                {
+                    AssignOfferHome = true;
+                    break;
+                }
+                case nameof(HandheldButtonsEnabled):
+                {
+                    HandheldButtonsEnabled = false;
+                    break;
+                }
+                case nameof(BatteryNotifyEnabled):
+                {
+                    BatteryNotifyEnabled = true;
+                    break;
+                }
+                case nameof(BatteryNotifyThreshold):
+                {
+                    BatteryNotifyThreshold = 15;
+                    break;
+                }
+                case nameof(BatteryNotifyVibrate):
+                {
+                    BatteryNotifyVibrate = false;
+                    break;
+                }
+                case nameof(BatteryNotifyRepeatMinutes):
+                {
+                    BatteryNotifyRepeatMinutes = 0;
+                    break;
+                }
+                case nameof(BatteryNotifyFull):
+                {
+                    BatteryNotifyFull = false;
+                    break;
+                }
+                case nameof(EnableInputHiding):
+                {
+                    EnableInputHiding = true;
+                    break;
+                }
+                case nameof(KeepHidHideCloaksBetweenLaunches):
+                {
+                    KeepHidHideCloaksBetweenLaunches = false;
+                    break;
+                }
+                case nameof(SteamVrInstallDir):
+                {
+                    SteamVrInstallDir = XBOXDS4ONE.Common.DriverInstaller.SteamVrInstallDir;
+                    break;
+                }
+                case nameof(EnableCommunityConfigLookup):
+                {
+                    EnableCommunityConfigLookup = false;
+                    break;
+                }
+                case nameof(ShowLegacyWorkshopConfigs):
+                {
+                    ShowLegacyWorkshopConfigs = false;
+                    break;
+                }
+                case nameof(DiagnosticsLoggingEnabled):
+                {
+                    DiagnosticsLoggingEnabled = false;
+                    break;
+                }
+                case nameof(EnableAutoProfileSwitching):
+                {
+                    EnableAutoProfileSwitching = false;
+                    break;
+                }
+                case nameof(EnableExternalControl):
+                {
+                    EnableExternalControl = false;
+                    break;
+                }
+                case nameof(IdentityProtectionModeIndex):
+                {
+                    IdentityProtectionModeIndex = 0;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class DashboardViewModel
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(EnableDsuMotionServer) or
+            nameof(EnableGameModServer) or
+            nameof(GameModDsxStandIn) or
+            nameof(EnableGameTelemetry) or
+            nameof(EnableTwitchChat) or
+            nameof(TwitchChatClaimApprovalIndex) or
+            nameof(EnableWebController) or
+            nameof(EnableWebControllerPlainHttp) or
+            nameof(WebControllerPlainHttpLocalOnly) or
+            nameof(EnableRemoteLink) or
+            nameof(AutoReconnect) or
+            nameof(EnableTouchpadOverlay) or
+            nameof(EnableMenuOverlay) or
+            nameof(EnableShiftLayerFlyout) or
+            nameof(EnableProfileOverlay);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(EnableDsuMotionServer):
+                {
+                    EnableDsuMotionServer = false;
+                    break;
+                }
+                case nameof(EnableGameModServer):
+                {
+                    EnableGameModServer = false;
+                    break;
+                }
+                case nameof(GameModDsxStandIn):
+                {
+                    GameModDsxStandIn = false;
+                    break;
+                }
+                case nameof(EnableGameTelemetry):
+                {
+                    EnableGameTelemetry = false;
+                    break;
+                }
+                case nameof(EnableTwitchChat):
+                {
+                    EnableTwitchChat = false;
+                    break;
+                }
+                case nameof(TwitchChatClaimApprovalIndex):
+                {
+                    TwitchChatClaimApprovalIndex = (int)XBOXDS4ONE.Common.Input.Twitch.TwitchClaimApproval.Streamer;
+                    break;
+                }
+                case nameof(EnableWebController):
+                {
+                    EnableWebController = false;
+                    break;
+                }
+                case nameof(EnableWebControllerPlainHttp):
+                {
+                    EnableWebControllerPlainHttp = false;
+                    break;
+                }
+                case nameof(WebControllerPlainHttpLocalOnly):
+                {
+                    WebControllerPlainHttpLocalOnly = false;
+                    break;
+                }
+                case nameof(EnableRemoteLink):
+                {
+                    EnableRemoteLink = false;
+                    break;
+                }
+                case nameof(AutoReconnect):
+                {
+                    AutoReconnect = true;
+                    break;
+                }
+                case nameof(EnableTouchpadOverlay):
+                {
+                    EnableTouchpadOverlay = false;
+                    break;
+                }
+                case nameof(EnableMenuOverlay):
+                {
+                    EnableMenuOverlay = true;
+                    break;
+                }
+                case nameof(EnableShiftLayerFlyout):
+                {
+                    EnableShiftLayerFlyout = true;
+                    break;
+                }
+                case nameof(EnableProfileOverlay):
+                {
+                    EnableProfileOverlay = true;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class DeviceRowViewModel
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(ForceRawJoystickMode) or
+            nameof(HidHideEnabled) or
+            nameof(ConsumeInputEnabled) or
+            nameof(IdleDisconnectMinutes) or
+            nameof(QuickChargeEnabled) or
+            nameof(GunCalibration) or
+            nameof(BlissBoxNativeArrows);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(ForceRawJoystickMode):
+                {
+                    ForceRawJoystickMode = false;
+                    break;
+                }
+                case nameof(HidHideEnabled):
+                {
+                    HidHideEnabled = false;
+                    break;
+                }
+                case nameof(ConsumeInputEnabled):
+                {
+                    ConsumeInputEnabled = false;
+                    break;
+                }
+                case nameof(IdleDisconnectMinutes):
+                {
+                    IdleDisconnectMinutes = 0;
+                    break;
+                }
+                case nameof(QuickChargeEnabled):
+                {
+                    QuickChargeEnabled = false;
+                    break;
+                }
+                case nameof(GunCalibration):
+                {
+                    GunCalibration = string.Empty;
+                    break;
+                }
+                case nameof(BlissBoxNativeArrows):
+                {
+                    BlissBoxNativeArrows = false;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class PadViewModel
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(ProfileId) or
+            nameof(KbmSurfaces) or
+            nameof(KbmKeyboardDevice) or
+            nameof(KbmMouseDevice) or
+            nameof(SteeringLockLightbarColorSource) or
+            nameof(SteeringLockLightbarColor) or
+            nameof(TriggerRumbleFold) or
+            nameof(SwapMotors) or
+            nameof(WheelRotationRangeEnabled) or
+            nameof(CenteringMode) or
+            nameof(CenteringVehicle) or
+            nameof(CenteringSpeedSource) or
+            nameof(CenteringWeight) or
+            nameof(CenteringWheelRange) or
+            nameof(CenteringOnCenter) or
+            nameof(CenteringAssist) or
+            nameof(CenteringDamping) or
+            nameof(CenteringFriction) or
+            nameof(CenteringGrip) or
+            nameof(CenteringFixedSpeed) or
+            nameof(CenteringWheelTorque) or
+            nameof(FalconFeel) or
+            nameof(FalconKickButton) or
+            nameof(FalconBraceButton) or
+            nameof(FalconPreloadButton) or
+            nameof(ConstantForceEnabled) or
+            nameof(AudioRumbleEnabled) or
+            nameof(ImpulseSwapTriggers) or
+            nameof(AtVibrationToImpulse) or
+            nameof(ConstantTriggerForceEnabled) or
+            nameof(AudioRumbleTriggersEnabled);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(ProfileId):
+                {
+                    ProfileId = XBOXDS4ONE.Common.Input.InputManager.GetDefaultProfileId(OutputType);
+                    break;
+                }
+                case nameof(KbmSurfaces):
+                {
+                    KbmSurfaces = KbmSlotConfig.DefaultSurfaces;
+                    break;
+                }
+                case nameof(KbmKeyboardDevice):
+                {
+                    KbmKeyboardDevice = KbmSlotConfig.WindowsInput;
+                    break;
+                }
+                case nameof(KbmMouseDevice):
+                {
+                    KbmMouseDevice = KbmSlotConfig.WindowsInput;
+                    break;
+                }
+                case nameof(SteeringLockLightbarColorSource):
+                {
+                    SteeringLockLightbarColorSource = MacroLightbarColorSource.Fixed;
+                    break;
+                }
+                case nameof(SteeringLockLightbarColor):
+                {
+                    SteeringLockLightbarColor = "#FF0000";
+                    break;
+                }
+                case nameof(TriggerRumbleFold):
+                {
+                    TriggerRumbleFold = false;
+                    break;
+                }
+                case nameof(SwapMotors):
+                {
+                    SwapMotors = false;
+                    break;
+                }
+                case nameof(WheelRotationRangeEnabled):
+                {
+                    WheelRotationRangeEnabled = true;
+                    break;
+                }
+                case nameof(FalconFeel):
+                {
+                    FalconFeel = 0;
+                    break;
+                }
+                case nameof(FalconKickButton):
+                {
+                    FalconKickButton = 1;
+                    break;
+                }
+                case nameof(FalconBraceButton):
+                {
+                    FalconBraceButton = 0;
+                    break;
+                }
+                case nameof(FalconPreloadButton):
+                {
+                    FalconPreloadButton = 0;
+                    break;
+                }
+                case nameof(ConstantForceEnabled):
+                {
+                    ConstantForceEnabled = false;
+                    break;
+                }
+                case nameof(AudioRumbleEnabled):
+                {
+                    AudioRumbleEnabled = false;
+                    break;
+                }
+                case nameof(ImpulseSwapTriggers):
+                {
+                    ImpulseSwapTriggers = false;
+                    break;
+                }
+                case nameof(AtVibrationToImpulse):
+                {
+                    AtVibrationToImpulse = false;
+                    break;
+                }
+                case nameof(ConstantTriggerForceEnabled):
+                {
+                    ConstantTriggerForceEnabled = false;
+                    break;
+                }
+                case nameof(AudioRumbleTriggersEnabled):
+                {
+                    AudioRumbleTriggersEnabled = false;
+                    break;
+                }
+                default:
+                {
+                    // The Centering card's rows (#588), beside their properties.
+                    if (!ResetCenteringSetting(name)) return;
+                    break;
+                }
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class DeviceSlotConfig
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(MicLedFollowDeviceId);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(MicLedFollowDeviceId):
+                {
+                    MicLedFollowDeviceId = string.Empty;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class MacroItem
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(IsEnabled) or
+            nameof(TriggerMode) or
+            nameof(LayerMask) or
+            nameof(TriggerExpression) or
+            nameof(TriggerSource) or
+            nameof(TriggerAxisThreshold) or
+            nameof(TriggerAxisDirectionIndex) or
+            nameof(ConsumeTriggerButtons) or
+            nameof(RepeatMode) or
+            nameof(RepeatCount);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(IsEnabled):
+                {
+                    IsEnabled = true;
+                    break;
+                }
+                case nameof(TriggerMode):
+                {
+                    TriggerMode = MacroTriggerMode.OnPress;
+                    break;
+                }
+                case nameof(LayerMask):
+                {
+                    LayerMask = "";
+                    break;
+                }
+                case nameof(TriggerExpression):
+                {
+                    TriggerExpression = "";
+                    break;
+                }
+                case nameof(TriggerSource):
+                {
+                    TriggerSource = MacroTriggerSource.InputDevice;
+                    break;
+                }
+                case nameof(TriggerAxisThreshold):
+                {
+                    TriggerAxisThreshold = 50;
+                    break;
+                }
+                case nameof(TriggerAxisDirectionIndex):
+                {
+                    TriggerAxisDirectionIndex = 0;
+                    break;
+                }
+                case nameof(ConsumeTriggerButtons):
+                {
+                    ConsumeTriggerButtons = true;
+                    break;
+                }
+                case nameof(RepeatMode):
+                {
+                    RepeatMode = MacroRepeatMode.Once;
+                    break;
+                }
+                case nameof(RepeatCount):
+                {
+                    RepeatCount = 1;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class MacroExpressionVariable
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(Source) or
+            nameof(OutputChannel) or
+            nameof(TelemetryChannel);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(Source):
+                {
+                    Source = MacroTriggerSource.InputDevice;
+                    break;
+                }
+                case nameof(OutputChannel):
+                {
+                    OutputChannel = MacroOutputChannel.None;
+                    break;
+                }
+                case nameof(TelemetryChannel):
+                {
+                    // Speed, the channel picking the source seeds (#531).
+                    TelemetryVariable = string.Empty;
+                    TelemetryChannel = XBOXDS4ONE.Common.Input.Telemetry.TelemetryChannel.SpeedKmh;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class MappingSourceItem
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(Kind) or
+            nameof(LineInvert) or
+            nameof(LineHalf) or
+            nameof(LineBidirectional) or
+            nameof(InvertOutput) or
+            nameof(ParamRate) or
+            nameof(ParamSticky) or
+            nameof(ParamMin) or
+            nameof(ParamMax) or
+            nameof(ParamAttackTime) or
+            nameof(ParamReleaseTime) or
+            nameof(ParamReverseMultiplier) or
+            nameof(ParamAutocenter) or
+            nameof(ParamRapidTriggerDistance) or
+            nameof(ParamUpInputChoice) or
+            nameof(ParamDownInputChoice) or
+            nameof(ParamModifierInputChoice);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(Kind):
+                {
+                    Kind = "Direct";
+                    break;
+                }
+                case nameof(LineInvert):
+                {
+                    Invert = false;
+                    break;
+                }
+                case nameof(LineHalf):
+                {
+                    HalfAxis = false;
+                    break;
+                }
+                case nameof(LineBidirectional):
+                {
+                    Bidirectional = false;
+                    break;
+                }
+                case nameof(InvertOutput):
+                {
+                    InvertOutput = false;
+                    break;
+                }
+                case nameof(ParamRate):
+                {
+                    ParamRate = 0.5;
+                    break;
+                }
+                case nameof(ParamSticky):
+                {
+                    ParamSticky = true;
+                    break;
+                }
+                case nameof(ParamMin):
+                {
+                    ParamMin = 0;
+                    break;
+                }
+                case nameof(ParamMax):
+                {
+                    ParamMax = 1;
+                    break;
+                }
+                case nameof(ParamAttackTime):
+                {
+                    ParamAttackTime = 0.30;
+                    break;
+                }
+                case nameof(ParamReleaseTime):
+                {
+                    ParamReleaseTime = 0.30;
+                    break;
+                }
+                case nameof(ParamReverseMultiplier):
+                {
+                    ParamReverseMultiplier = 4.0;
+                    break;
+                }
+                case nameof(ParamAutocenter):
+                {
+                    ParamAutocenter = true;
+                    break;
+                }
+                case nameof(ParamRapidTriggerDistance):
+                {
+                    ParamRapidTriggerDistance = Engine.Data.MappingSource.DefaultRapidTriggerDistance;
+                    break;
+                }
+                case nameof(ParamUpInputChoice):
+                {
+                    SetParamKey(ParamRecordTarget.Up, "", null);
+                    break;
+                }
+                case nameof(ParamDownInputChoice):
+                {
+                    SetParamKey(ParamRecordTarget.Down, "", null);
+                    break;
+                }
+                case nameof(ParamModifierInputChoice):
+                {
+                    SetParamKey(ParamRecordTarget.Modifier, "", null);
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class MappingItem
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(CombineMode) or
+            nameof(CombineExpression) or
+            nameof(LineInvert) or
+            nameof(LineHalf) or
+            nameof(LineBidirectional) or
+            nameof(InvertOutput) or
+            nameof(NoInherit) or
+            nameof(MotionResponse) or
+            nameof(MotionSpeed) or
+            nameof(MotionMinSpeed) or
+            nameof(MotionAngle) or
+            nameof(MotionDeadzone);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(MotionResponse):
+                {
+                    MotionResponse = "";
+                    break;
+                }
+                case nameof(MotionSpeed):
+                {
+                    MotionSpeed = Engine.Data.MappingRow.DefaultMotionSpeed;
+                    break;
+                }
+                case nameof(MotionMinSpeed):
+                {
+                    MotionMinSpeed = 0;
+                    break;
+                }
+                case nameof(MotionAngle):
+                {
+                    MotionAngle = Engine.Data.MappingRow.DefaultMotionAngle;
+                    break;
+                }
+                case nameof(MotionDeadzone):
+                {
+                    MotionDeadzone = Engine.Data.MappingRow.DefaultMotionDeadzone;
+                    break;
+                }
+                case nameof(CombineMode):
+                {
+                    // Back to the row's default, the one a second source
+                    // picks: Strongest on an axis, Either on a button. The
+                    // bare "" means the same to the engine, but no picker
+                    // entry carries it, so the dropdown read blank.
+                    CombineMode = "";
+                    if (IsMultiSource) EnsureCombineModeDefault();
+                    break;
+                }
+                case nameof(CombineExpression):
+                {
+                    CombineExpression = "";
+                    break;
+                }
+                case nameof(LineInvert):
+                {
+                    IsInverted = false;
+                    break;
+                }
+                case nameof(LineHalf):
+                {
+                    IsHalfAxis = false;
+                    break;
+                }
+                case nameof(LineBidirectional):
+                {
+                    IsBidirectional = false;
+                    break;
+                }
+                case nameof(InvertOutput):
+                {
+                    InvertOutput = false;
+                    break;
+                }
+                case nameof(NoInherit):
+                {
+                    NoInherit = false;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class EqBandVm
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(Enabled) or
+            nameof(Type) or
+            nameof(FrequencyHz) or
+            nameof(GainDb) or
+            nameof(Q);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(Enabled):
+                {
+                    Enabled = true;
+                    break;
+                }
+                case nameof(Type):
+                {
+                    Type = XBOXDS4ONE.Common.Input.EqBandType.Peaking;
+                    break;
+                }
+                case nameof(FrequencyHz):
+                {
+                    FrequencyHz = 1000f;
+                    break;
+                }
+                case nameof(GainDb):
+                {
+                    GainDb = 0;
+                    break;
+                }
+                case nameof(Q):
+                {
+                    Q = 0.707f;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class MenuEditorItem
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(Enabled) or
+            nameof(CellCount) or
+            nameof(HasCenter) or
+            nameof(ShowLabels) or
+            nameof(ShowOnWebController) or
+            nameof(PosXPercent) or
+            nameof(PosYPercent) or
+            nameof(ScalePercent) or
+            nameof(OpacityPercent) or
+            nameof(OpenOnTextFocus) or
+            nameof(FunctionRow) or
+            nameof(Suggestions) or
+            nameof(HotbarWrap) or
+            nameof(HotbarDismissOnFire) or
+            nameof(HotbarRecenter);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(Enabled):
+                {
+                    Enabled = true;
+                    break;
+                }
+                // Steam's hotbar defaults: no wrap, Dismiss After Activation
+                // and Re-Center Each Time on (0x1388bf1b2 to 0x1388bf2a4).
+                case nameof(HotbarWrap):
+                {
+                    HotbarWrap = false;
+                    break;
+                }
+                case nameof(HotbarDismissOnFire):
+                {
+                    HotbarDismissOnFire = true;
+                    break;
+                }
+                case nameof(HotbarRecenter):
+                {
+                    HotbarRecenter = true;
+                    break;
+                }
+                case nameof(OpenOnTextFocus):
+                {
+                    OpenOnTextFocus = false;
+                    break;
+                }
+                case nameof(FunctionRow):
+                {
+                    FunctionRow = false;
+                    break;
+                }
+                case nameof(Suggestions):
+                {
+                    Suggestions = true;
+                    break;
+                }
+                // How many cells a new menu has. The count box of 5.3.1 had
+                // this reset, and Add Cell's line keeps it (#574).
+                case nameof(CellCount):
+                {
+                    CellCount = new MenuDefinitionEntry().CellCount;
+                    break;
+                }
+                case nameof(HasCenter):
+                {
+                    HasCenter = false;
+                    break;
+                }
+                case nameof(ShowLabels):
+                {
+                    ShowLabels = true;
+                    break;
+                }
+                case nameof(ShowOnWebController):
+                {
+                    ShowOnWebController = false;
+                    break;
+                }
+                case nameof(PosXPercent):
+                {
+                    PosXPercent = 50;
+                    break;
+                }
+                case nameof(PosYPercent):
+                {
+                    // A keyboard (#566) sits at the bottom by default.
+                    PosYPercent = IsKeyboard ? XBOXDS4ONE.Engine.Menus.KeyboardMenuDefaults.PosYPercent : 50;
+                    break;
+                }
+                case nameof(ScalePercent):
+                {
+                    ScalePercent = 100;
+                    break;
+                }
+                case nameof(OpacityPercent):
+                {
+                    OpacityPercent = 90;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class MenuCellItem
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(Label) or
+            nameof(BindingKind) or
+            nameof(IconName) or
+            nameof(IconScalePercent);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(Label):
+                {
+                    Label = "";
+                    break;
+                }
+                case nameof(BindingKind):
+                {
+                    BindingKind = 0;
+                    break;
+                }
+                // Through SetIcon, so the icon's size resets with it (#413).
+                case nameof(IconName):
+                {
+                    SetIcon("");
+                    break;
+                }
+                case nameof(IconScalePercent):
+                {
+                    IconScalePercent = 100;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class ProfileShortcutViewModel
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(SwitchMode) or
+            nameof(TargetProfileId) or
+            nameof(TriggerDeviceGuid);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(SwitchMode):
+                {
+                    SwitchMode = XBOXDS4ONE.Services.SwitchProfileMode.Next;
+                    break;
+                }
+                case nameof(TargetProfileId):
+                {
+                    TargetProfileId = "";
+                    break;
+                }
+                case nameof(TriggerDeviceGuid):
+                {
+                    TriggerDeviceGuid = Guid.Empty;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class RemoteLinkTrustedPeer
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(Name) or
+            nameof(AllowRemoteAssignments);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(Name):
+                {
+                    Name = string.Empty;
+                    break;
+                }
+                case nameof(AllowRemoteAssignments):
+                {
+                    AllowRemoteAssignments = false;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+    public partial class MacroItem
+    {
+        public partial class TriggerInputEntry
+        {
+            private RelayCommand<string> _resetSettingCommand;
+            public RelayCommand<string> ResetSettingCommand =>
+                _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+            internal static bool CanResetSetting(string name) => name is
+                nameof(Invert) or
+                nameof(HalfAxis) or
+                nameof(Bidirectional);
+
+            private void ResetSetting(string name)
+            {
+                switch (name)
+                {
+                    case nameof(Invert):
+                    {
+                        Invert = false;
+                        break;
+                    }
+                    case nameof(HalfAxis):
+                    {
+                        HalfAxis = false;
+                        break;
+                    }
+                    case nameof(Bidirectional):
+                    {
+                        Bidirectional = false;
+                        break;
+                    }
+                    default: return;
+                }
+                // Refresh pending editor text even when the stored value was already the default.
+                OnPropertyChanged(name);
+            }
+        }
+    }
+
+    public partial class MacroAction
+    {
+        private RelayCommand<string> _resetSettingCommand;
+        public RelayCommand<string> ResetSettingCommand =>
+            _resetSettingCommand ??= new RelayCommand<string>(ResetSetting, CanResetSetting);
+
+        internal static bool CanResetSetting(string name) => name is
+            nameof(AxisSource) or
+            nameof(AxisTarget) or
+            nameof(AxisValue) or
+            nameof(AxisValuePercent) or
+            nameof(AxisYieldToPhysical) or
+            nameof(CursorClampMode) or
+            nameof(CursorPinMode) or
+            nameof(CursorPinX) or
+            nameof(CursorPinY) or
+            nameof(CursorRecenterMode) or
+            nameof(CycleStepsCsv) or
+            nameof(CycleWrap) or
+            nameof(DisconnectDeviceGuid) or
+            nameof(DisconnectTarget) or
+            nameof(DurationMs) or
+            nameof(GuideLedPercent) or
+            nameof(InvertAxis) or
+            nameof(KeyString) or
+            nameof(LightbarColorSource) or
+            nameof(LightbarFadeMs) or
+            nameof(LightbarHoldMode) or
+            nameof(LightbarHoldMs) or
+            nameof(LightbarTargetMode) or
+            nameof(MouseButton) or
+            nameof(MouseSensitivity) or
+            nameof(MouseX) or
+            nameof(MouseY) or
+            nameof(NudgeDx) or
+            nameof(NudgeDy) or
+            nameof(PointerSetMode) or
+            nameof(PressureScaledRate) or
+            nameof(ProcessName) or
+            nameof(ProgramArgs) or
+            nameof(ProgramPath) or
+            nameof(ProgramWorkingDir) or
+            nameof(PulseWhileLatched) or
+            nameof(RumbleFadeMs) or
+            nameof(RumbleHoldMode) or
+            nameof(RumbleHoldMs) or
+            nameof(RumbleStrengthLeft) or
+            nameof(TriggerEffectSide) or
+            nameof(TriggerEffectMode) or
+            nameof(TriggerEffectHold) or
+            nameof(TriggerEffectMs) or
+            nameof(KeyColorTargets) or
+            nameof(KeyColorStyle) or
+            nameof(KeyColorHold) or
+            nameof(KeyColorMs) or
+            nameof(KeyColorRest) or
+            "KeyRestColor" or
+            nameof(RumbleStrengthRight) or
+            nameof(SetGyroEngagedMode) or
+            nameof(ShowVolumeOsd) or
+            nameof(SoundFilePath) or
+            nameof(SoundLoop) or
+            nameof(SoundVolume) or
+            nameof(SourceDeviceAxisIndex) or
+            nameof(SourceDeviceGuid) or
+            nameof(SwitchLayerMask) or
+            nameof(TextContent) or
+            nameof(TextPerCharDelayMs) or
+            nameof(DreamcastFrames) or
+            nameof(DreamcastFrameMs) or
+            nameof(DreamcastRepeat) or
+            nameof(ScreenKind) or
+            nameof(ScreenOverlayNumber) or
+            nameof(CrosshairNumber) or
+            nameof(ProfileShortcutMode) or
+            nameof(ScreenFrames) or
+            nameof(ScreenFrameMs) or
+            nameof(ScreenRepeat) or
+            nameof(ScreenMode) or
+            nameof(StopwatchAction) or
+            nameof(PanDirection) or
+            nameof(PanStep) or
+            nameof(TurboRateCurve) or
+            nameof(Type) or
+            nameof(VolumeLimit) or
+            nameof(WheelHorizontal);
+
+        private void ResetSetting(string name)
+        {
+            switch (name)
+            {
+                case nameof(AxisSource):
+                {
+                    AxisSource = MacroAxisSource.OutputController;
+                    break;
+                }
+                case nameof(AxisTarget):
+                {
+                    AxisTarget = MacroAxisTarget.None;
+                    break;
+                }
+                case nameof(AxisValue):
+                {
+                    AxisValue = 0;
+                    break;
+                }
+                case nameof(AxisValuePercent):
+                {
+                    AxisValuePercent = 0;
+                    break;
+                }
+                case nameof(AxisYieldToPhysical):
+                {
+                    AxisYieldToPhysical = false;
+                    break;
+                }
+                case nameof(CursorClampMode):
+                {
+                    CursorClampMode = CursorClampMode.XAndY;
+                    break;
+                }
+                case nameof(CursorPinMode):
+                {
+                    CursorPinMode = CursorPinMode.XAndY;
+                    break;
+                }
+                case nameof(CursorPinX):
+                {
+                    if (XBOXDS4ONE.Services.CursorControlService.TryGetPrimaryCenter(out int x, out int y)) CursorPinX = x;
+                    break;
+                }
+                case nameof(CursorPinY):
+                {
+                    if (XBOXDS4ONE.Services.CursorControlService.TryGetPrimaryCenter(out int x, out int y)) CursorPinY = y;
+                    break;
+                }
+                case nameof(CursorRecenterMode):
+                {
+                    CursorRecenterMode = CursorRecenterMode.XAndY;
+                    break;
+                }
+                case nameof(CycleStepsCsv):
+                {
+                    CycleStepsCsv = "";
+                    break;
+                }
+                case nameof(CycleWrap):
+                {
+                    CycleWrap = true;
+                    break;
+                }
+                case nameof(DisconnectDeviceGuid):
+                {
+                    DisconnectDeviceGuid = Guid.Empty;
+                    break;
+                }
+                case nameof(DisconnectTarget):
+                {
+                    DisconnectTarget = MacroDisconnectTarget.TriggeringDevice;
+                    break;
+                }
+                case nameof(DurationMs):
+                {
+                    DurationMs = 50;
+                    break;
+                }
+                case nameof(GuideLedPercent):
+                {
+                    GuideLedPercent = 100;
+                    break;
+                }
+                case nameof(InvertAxis):
+                {
+                    InvertAxis = false;
+                    break;
+                }
+                case nameof(KeyString):
+                {
+                    KeyString = "";
+                    break;
+                }
+                case nameof(LightbarColorSource):
+                {
+                    LightbarColorSource = MacroLightbarColorSource.Fixed;
+                    break;
+                }
+                case nameof(LightbarFadeMs):
+                {
+                    LightbarFadeMs = 600;
+                    break;
+                }
+                case nameof(LightbarHoldMode):
+                {
+                    LightbarHoldMode = MacroLightbarHoldMode.Reactive;
+                    break;
+                }
+                case nameof(LightbarHoldMs):
+                {
+                    LightbarHoldMs = 0;
+                    break;
+                }
+                case nameof(LightbarTargetMode):
+                {
+                    LightbarTargetMode = LightbarMode.Static;
+                    break;
+                }
+                case nameof(MouseButton):
+                {
+                    MouseButton = MacroMouseButton.Left;
+                    break;
+                }
+                case nameof(MouseSensitivity):
+                {
+                    MouseSensitivity = 10f;
+                    break;
+                }
+                case nameof(MouseX):
+                {
+                    if (XBOXDS4ONE.Services.CursorControlService.TryGetPrimaryCenter(out int x, out int y)) MouseX = x;
+                    break;
+                }
+                case nameof(MouseY):
+                {
+                    if (XBOXDS4ONE.Services.CursorControlService.TryGetPrimaryCenter(out int x, out int y)) MouseY = y;
+                    break;
+                }
+                case nameof(NudgeDx):
+                {
+                    NudgeDx = 0;
+                    break;
+                }
+                case nameof(NudgeDy):
+                {
+                    NudgeDy = 0;
+                    break;
+                }
+                case nameof(PointerSetMode):
+                {
+                    PointerSetMode = "Mouse";
+                    break;
+                }
+                case nameof(PressureScaledRate):
+                {
+                    PressureScaledRate = false;
+                    break;
+                }
+                case nameof(ProcessName):
+                {
+                    ProcessName = "";
+                    break;
+                }
+                case nameof(ProgramArgs):
+                {
+                    ProgramArgs = "";
+                    break;
+                }
+                case nameof(ProgramPath):
+                {
+                    ProgramPath = "";
+                    break;
+                }
+                case nameof(ProgramWorkingDir):
+                {
+                    ProgramWorkingDir = "";
+                    break;
+                }
+                case nameof(PulseWhileLatched):
+                {
+                    PulseWhileLatched = false;
+                    break;
+                }
+                case nameof(RumbleFadeMs):
+                {
+                    RumbleFadeMs = 200;
+                    break;
+                }
+                case nameof(TriggerEffectSide):
+                {
+                    TriggerEffectSide = MacroTriggerEffectSide.Right;
+                    break;
+                }
+                case nameof(TriggerEffectMode):
+                {
+                    // Back to Feedback, with its own starting values (#531).
+                    // The mode's setter starts the values over only when the
+                    // effect changes, so an edited Feedback gets them here.
+                    TriggerEffectMode = TriggerEffectCatalog.ResistanceMode;
+                    ResetTriggerEffectValues();
+                    break;
+                }
+                case nameof(TriggerEffectHold):
+                {
+                    TriggerEffectHold = MacroTriggerEffectHold.UntilRelease;
+                    break;
+                }
+                case nameof(TriggerEffectMs):
+                {
+                    TriggerEffectMs = 500;
+                    break;
+                }
+                case nameof(KeyColorTargets):
+                {
+                    KeyColorTargets = string.Empty;
+                    break;
+                }
+                case nameof(KeyColorStyle):
+                {
+                    KeyColorStyle = MacroKeyColorStyle.Steady;
+                    break;
+                }
+                case nameof(KeyColorHold):
+                {
+                    KeyColorHold = MacroKeyColorHold.Duration;
+                    break;
+                }
+                case nameof(KeyColorMs):
+                {
+                    KeyColorMs = 3000;
+                    break;
+                }
+                case nameof(KeyColorRest):
+                {
+                    KeyColorRest = MacroKeyColorRest.Keep;
+                    break;
+                }
+                case "KeyRestColor":
+                {
+                    KeyRestR = 0;
+                    KeyRestG = 0;
+                    KeyRestB = 0;
+                    break;
+                }
+                case nameof(RumbleHoldMode):
+                {
+                    RumbleHoldMode = MacroRumbleHoldMode.Reactive;
+                    break;
+                }
+                case nameof(RumbleHoldMs):
+                {
+                    RumbleHoldMs = 100;
+                    break;
+                }
+                case nameof(RumbleStrengthLeft):
+                {
+                    RumbleStrengthLeft = 100;
+                    break;
+                }
+                case nameof(RumbleStrengthRight):
+                {
+                    RumbleStrengthRight = 100;
+                    break;
+                }
+                case nameof(SetGyroEngagedMode):
+                {
+                    SetGyroEngagedMode = MacroSetGyroEngagedMode.Toggle;
+                    break;
+                }
+                case nameof(ShowVolumeOsd):
+                {
+                    ShowVolumeOsd = true;
+                    break;
+                }
+                case nameof(SoundFilePath):
+                {
+                    SoundFilePath = string.Empty;
+                    break;
+                }
+                case nameof(SoundLoop):
+                {
+                    SoundLoop = false;
+                    break;
+                }
+                case nameof(SoundVolume):
+                {
+                    SoundVolume = 100;
+                    break;
+                }
+                case nameof(SourceDeviceAxisIndex):
+                {
+                    SourceDeviceAxisIndex = -1;
+                    break;
+                }
+                case nameof(SourceDeviceGuid):
+                {
+                    SourceDeviceGuid = Guid.Empty;
+                    break;
+                }
+                case nameof(SwitchLayerMask):
+                {
+                    SwitchLayerMask = "Base";
+                    break;
+                }
+                case nameof(TextContent):
+                {
+                    TextContent = "";
+                    break;
+                }
+                case nameof(TextPerCharDelayMs):
+                {
+                    TextPerCharDelayMs = 0;
+                    break;
+                }
+                case nameof(DreamcastFrames):
+                {
+                    DreamcastFrames = string.Empty;
+                    break;
+                }
+                case nameof(DreamcastFrameMs):
+                {
+                    DreamcastFrameMs = XBOXDS4ONE.Services.DreamcastScreenService.MinFrameMs;
+                    break;
+                }
+                case nameof(DreamcastRepeat):
+                {
+                    DreamcastRepeat = 1;
+                    break;
+                }
+                case nameof(ProfileShortcutMode):
+                    ProfileShortcutMode = XBOXDS4ONE.Services.SwitchProfileMode.Specific;
+                    ProfileShortcutName = string.Empty;
+                    break;
+                case nameof(ScreenOverlayNumber):
+                {
+                    ScreenOverlayNumber = 0;
+                    break;
+                }
+                case nameof(CrosshairNumber):
+                {
+                    CrosshairNumber = 0;
+                    break;
+                }
+                case nameof(ScreenKind):
+                {
+                    ScreenKind = XBOXDS4ONE.Common.Input.KeyboardScreens.KeyboardScreenKind.Monochrome;
+                    break;
+                }
+                case nameof(ScreenFrames):
+                {
+                    ScreenFrames = string.Empty;
+                    break;
+                }
+                case nameof(ScreenFrameMs):
+                {
+                    ScreenFrameMs = 1000;
+                    break;
+                }
+                case nameof(ScreenRepeat):
+                {
+                    ScreenRepeat = 1;
+                    break;
+                }
+                case nameof(ScreenMode):
+                {
+                    ScreenMode = XBOXDS4ONE.Services.KeyboardScreenData.DefaultMode;
+                    break;
+                }
+                case nameof(StopwatchAction):
+                {
+                    StopwatchAction = XBOXDS4ONE.Services.KeyboardScreenStopwatchAction.StartPause;
+                    break;
+                }
+                case nameof(PanDirection):
+                {
+                    PanDirection = XBOXDS4ONE.Services.KeyboardScreenPanDirection.Right;
+                    break;
+                }
+                case nameof(PanStep):
+                {
+                    PanStep = DefaultPanStep;
+                    break;
+                }
+                case nameof(TurboRateCurve):
+                {
+                    TurboRateCurve = "Linear";
+                    break;
+                }
+                case nameof(Type):
+                {
+                    Type = MacroActionType.ButtonPress;
+                    break;
+                }
+                case nameof(VolumeLimit):
+                {
+                    VolumeLimit = 100;
+                    break;
+                }
+                case nameof(WheelHorizontal):
+                {
+                    WheelHorizontal = false;
+                    break;
+                }
+                default: return;
+            }
+            // Refresh pending editor text even when the stored value was already the default.
+            OnPropertyChanged(name);
+        }
+    }
+
+}

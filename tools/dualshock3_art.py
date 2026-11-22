@@ -131,7 +131,7 @@ RING_W = 6                      # press ring, as on DS4_Face_Button.png
 STROKE_W = 6                    # face-button symbols
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DS4_DIR = os.path.join(os.path.dirname(HERE), "PadForge.App", "2DModels", "DS4")
+DS4_DIR = os.path.join(os.path.dirname(HERE), "XBOXDS4ONE.App", "2DModels", "DS4")
 
 
 def canvas_h():
@@ -574,6 +574,6 @@ def build(out_dir):
 
 
 if __name__ == "__main__":
-    out = os.path.join(os.path.dirname(HERE), "PadForge.App", "2DModels", "DS3")
+    out = os.path.join(os.path.dirname(HERE), "XBOXDS4ONE.App", "2DModels", "DS3")
     data = build(out)
     print(f"{len(data['results'])} elements on a {data['base_width']}x{data['base_height']} base")

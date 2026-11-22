@@ -14,7 +14,7 @@ WHAT IT READS, under OpenRGB's Controllers/LenovoControllers:
 - RGBController/RGBControllerKeyNames.cpp: the string behind each KEY_ and
   ZONE_ name the tables use.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/LenovoLights.g.cs, the
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/LenovoLights.g.cs, the
 tables as OpenRGB holds them, each OpenRGB identifier written in Pascal case
 (legion_Y760_ansi_leds becomes LegionY760AnsiLeds). The families resolve the
 names to keys and build their light maps in LenovoLights.cs.
@@ -32,7 +32,7 @@ import sys
 import openrgb_cpp as oc
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "LenovoLights.g.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "LenovoLights.g.cs")
 
 
 def read(path):
@@ -185,7 +185,7 @@ def main():
     out.append("//     with the key names of RGBController/RGBControllerKeyNames.cpp). Do not edit")
     out.append("//     by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals")
     out.append("{")
     out.append("    internal static partial class LenovoLights")
     out.append("    {")

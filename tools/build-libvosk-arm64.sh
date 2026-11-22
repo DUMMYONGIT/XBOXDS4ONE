@@ -1,6 +1,6 @@
 #!/bin/bash
-# Builds the Windows ARM64 libvosk.dll PadForge bundles at
-# PadForge.App/Resources/Vosk/arm64/libvosk.dll.
+# Builds the Windows ARM64 libvosk.dll XBOXDS4ONE bundles at
+# XBOXDS4ONE.App/Resources/Vosk/arm64/libvosk.dll.
 #
 # Vosk publishes Windows binaries for x64 and x86 only. Its maintainer wrote an
 # ARM64 recipe (alphacep/vosk-api 1b308a30, travis/Dockerfile.winaarch64 and
@@ -66,7 +66,7 @@ vosk-api  https://github.com/alphacep/vosk-api     f73088da5840f9a382eb949f65cbf
 OpenBLAS  https://github.com/OpenMathLib/OpenBLAS  0b678b19dc03f2a999d6e038814c4c50b9640a4e  OpenBLAS
 "
 # vosk-api f73088da is tag v0.3.38, the version of the managed Vosk package
-# PadForge references and of the x64 libvosk.dll that package carries.
+# XBOXDS4ONE references and of the x64 libvosk.dll that package carries.
 # OpenBLAS 0b678b19 is v0.3.20, upstream's pin for every platform it builds.
 
 export PATH="$TOOLCHAIN/bin:$PATH"
@@ -144,4 +144,4 @@ OUTDIR=out EXTRA_LDFLAGS="out/libvosk.def -Wl,--out-implib,out/libvosk.lib -Wl,-
 
 ls -la out/libvosk.dll
 sha256sum out/libvosk.dll
-echo "Copy out/libvosk.dll to PadForge.App/Resources/Vosk/arm64/libvosk.dll"
+echo "Copy out/libvosk.dll to XBOXDS4ONE.App/Resources/Vosk/arm64/libvosk.dll"

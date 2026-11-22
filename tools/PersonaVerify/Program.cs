@@ -1,8 +1,8 @@
 // PersonaVerify: consumer-side integration check for HIDMaestro composite
-// USB personas (PadForge #255, HM#39).
+// USB personas (XBOXDS4ONE #255, HM#39).
 //
 // Why this exists: on 2026-07-31 every internal telemetry point in the
-// PadForge audio bridge read healthy (frames flowing, decode succeeding,
+// XBOXDS4ONE audio bridge read healthy (frames flowing, decode succeeding,
 // buffers draining) while Windows received full-scale noise. Internal
 // counters cannot see corruption that happens below them. The only
 // measurements that produced truth were taken at the consumer: WASAPI
@@ -15,7 +15,7 @@
 // exercises the haptics lane with no game required.
 //
 // Usage:  dotnet run --project tools/PersonaVerify -- [diagLogPath]
-// PadForge should be running with PADFORGE_DIAG pointed at that same path
+// XBOXDS4ONE should be running with PADFORGE_DIAG pointed at that same path
 // for the log-backed checks; without it the audio checks still run.
 
 using System;
@@ -33,7 +33,7 @@ internal static class Program
 
     private static int Main(string[] args)
     {
-        string diagPath = args.Length > 0 ? args[0] : @"C:\PadForge\persona-diag.log";
+        string diagPath = args.Length > 0 ? args[0] : @"C:\XBOXDS4ONE\persona-diag.log";
         Console.WriteLine("PersonaVerify: composite USB persona, consumer-side checks");
         Console.WriteLine($"diag log: {diagPath}{(File.Exists(diagPath) ? "" : "  (absent, log checks skipped)")}\n");
 
@@ -124,7 +124,7 @@ internal static class Program
         if (!File.Exists(diagPath)) return;
         string tail = ReadTail(diagPath, logStart);
         Check("bridge saw rendered frames", tail.Contains("PERSONA rx"),
-            "PadForge PERSONA rx heartbeat during render");
+            "XBOXDS4ONE PERSONA rx heartbeat during render");
         Check("authored-haptics detected on ch 3/4", tail.Contains("PERSONA haptics ONSET"),
             tail.Contains("PERSONA haptics ONSET")
                 ? "sniffer fired on the haptics phase"
@@ -179,7 +179,7 @@ internal static class Program
         // line. Report it, and point at the deterministic alternative.
         Console.WriteLine(rms < 0.002
             ? $"  [INFO] capture level: rms={rms:F4}, quiet. Ambient only, not a verdict."
-            + " For a definitive level check run PadForge with PADFORGE_MICTONE=1000"
+            + " For a definitive level check run XBOXDS4ONE with PADFORGE_MICTONE=1000"
             + " and expect rms 0.0216 / peak 0.0305 here."
             : $"  [INFO] capture level: rms={rms:F4}");
     }
@@ -217,7 +217,7 @@ internal static class Program
 /// CreateIeeeFloatWaveFormat. Shared-mode WASAPI rejects a
 /// non-extensible format beyond stereo with "Value does not fall within
 /// the expected range" (E_INVALIDARG), and the persona endpoint is
-/// extensible float 48k 4ch. PadForge's own UsbFrameProvider carries the
+/// extensible float 48k 4ch. XBOXDS4ONE's own UsbFrameProvider carries the
 /// same note for the same reason.</summary>
 internal sealed class PhaseTone : IWaveProvider
 {

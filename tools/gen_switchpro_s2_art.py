@@ -32,7 +32,7 @@ import os
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(ROOT, "PadForge.App", "2DModels", "SWITCH2PRO")
+SRC = os.path.join(ROOT, "XBOXDS4ONE.App", "2DModels", "SWITCH2PRO")
 PACK = os.path.join(os.path.dirname(ROOT), "Gamepad-Asset-Pack", "Controller Asset Pack",
                     "Nintendo Switch Controller Images", "Switch Pro Controller",
                     "Default Theme", "Templates", "NSwitchPro_base.png")

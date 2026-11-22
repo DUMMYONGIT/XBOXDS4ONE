@@ -12,7 +12,7 @@ WHAT IT READS, under OpenRGB's Controllers/RoccatController/RoccatVulcanKeyboard
 OpenRGB lays these keyboards out without its KeyboardLayoutManager, so the
 family keeps the tables as OpenRGB holds them.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/HidFamilies/RoccatVulcanLayouts.g.cs,
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/RoccatVulcanLayouts.g.cs,
 with CRLF line endings. Four Japanese legends (E/J, @, ^ and :) name a key
 whose usage depends on the layout it sits in, and OpenRGB's key names give
 them none. Each one's cell in its grid is looked up in the US entry of the
@@ -34,7 +34,7 @@ import openrgb_cpp as oc
 from openrgb_cpp import CppError, Expr, Node
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies",
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies",
                       "RoccatVulcanLayouts.g.cs")
 
 HEADER = "Controllers/RoccatController/RoccatVulcanKeyboardController/RoccatVulcanKeyboardLayouts.h"
@@ -174,7 +174,7 @@ def main():
     out.append("//     %s (Controllers/RoccatController/RoccatVulcanKeyboardController/" % commit[:10])
     out.append("//     RoccatVulcanKeyboardLayouts.h). Do not edit by hand.")
     out.append("// </auto-generated>")
-    out.append("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    out.append("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     out.append("{")
     out.append("    internal static partial class RoccatVulcanLayouts")
     out.append("    {")

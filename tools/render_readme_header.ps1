@@ -7,13 +7,13 @@ $page = Join-Path $repo "tools\readme_header.html"
 $out = Join-Path $repo "screenshots\header.png"
 $edge = "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 if (-not (Test-Path $edge)) { $edge = "C:\Program Files\Microsoft\Edge\Application\msedge.exe" }
-$profileDir = Join-Path $env:TEMP "PadForge_ReadmeHeader"
+$profileDir = Join-Path $env:TEMP "XBOXDS4ONE_ReadmeHeader"
 # Escaped, so a space or a # in the path neither splits the argument nor
 # ends the address.
 $url = ([System.Uri]$page).AbsoluteUri
 # Edge writes a new file of its own, which replaces the banner only once it
 # exists, so a render that fails leaves the banner as it was and says so.
-$fresh = Join-Path $env:TEMP ("PadForge_ReadmeHeader_{0}.png" -f [guid]::NewGuid().ToString("N"))
+$fresh = Join-Path $env:TEMP ("XBOXDS4ONE_ReadmeHeader_{0}.png" -f [guid]::NewGuid().ToString("N"))
 Start-Process $edge -Wait -ArgumentList @(
     "--headless=new", "--disable-gpu", "--hide-scrollbars",
     "--user-data-dir=`"$profileDir`"",

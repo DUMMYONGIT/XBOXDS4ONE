@@ -1,0 +1,898 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using XBOXDS4ONE.Common.Input;
+using XBOXDS4ONE.Engine.Data;
+
+namespace XBOXDS4ONE.Services
+{
+    /// <summary>
+    /// <para>Moves a Workshop import's device tuning into the device's OWN
+    /// settings, once a device is actually assigned to the slot.</para>
+    ///
+    /// <para>A Steam config assumes one controller, so its tuning is per
+    /// physical input: "the right stick uses this deadzone shape", "gyro
+    /// engages on this button". XBOXDS4ONE already has settings for exactly
+    /// those things, with cards the user can edit. The import could not write
+    /// them because it runs before any device is assigned and those settings
+    /// are keyed by device guid, so it parked them on the slot as
+    /// <c>MappingSet.Workshop*</c> stamps and the engine consulted the stamps
+    /// at runtime instead.</para>
+    ///
+    /// <para>That parking spot became a second, invisible settings system.
+    /// The stick deadzone shape was the worst of it: the runtime read
+    /// returned the stamp unconditionally for an Authoritative slot, so the
+    /// user's own Dead Zone Shape control was overridden and editing it did
+    /// nothing, with nothing on screen to say why.</para>
+    ///
+    /// <para>So the stamps are applied HERE, at assignment, and cleared. From
+    /// then on the values live in the user's settings, the existing cards show
+    /// and edit them, and the engine has one place to read.</para>
+    ///
+    /// <para>Two shapes of parked value get folded. Slot-level
+    /// <c>Workshop*</c> stamps, and the per-SOURCE response shaping the import
+    /// writes onto its rows (see <see cref="FoldSourceShaping"/>), which had
+    /// the same defect one level down: live in the engine, absent from the
+    /// cards that own those very knobs.</para>
+    ///
+    /// <para>Applied only where the user has not already chosen something, so
+    /// re-assigning a device cannot silently overwrite tuning the user set by
+    /// hand. Cleared unconditionally, because a stamp that has been offered
+    /// once has done its job: leaving it would let it re-apply after the user
+    /// deliberately changed the value back.</para>
+    /// </summary>
+    public static class WorkshopTuningApplier
+    {
+        /// <summary><para>Folds the slot's import stamps into
+        /// <paramref name="ps"/>. Returns true when anything changed, so the
+        /// caller can mark dirty.</para>
+        /// <para>Call this from EVERY path that assigns a device to a slot.
+        /// The runtime overlays this replaced applied on every path by
+        /// construction, so wiring it into one assignment entry point and not
+        /// its sibling silently dropped the tuning for the other. There is
+        /// one today, DeviceService.AssignDeviceToSlot, which the Used By
+        /// chips (SetDeviceSlotAssignment) and drops reach, and a second added
+        /// later must not have to know this exists. It is idempotent and
+        /// cheap, so calling it too often is free and calling it too seldom
+        /// is a silent regression.</para>
+        /// <para>Not called by PeripheralSwitchMigration.AssignLive (#494),
+        /// by design: it assigns a PC peripheral's output row, which has no
+        /// stick or gyro for a stamp to fold into. Calling this there would
+        /// clear the stamps before a gamepad is assigned.</para></summary>
+        public static bool ApplyToAssignedDevice(int slotIndex, PadSetting ps, string deviceGuid = null)
+        {
+            if (ps == null) return false;
+            var sets = SettingsManager.SlotMappingSets;
+            if (sets == null || slotIndex < 0 || slotIndex >= sets.Length) return false;
+            var set = sets[slotIndex];
+            if (set == null) return false;
+
+            bool changed = false;
+
+            // ── stick deadzone shape ──────────────────────────────────────
+            if (!string.IsNullOrEmpty(set.WorkshopLeftStickDeadZoneShape))
+            {
+                if (IsDefaultShape(ps.LeftThumbDeadZoneShape))
+                {
+                    ps.LeftThumbDeadZoneShape = set.WorkshopLeftStickDeadZoneShape;
+                    changed = true;
+                }
+                set.WorkshopLeftStickDeadZoneShape = "";
+            }
+            if (!string.IsNullOrEmpty(set.WorkshopRightStickDeadZoneShape))
+            {
+                if (IsDefaultShape(ps.RightThumbDeadZoneShape))
+                {
+                    ps.RightThumbDeadZoneShape = set.WorkshopRightStickDeadZoneShape;
+                    changed = true;
+                }
+                set.WorkshopRightStickDeadZoneShape = "";
+            }
+
+            // ── gyro engage button ────────────────────────────────────────
+            if (!string.IsNullOrEmpty(set.WorkshopGyroEngageDescriptor))
+            {
+                if (string.IsNullOrEmpty(ps.GyroAimEngageButton))
+                {
+                    ps.GyroAimEngageButton = set.WorkshopGyroEngageDescriptor;
+                    // The import's descriptor is device-free by construction:
+                    // it names a control on whatever device drives the slot.
+                    ps.GyroAimEngageDeviceGuid = "";
+                    ps.GyroAimEngageMode =
+                        set.WorkshopGyroEngageToggle ? "Toggle"
+                        : set.WorkshopGyroEngageInvert ? "ReleaseToEngage"
+                        : "Hold";
+                    changed = true;
+                }
+                set.WorkshopGyroEngageDescriptor = "";
+                set.WorkshopGyroEngageToggle = false;
+                set.WorkshopGyroEngageInvert = false;
+            }
+
+            // ── gyro activation by layer, the ratchet and the re-center ───
+            if (HasGyroStamps(set))
+            {
+                changed |= FoldGyroStamps(set, ps);
+                ClearGyroStamps(set);
+            }
+
+            // A target whose rows tune it differently keeps its rows' tuning.
+            var kept = TargetsKeepingTheirRows(set);
+
+            // ── response curves, rumble and idle time from an import (#561) ──
+            changed |= FoldImportStamps(set, ps, deviceGuid, kept);
+
+            // ── per-source response shaping ───────────────────────────────
+            changed |= FoldSourceShaping(set, ps, kept);
+
+            // ── per-pad cursor acceleration ───────────────────────────────
+            changed |= FoldTouchpadAcceleration(set, ps, deviceGuid);
+
+            // ── touchpad momentum from an import (#561) ──────────────────
+            changed |= FoldTouchpadGlide(set, ps, deviceGuid);
+
+            // ── gyro cursor acceleration ──────────────────────────────────
+            changed |= FoldGyroAcceleration(set, ps);
+
+            return changed;
+        }
+
+
+        /// <summary>True when <paramref name="set"/> still carries one of the
+        /// three gyro stamps: the ratchet, the activation by layer or the
+        /// re-center.</summary>
+        internal static bool HasGyroStamps(MappingSet set)
+            => set != null
+               && (!string.IsNullOrEmpty(set.WorkshopGyroActivation)
+                   || !string.IsNullOrEmpty(set.WorkshopGyroRatchetDescriptors)
+                   || set.WorkshopGyroRecenterOnEngage);
+
+        /// <summary><para>Moves the slot's gyro stamps onto
+        /// <paramref name="ps"/>, the Gyro card's Gyro On rows and its
+        /// Re-Center switch, where the card still holds none. Leaves the
+        /// stamps on the set: the caller clears them once every device that
+        /// takes them has (<see cref="ClearGyroStamps"/>).</para>
+        /// <para>Steam's ratchet is the Base layer's "on while not held" on
+        /// any of its buttons, which is how the Gyro card writes it. The
+        /// translator stamps at most one of the two
+        /// (ConfigTranslator.FinalizeGyroActivation returns after the
+        /// ratchet and sets it nowhere else), so the ratchet stands in only
+        /// for a missing activation.</para></summary>
+        internal static bool FoldGyroStamps(MappingSet set, PadSetting ps)
+        {
+            if (set == null || ps == null) return false;
+            bool changed = false;
+            string activation = set.WorkshopGyroActivation;
+            if (string.IsNullOrEmpty(activation) && !string.IsNullOrEmpty(set.WorkshopGyroRatchetDescriptors))
+                activation = "Base=Release,Any," + set.WorkshopGyroRatchetDescriptors;
+            if (!string.IsNullOrEmpty(activation) && string.IsNullOrEmpty(ps.GyroActivation))
+            {
+                ps.GyroActivation = activation;
+                changed = true;
+            }
+            if (set.WorkshopGyroRecenterOnEngage && ps.GyroRecenterOnEngage != "1")
+            {
+                ps.GyroRecenterOnEngage = "1";
+                changed = true;
+            }
+            return changed;
+        }
+
+        /// <summary>Clears the three gyro stamps once they are folded.</summary>
+        internal static void ClearGyroStamps(MappingSet set)
+        {
+            if (set == null) return;
+            set.WorkshopGyroActivation = "";
+            set.WorkshopGyroRatchetDescriptors = "";
+            set.WorkshopGyroRecenterOnEngage = false;
+        }
+
+        /// <summary><para>Folds the gyro stamps of a stored set of slots
+        /// onto the devices already assigned there, for a file saved before
+        /// the engine stopped reading the stamps. The device's assignment
+        /// already happened, so <see cref="ApplyToAssignedDevice"/> will not
+        /// run for it again, and without this the user's gyro activation
+        /// would stop.</para>
+        /// <para><paramref name="entries"/> are the stored assignments (a
+        /// UserSetting or a profile's entry): the slot, the checksum naming
+        /// the device's PadSetting in <paramref name="padSettings"/>, and a
+        /// way to point the entry at another PadSetting. A PadSetting that
+        /// entries on another slot share is copied before the fold, so the
+        /// other slot's device keeps its own. A slot with no assigned device
+        /// keeps its stamps for the assignment to fold. Returns the
+        /// PadSettings, grown by any copy.</para></summary>
+        internal static PadSetting[] FoldCarriedGyroStamps(MappingSet[] sets,
+            IReadOnlyList<(int Slot, string Checksum, Action<string> Repoint)> entries, PadSetting[] padSettings)
+        {
+            if (sets == null || entries == null || padSettings == null) return padSettings;
+            var list = new List<PadSetting>(padSettings);
+            for (int slot = 0; slot < sets.Length; slot++)
+            {
+                var set = sets[slot];
+                if (!HasGyroStamps(set)) continue;
+                bool folded = false;
+                foreach (var e in entries)
+                {
+                    if (e.Slot != slot || string.IsNullOrEmpty(e.Checksum)) continue;
+                    int at = list.FindIndex(p => p != null && p.PadSettingChecksum == e.Checksum);
+                    if (at < 0) continue;
+                    bool shared = false;
+                    foreach (var o in entries)
+                        if (o.Slot != slot && o.Checksum == e.Checksum) { shared = true; break; }
+                    if (!shared)
+                    {
+                        FoldGyroStamps(set, list[at]);
+                    }
+                    else
+                    {
+                        var copy = list[at].CloneDeep();
+                        FoldGyroStamps(set, copy);
+                        copy.UpdateChecksum();
+                        if (!list.Exists(p => p != null && p.PadSettingChecksum == copy.PadSettingChecksum))
+                            list.Add(copy);
+                        e.Repoint?.Invoke(copy.PadSettingChecksum);
+                    }
+                    folded = true;
+                }
+                if (folded) ClearGyroStamps(set);
+            }
+            return list.ToArray();
+        }
+
+        /// <summary>The battery light colors an import set for the slot (#561),
+        /// onto the device's own Lighting card where it still holds the
+        /// defaults, red at empty and green at full. Spent on the first device
+        /// that takes it, as the other stamps are.</summary>
+        public static bool ApplyBatteryColors(int slotIndex, ViewModels.DeviceSlotConfig cfg)
+        {
+            var sets = SettingsManager.SlotMappingSets;
+            if (cfg == null || sets == null || slotIndex < 0 || slotIndex >= sets.Length) return false;
+            var set = sets[slotIndex];
+            if (set == null || string.IsNullOrEmpty(set.WorkshopBatteryColors)) return false;
+
+            bool changed = false;
+            var parts = set.WorkshopBatteryColors.Split(';');
+            if (parts.Length == 2 && TryColor(parts[0], out var low) && TryColor(parts[1], out var high)
+                && cfg.LightbarBatteryLowR == 0xFF && cfg.LightbarBatteryLowG == 0 && cfg.LightbarBatteryLowB == 0
+                && cfg.LightbarBatteryHighR == 0 && cfg.LightbarBatteryHighG == 0xFF && cfg.LightbarBatteryHighB == 0)
+            {
+                cfg.LightbarBatteryLowR = low.R;
+                cfg.LightbarBatteryLowG = low.G;
+                cfg.LightbarBatteryLowB = low.B;
+                cfg.LightbarBatteryHighR = high.R;
+                cfg.LightbarBatteryHighG = high.G;
+                cfg.LightbarBatteryHighB = high.B;
+                changed = true;
+            }
+            set.WorkshopBatteryColors = "";
+            return changed;
+        }
+
+        private static bool TryColor(string text, out (byte R, byte G, byte B) color)
+        {
+            color = default;
+            var c = text.Split(',');
+            if (c.Length != 3
+                || !byte.TryParse(c[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out byte r)
+                || !byte.TryParse(c[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out byte g)
+                || !byte.TryParse(c[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out byte b))
+                return false;
+            color = (r, g, b);
+            return true;
+        }
+
+        /// <summary>What a reWASD or DS4Windows import set for the device (#561),
+        /// each kept where the user has not chosen something.</summary>
+        private static bool FoldImportStamps(MappingSet set, PadSetting ps, string deviceGuid, HashSet<string> kept)
+        {
+            bool changed = false;
+            if (!string.IsNullOrEmpty(set.WorkshopCurves))
+            {
+                foreach (string entry in set.WorkshopCurves.Split('|', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    int eq = entry.IndexOf('=');
+                    if (eq <= 0) continue;
+                    // The card stays as it was under rows that keep their own.
+                    if (kept.Contains(entry[..eq])) continue;
+                    var card = ShapingCardFor(entry[..eq], ps);
+                    if (card != null && Common.CurveLut.IsLinear(card.GetCurve()))
+                    {
+                        card.SetCurve(entry[(eq + 1)..]);
+                        changed = true;
+                    }
+                }
+                set.WorkshopCurves = "";
+            }
+            if (!string.IsNullOrEmpty(set.WorkshopRumblePercent))
+            {
+                if (IsPercent(ps.LeftMotorStrength, 100) && IsPercent(ps.RightMotorStrength, 100))
+                {
+                    ps.LeftMotorStrength = set.WorkshopRumblePercent;
+                    ps.RightMotorStrength = set.WorkshopRumblePercent;
+                    changed = true;
+                }
+                set.WorkshopRumblePercent = "";
+            }
+            if (!string.IsNullOrEmpty(set.WorkshopGyroDeadZone))
+            {
+                // Over the default only, as the rumble: a dead zone the user
+                // set in the Gyro group stays.
+                if (string.IsNullOrEmpty(ps.GyroDeadZoneDegPerSec) || ps.GyroDeadZoneDegPerSec == DefaultGyroDeadZone)
+                {
+                    ps.GyroDeadZoneDegPerSec = set.WorkshopGyroDeadZone;
+                    changed = true;
+                }
+                set.WorkshopGyroDeadZone = "";
+            }
+            if (!string.IsNullOrEmpty(set.WorkshopGyroSpace))
+            {
+                // A Steam import's Player or World Space, over the default
+                // Local only: a space the user chose in the Gyro group stays.
+                if (string.IsNullOrEmpty(ps.GyroSpace) || ps.GyroSpace == "Local")
+                {
+                    ps.GyroSpace = set.WorkshopGyroSpace;
+                    changed = true;
+                }
+                set.WorkshopGyroSpace = "";
+            }
+            if (!string.IsNullOrEmpty(set.WorkshopIdleDisconnectSeconds))
+            {
+                if (Guid.TryParse(deviceGuid, out var guid)
+                    && int.TryParse(set.WorkshopIdleDisconnectSeconds, NumberStyles.Integer, CultureInfo.InvariantCulture, out int seconds))
+                {
+                    var device = SettingsManager.FindDeviceByInstanceGuid(guid);
+                    if (device != null && device.IdleDisconnectSeconds <= 0)
+                    {
+                        device.IdleDisconnectSeconds = seconds;
+                        changed = true;
+                    }
+                }
+                set.WorkshopIdleDisconnectSeconds = "";
+            }
+            return changed;
+        }
+
+        /// <summary><para>Moves a gyro source's stamped acceleration onto the
+        /// Gyro Acceleration card.</para>
+        ///
+        /// <para>The gyro mouse lane runs both accelerations back to back
+        /// (ApplyGyroAcceleration with the card's value, then
+        /// ApplyPerSourceAccel with the stamp), so an import stacked invisibly
+        /// on whatever the user set. Worse, ApplyPerSourceAccel hard-caps its
+        /// result at full-scale because it is shared with deflection lanes,
+        /// while the gyro lane is a RATE output whose own comment says that
+        /// clamp is deliberately dropped ("a fast spin past the curve's
+        /// reference rate must stay a fast spin"). So the imported value was
+        /// also throttled by an accident of code sharing. After the fold it
+        /// rides the card's own uncapped path, which means imported configs'
+        /// fast flicks travel further than they did before: the ceiling was
+        /// the artifact, not the fix.</para>
+        ///
+        /// <para>Same units both sides, verified not assumed: the card is
+        /// parsed by TryParseFloatPs with no scaling (InputService, the gyro
+        /// tuning build) and both formulas are 1 + accel x |v|. The card's
+        /// range was widened to 5 to cover the translator's maximum
+        /// (clamp(0..10) x 0.5), so the copy is lossless.</para>
+        ///
+        /// <para>Gyro descriptors only. A stick-hosted mouse row can carry
+        /// this stamp too (EmitMouseAxes serves joystick_mouse); that one
+        /// stays per-source, where the row editors now show it as the
+        /// Acceleration control and the shared axis seam reads it.</para></summary>
+        private static bool FoldGyroAcceleration(MappingSet set, PadSetting ps)
+        {
+            if (set.Rows == null) return false;
+
+            bool changed = false;
+            foreach (var row in set.Rows)
+            {
+                if (row?.Sources == null) continue;
+                foreach (var src in row.Sources)
+                {
+                    if (src == null || src.ParamAccel <= 0.0) continue;
+                    if (!(src.Descriptor ?? "").StartsWith("Gyro ", StringComparison.Ordinal))
+                        continue;
+
+                    if (IsPercent(ps.GyroAcceleration, 0))
+                    {
+                        // F2 invariant, the card's own save format
+                        // (InputService writes GyroAcceleration.ToString("F2", ic)).
+                        ps.GyroAcceleration = src.ParamAccel.ToString("F2",
+                            CultureInfo.InvariantCulture);
+                        changed = true;
+                    }
+                    src.ParamAccel = 0.0;
+                }
+            }
+            return changed;
+        }
+
+        /// <summary><para>Moves a stamped cursor acceleration onto the pad's own
+        /// Mouse Acceleration card.</para>
+        ///
+        /// <para>Keyed off the SOURCE descriptor, not the row target, which is
+        /// the opposite of the stick fold above and for a concrete reason: the
+        /// target of a touchpad mouse row is Mouse X or Mouse Y, which names no
+        /// pad. "Touchpad 1 Finger 0 X" names pad 1, and the setting is
+        /// per-(device, pad), so the source is the only end of the row that
+        /// identifies the card.</para>
+        ///
+        /// <para>NOT behavior-preserving on the cursor lane, deliberately.
+        /// ReadTouchpadMouseCounts never applied ParamAccel at all, so an
+        /// import whose acceleration rode a touchpad-finger row into Mouse X
+        /// or Mouse Y had it silently DROPPED, while the same stamp on an axis
+        /// row did apply. The pad setting is read by both lanes, so folding
+        /// makes the imported value take effect on the cursor for the first
+        /// time. That is the point: the alternative is a value Steam authored,
+        /// XBOXDS4ONE stored, and nothing honored.</para>
+        ///
+        /// <para>On the axis lane it IS exactly preserving: the same
+        /// v x (1 + accel x |v|) curve, and the fold only runs while the card
+        /// sits at 0 where that curve is the identity. Nothing stacks either
+        /// way, because the stamp is cleared.</para></summary>
+        private static bool FoldTouchpadAcceleration(MappingSet set, PadSetting ps, string deviceGuid)
+        {
+            if (set.Rows == null || string.IsNullOrEmpty(deviceGuid)) return false;
+
+            bool changed = false;
+            var list = ps.TouchpadSettings != null
+                ? new List<XBOXDS4ONE.Engine.Touchpad.TouchpadSettingsEntry>(ps.TouchpadSettings)
+                : new List<XBOXDS4ONE.Engine.Touchpad.TouchpadSettingsEntry>();
+            bool listGrew = false;
+
+            foreach (var row in set.Rows)
+            {
+                if (row?.Sources == null) continue;
+                foreach (var src in row.Sources)
+                {
+                    if (src == null || src.ParamAccel <= 0.0) continue;
+                    if (!TryPadIndexOfTouchpadSource(src.Descriptor, out int pad)) continue;
+
+                    var entry = FindOrAddPadEntry(list, deviceGuid, pad, ref listGrew);
+                    if (entry.Settings.MouseAcceleration <= 0f)
+                    {
+                        entry.Settings.MouseAcceleration = (float)src.ParamAccel;
+                        changed = true;
+                    }
+                    src.ParamAccel = 0.0;
+                }
+            }
+
+            if (listGrew) ps.TouchpadSettings = list.ToArray();
+            return changed;
+        }
+
+        /// <summary>Turns on touchpad momentum for pad 0 at the glide an
+        /// import stamped (#561), on the device's own Touchpad card, where
+        /// momentum is still off. It needs the device to key the pad's entry
+        /// on, so the stamp waits for an assignment that names one, and is
+        /// spent on the first that does.</summary>
+        private static bool FoldTouchpadGlide(MappingSet set, PadSetting ps, string deviceGuid)
+        {
+            if (string.IsNullOrEmpty(set.WorkshopTouchpadGlide) || string.IsNullOrEmpty(deviceGuid)) return false;
+
+            bool changed = false;
+            if (float.TryParse(set.WorkshopTouchpadGlide, NumberStyles.Float, CultureInfo.InvariantCulture, out float glide)
+                && float.IsFinite(glide))
+            {
+                var list = ps.TouchpadSettings != null
+                    ? new List<XBOXDS4ONE.Engine.Touchpad.TouchpadSettingsEntry>(ps.TouchpadSettings)
+                    : new List<XBOXDS4ONE.Engine.Touchpad.TouchpadSettingsEntry>();
+                bool listGrew = false;
+                var entry = FindOrAddPadEntry(list, deviceGuid, 0, ref listGrew);
+                if (!entry.Settings.MouseMomentum)
+                {
+                    entry.Settings.MouseMomentum = true;
+                    entry.Settings.MouseMomentumDecay = Math.Clamp(glide, 0.80f, 1.00f);
+                    changed = true;
+                }
+                if (listGrew) ps.TouchpadSettings = list.ToArray();
+            }
+            set.WorkshopTouchpadGlide = "";
+            return changed;
+        }
+
+        /// <summary>Pad index from a "Touchpad N ..." source descriptor.</summary>
+        private static bool TryPadIndexOfTouchpadSource(string descriptor, out int pad)
+        {
+            pad = 0;
+            if (string.IsNullOrEmpty(descriptor)) return false;
+            const string prefix = "Touchpad ";
+            if (!descriptor.StartsWith(prefix, StringComparison.Ordinal)) return false;
+            int i = prefix.Length, start = i;
+            while (i < descriptor.Length && char.IsDigit(descriptor[i])) i++;
+            return i > start
+                && int.TryParse(descriptor.Substring(start, i - start), out pad);
+        }
+
+        /// <summary>The (device, pad) entry, created at defaults if absent.
+        /// Same create-or-find shape the Touchpad group's own push uses, so the
+        /// group and this fold cannot disagree about which entry owns a pad.</summary>
+        private static XBOXDS4ONE.Engine.Touchpad.TouchpadSettingsEntry FindOrAddPadEntry(
+            List<XBOXDS4ONE.Engine.Touchpad.TouchpadSettingsEntry> list,
+            string deviceGuid, int pad, ref bool listGrew)
+        {
+            foreach (var e in list)
+            {
+                if (e?.Settings == null) continue;
+                if (e.TouchpadIndex != pad) continue;
+                if (!string.Equals(e.DeviceGuid, deviceGuid, StringComparison.OrdinalIgnoreCase)) continue;
+                return e;
+            }
+            var added = new XBOXDS4ONE.Engine.Touchpad.TouchpadSettingsEntry
+            {
+                DeviceGuid = deviceGuid,
+                TouchpadIndex = pad,
+                Settings = XBOXDS4ONE.Engine.Touchpad.TouchpadGestureSettings.Default(),
+            };
+            list.Add(added);
+            listGrew = true;
+            return added;
+        }
+
+        /// <summary>True when the stored shape is absent or the serialized
+        /// default, i.e. the user has not chosen one.</summary>
+        private static bool IsDefaultShape(string shape) =>
+            string.IsNullOrEmpty(shape) || shape == "2";
+
+        /// <summary><para>Moves the per-SOURCE response shaping an import
+        /// stamps on its rows (curve exponent, outer range, anti-deadzone)
+        /// into the per-input cards that already exist for those three, then
+        /// clears the stamps so exactly one layer applies them.</para>
+        ///
+        /// <para>These are the same three knobs twice over. The engine reads
+        /// <c>ParamCurveExponent</c> / <c>ParamRangeOuter</c> /
+        /// <c>ParamAntiDeadzone</c> off the source when the row is read, and
+        /// Step3 reads SensitivityCurve / MaxRange / AntiDeadZone off the
+        /// device when the output pad is built. Both are live, so a stamp that
+        /// stayed put while its value was also copied to a card would apply
+        /// the curve TWICE. Hence move, never copy.</para>
+        ///
+        /// <para>Keyed on the row's TARGET, not its source descriptor,
+        /// because the card applies to the OUTPUT axis: a Steam config that
+        /// redirects the left stick onto the right pair (output_joystick)
+        /// must land on the right stick's card, which is the same rule the
+        /// slot-level deadzone_shape stamp already follows.</para>
+        ///
+        /// <para>The outer range is folded ONLY when no stick geometry is
+        /// stamped. With a shape present the engine spends
+        /// <c>ParamRangeOuter</c> as the deadzone's outer radius inside
+        /// ApplyStickDeadZoneShape and deliberately suppresses the scalar
+        /// tail (its own <c>hasOuter</c> requires shape == 0), so folding it
+        /// there would move a radius out of the geometry that still needs
+        /// it. This mirrors that guard rather than restating it.</para>
+        ///
+        /// <para>Semantics were checked against the card pipeline rather than
+        /// assumed: Steam's outer radius is <c>mag / outer</c> and MaxRange is
+        /// the same upper bound, so percent = outer x 100; anti-deadzone is
+        /// <c>a + (1-a) x mag</c> on BOTH sides; and both apply range, then
+        /// curve, then anti, in that order. The exponent becomes explicit
+        /// control points instead of the legacy single-number curve, whose
+        /// scale is <c>4^(-v/100)</c> and would read a bare "2.0" as very
+        /// nearly linear.</para></summary>
+        private static bool FoldSourceShaping(MappingSet set, PadSetting ps, HashSet<string> kept)
+        {
+            if (set.Rows == null) return false;
+
+            bool changed = false;
+            foreach (var row in set.Rows)
+            {
+                if (row?.Sources == null || kept.Contains(row.Target ?? "")) continue;
+                var card = ShapingCardFor(row.Target, ps);
+                if (card == null) continue;
+
+                foreach (var src in row.Sources)
+                {
+                    if (src == null) continue;
+
+                    // A stick row's scale with a dead zone geometry: the row
+                    // reads the geometry, then the scale, then the curve
+                    // (SourceCoercion.ReadAsBipolar), and the card runs after
+                    // the row, so a scale left on the row would read before
+                    // the card's dead zone and move its edge. The card's
+                    // curve takes the scale, clamped to full, ahead of the
+                    // stamped exponent. A row of several sources sums them,
+                    // each scale a coefficient of its own, so it keeps them.
+                    if (row.Sources.Count == 1 && card.SetShape != null
+                        && src.ParamStickDeadZoneShape != 0
+                        && src.Sensitivity > 0.0 && src.Sensitivity != 1.0
+                        && Common.CurveLut.IsLinear(card.GetCurve()))
+                    {
+                        double scale = src.Sensitivity;
+                        double exponent = src.ParamCurveExponent > 0.0 ? src.ParamCurveExponent : 1.0;
+                        card.SetCurve(CurveFrom(x => Math.Pow(Math.Min(1.0, scale * x), exponent), scale > 1.0 ? 1.0 / scale : 1.0));
+                        src.Sensitivity = 1.0;
+                        src.ParamCurveExponent = 0.0;
+                        changed = true;
+                    }
+
+                    if (src.ParamCurveExponent > 0.0 && src.ParamCurveExponent != 1.0)
+                    {
+                        if (Common.CurveLut.IsLinear(card.GetCurve()))
+                        {
+                            card.SetCurve(CurveFromExponent(src.ParamCurveExponent));
+                            changed = true;
+                        }
+                        src.ParamCurveExponent = 0.0;
+                    }
+
+                    if (src.ParamAntiDeadzone > 0.0 && src.ParamAntiDeadzone < 1.0)
+                    {
+                        if (IsPercent(card.GetAnti(), 0))
+                        {
+                            card.SetAnti(Percent(src.ParamAntiDeadzone));
+                            changed = true;
+                        }
+                        src.ParamAntiDeadzone = 0.0;
+                    }
+
+                    if (src.ParamStickDeadZoneShape != 0)
+                    {
+                        changed |= FoldStickGeometry(src, card);
+                    }
+                    else if (src.ParamRangeOuter > 0.0 && src.ParamRangeOuter < 1.0)
+                    {
+                        if (IsPercent(card.GetRange(), 100))
+                        {
+                            card.SetRange(Percent(src.ParamRangeOuter));
+                            changed = true;
+                        }
+                        src.ParamRangeOuter = 0.0;
+                    }
+                }
+            }
+            return changed;
+        }
+
+        /// <summary>True for the six outputs a device card shapes.</summary>
+        internal static bool IsCardTarget(string target)
+            => !string.IsNullOrEmpty(target) && CardTargets.Contains(target);
+
+        /// <summary>The six outputs a device card shapes.</summary>
+        private static readonly HashSet<string> CardTargets = new(StringComparer.Ordinal)
+        {
+            "LeftThumbAxisX", "LeftThumbAxisY", "RightThumbAxisX", "RightThumbAxisY", "LeftTrigger", "RightTrigger",
+        };
+
+        /// <summary><para>The card targets whose rows, on every layer, do not
+        /// all carry the same shaping stamps, a source with none counting as
+        /// one more value. The device has one card per output and a slot's
+        /// layers each write the same outputs, so a card that took one row's
+        /// shaping would shape every layer's output by it: SpaceSim's
+        /// Precision layer played Base's curve, and a reWASD layer's own
+        /// curve was dropped. Such a target keeps every row's stamps, which
+        /// the engine applies on that row's read (SourceCoercion.ReadAsBipolar
+        /// and ReadAsUnipolar), and its card stays as it was.</para>
+        ///
+        /// <para>A single-source stick row with a geometry hands its scale to
+        /// the card too (FoldSourceShaping), so that scale counts. A row that
+        /// sums several sources keeps its scales as coefficients, which
+        /// never reach the card.</para></summary>
+        internal static HashSet<string> TargetsKeepingTheirRows(MappingSet set)
+        {
+            var kept = new HashSet<string>(StringComparer.Ordinal);
+            if (set?.Rows == null) return kept;
+            var first = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var row in set.Rows)
+            {
+                if (row?.Sources == null || row.Target == null || !CardTargets.Contains(row.Target)) continue;
+                foreach (var src in row.Sources)
+                {
+                    if (src == null) continue;
+                    string stamps = Stamps(src, row.Sources.Count, row.Target.Contains("Thumb", StringComparison.Ordinal));
+                    if (!first.TryGetValue(row.Target, out string seen)) first[row.Target] = stamps;
+                    else if (seen != stamps) kept.Add(row.Target);
+                }
+            }
+            return kept;
+        }
+
+        /// <summary>A source's shaping stamps as the fold reads them, each
+        /// outside its live range read as none.</summary>
+        private static string Stamps(MappingSource src, int sources, bool stick)
+        {
+            double exponent = src.ParamCurveExponent > 0.0 && src.ParamCurveExponent != 1.0 ? src.ParamCurveExponent : 0.0;
+            double anti = src.ParamAntiDeadzone > 0.0 && src.ParamAntiDeadzone < 1.0 ? src.ParamAntiDeadzone : 0.0;
+            double inner = src.ParamStickDeadZoneInner > 0.0 && src.ParamStickDeadZoneInner < 1.0 ? src.ParamStickDeadZoneInner : 0.0;
+            double outer = src.ParamRangeOuter > 0.0 && src.ParamRangeOuter < 1.0 ? src.ParamRangeOuter : 0.0;
+            double scale = stick && sources == 1 && src.ParamStickDeadZoneShape != 0
+                && src.Sensitivity > 0.0 && src.Sensitivity != 1.0 ? src.Sensitivity : 1.0;
+            return string.Join("|",
+                exponent.ToString("R", CultureInfo.InvariantCulture),
+                anti.ToString("R", CultureInfo.InvariantCulture),
+                src.ParamStickDeadZoneShape.ToString(CultureInfo.InvariantCulture),
+                inner.ToString("R", CultureInfo.InvariantCulture),
+                outer.ToString("R", CultureInfo.InvariantCulture),
+                scale.ToString("R", CultureInfo.InvariantCulture));
+        }
+
+        /// <summary><para>Moves a stamped stick deadzone geometry (shape, inner
+        /// radius, outer radius) onto the stick's own Dead Zone / Dead Zone
+        /// Shape / Max Range cards, as one unit.</para>
+        ///
+        /// <para>The three travel together or not at all. The engine reads them
+        /// as a single band in ApplyStickDeadZoneShape (<c>mag &lt;= inner</c>
+        /// zeroes, then <c>(mag-inner)/(outer-inner)</c> rescales), so folding
+        /// the inner radius while leaving the outer behind would hand the row
+        /// read a band with no floor and the card a floor with no band.</para>
+        ///
+        /// <para>Equivalence was checked against both card paths, not assumed.
+        /// Steam Circle is engine shape 2, and Step3's ComputeRadial scaled
+        /// branch computes <c>(rawMag - dzR)/(mrR - dzR)</c> where dzR is the
+        /// deadzone ellipse radius along the input direction, which collapses
+        /// to plain dz once both axes carry the same value, giving the same
+        /// circle and the same band. Steam Cross / Square is engine shape 1,
+        /// and the Axial path's ApplySingleDeadZone computes
+        /// <c>(magnitude - dz)/(maxRange - dz)</c> per axis, which is that
+        /// same band in one dimension. The shape mapping (Circle to card "2",
+        /// Cross / Square to card "0") is the one the slot-level deadzone_shape
+        /// stamp already uses.</para>
+        ///
+        /// <para>Each axis writes only its own Dead Zone field, and the pair's
+        /// two rows carry the same stamped value, so the pair lands as
+        /// dzX == dzY: the circle Steam authored. The shape field is per stick
+        /// rather than per axis, so whichever row arrives first sets it and the
+        /// second agrees.</para></summary>
+        private static bool FoldStickGeometry(MappingSource src, ShapingCard card)
+        {
+            bool changed = false;
+
+            // Shape first, so a card left at its ScaledRadial default is
+            // switched to Axial before the radii that ride it are written.
+            if (card.SetShape != null && IsDefaultShape(card.GetShape()))
+            {
+                string mapped = src.ParamStickDeadZoneShape == 2 ? "2" : "0";
+                if (!string.Equals(card.GetShape(), mapped, StringComparison.Ordinal))
+                {
+                    card.SetShape(mapped);
+                    changed = true;
+                }
+            }
+
+            if (src.ParamStickDeadZoneInner > 0.0 && src.ParamStickDeadZoneInner < 1.0
+                && IsPercent(card.GetDeadZone(), 0))
+            {
+                card.SetDeadZone(Percent(src.ParamStickDeadZoneInner));
+                changed = true;
+            }
+
+            if (src.ParamRangeOuter > 0.0 && src.ParamRangeOuter < 1.0
+                && IsPercent(card.GetRange(), 100))
+            {
+                card.SetRange(Percent(src.ParamRangeOuter));
+                changed = true;
+            }
+
+            // Cleared as a unit, including the shape: leaving the shape would
+            // keep ApplyStickDeadZoneShape live over radii it no longer has,
+            // and leaving the outer would keep it out of the scalar tail's
+            // reach too (that guard reads shape == 0).
+            src.ParamStickDeadZoneShape = 0;
+            src.ParamStickDeadZoneInner = 0.0;
+            src.ParamRangeOuter = 0.0;
+            return changed;
+        }
+
+        /// <summary>The card fields for a row target, or null when the
+        /// target is not one of the six shaped inputs. Named targets only:
+        /// a RawAxis{n} target's stick is resolved from the slot's own axis
+        /// layout, which lives on the view model, not here.</summary>
+        private static ShapingCard ShapingCardFor(string target, PadSetting ps) => target switch
+        {
+            "LeftThumbAxisX" => new ShapingCard(
+                () => ps.LeftThumbSensitivityCurveX, v => ps.LeftThumbSensitivityCurveX = v,
+                () => ps.LeftThumbMaxRangeX, v => ps.LeftThumbMaxRangeX = v,
+                () => ps.LeftThumbAntiDeadZoneX, v => ps.LeftThumbAntiDeadZoneX = v,
+                () => ps.LeftThumbDeadZoneX, v => ps.LeftThumbDeadZoneX = v,
+                () => ps.LeftThumbDeadZoneShape, v => ps.LeftThumbDeadZoneShape = v),
+            "LeftThumbAxisY" => new ShapingCard(
+                () => ps.LeftThumbSensitivityCurveY, v => ps.LeftThumbSensitivityCurveY = v,
+                () => ps.LeftThumbMaxRangeY, v => ps.LeftThumbMaxRangeY = v,
+                () => ps.LeftThumbAntiDeadZoneY, v => ps.LeftThumbAntiDeadZoneY = v,
+                () => ps.LeftThumbDeadZoneY, v => ps.LeftThumbDeadZoneY = v,
+                () => ps.LeftThumbDeadZoneShape, v => ps.LeftThumbDeadZoneShape = v),
+            "RightThumbAxisX" => new ShapingCard(
+                () => ps.RightThumbSensitivityCurveX, v => ps.RightThumbSensitivityCurveX = v,
+                () => ps.RightThumbMaxRangeX, v => ps.RightThumbMaxRangeX = v,
+                () => ps.RightThumbAntiDeadZoneX, v => ps.RightThumbAntiDeadZoneX = v,
+                () => ps.RightThumbDeadZoneX, v => ps.RightThumbDeadZoneX = v,
+                () => ps.RightThumbDeadZoneShape, v => ps.RightThumbDeadZoneShape = v),
+            "RightThumbAxisY" => new ShapingCard(
+                () => ps.RightThumbSensitivityCurveY, v => ps.RightThumbSensitivityCurveY = v,
+                () => ps.RightThumbMaxRangeY, v => ps.RightThumbMaxRangeY = v,
+                () => ps.RightThumbAntiDeadZoneY, v => ps.RightThumbAntiDeadZoneY = v,
+                () => ps.RightThumbDeadZoneY, v => ps.RightThumbDeadZoneY = v,
+                () => ps.RightThumbDeadZoneShape, v => ps.RightThumbDeadZoneShape = v),
+            // A trigger is one-dimensional, so it has a Dead Zone but no Dead
+            // Zone Shape. The import never stamps a geometry on one anyway
+            // (the translator gates stickShape on IsStick), so the null shape
+            // setter is belt and braces rather than a live path.
+            "LeftTrigger" => new ShapingCard(
+                () => ps.LeftTriggerSensitivityCurve, v => ps.LeftTriggerSensitivityCurve = v,
+                () => ps.LeftTriggerMaxRange, v => ps.LeftTriggerMaxRange = v,
+                () => ps.LeftTriggerAntiDeadZone, v => ps.LeftTriggerAntiDeadZone = v,
+                () => ps.LeftTriggerDeadZone, v => ps.LeftTriggerDeadZone = v,
+                null, null),
+            "RightTrigger" => new ShapingCard(
+                () => ps.RightTriggerSensitivityCurve, v => ps.RightTriggerSensitivityCurve = v,
+                () => ps.RightTriggerMaxRange, v => ps.RightTriggerMaxRange = v,
+                () => ps.RightTriggerAntiDeadZone, v => ps.RightTriggerAntiDeadZone = v,
+                () => ps.RightTriggerDeadZone, v => ps.RightTriggerDeadZone = v,
+                null, null),
+            _ => null,
+        };
+
+        private sealed class ShapingCard
+        {
+            public ShapingCard(Func<string> getCurve, Action<string> setCurve,
+                Func<string> getRange, Action<string> setRange,
+                Func<string> getAnti, Action<string> setAnti,
+                Func<string> getDeadZone, Action<string> setDeadZone,
+                Func<string> getShape, Action<string> setShape)
+            {
+                GetCurve = getCurve; SetCurve = setCurve;
+                GetRange = getRange; SetRange = setRange;
+                GetAnti = getAnti; SetAnti = setAnti;
+                GetDeadZone = getDeadZone; SetDeadZone = setDeadZone;
+                GetShape = getShape; SetShape = setShape;
+            }
+
+            public Func<string> GetCurve { get; }
+            public Action<string> SetCurve { get; }
+            public Func<string> GetRange { get; }
+            public Action<string> SetRange { get; }
+            public Func<string> GetAnti { get; }
+            public Action<string> SetAnti { get; }
+            public Func<string> GetDeadZone { get; }
+            public Action<string> SetDeadZone { get; }
+
+            /// <summary>Null on a one-dimensional input, which has no shape.</summary>
+            public Func<string> GetShape { get; }
+            public Action<string> SetShape { get; }
+        }
+
+        /// <summary>A 0..1 fraction as the card's percent string.</summary>
+        private static string Percent(double fraction) =>
+            Math.Round(fraction * 100.0, 2).ToString(CultureInfo.InvariantCulture);
+
+        /// <summary>True when a percent field still holds the given default,
+        /// i.e. the user has not chosen a value. An unparseable or empty
+        /// field counts as the default, matching how Step3 reads it.</summary>
+        private static readonly string DefaultGyroDeadZone = new PadSetting().GyroDeadZoneDegPerSec;
+
+        private static bool IsPercent(string stored, double expected)
+        {
+            if (string.IsNullOrWhiteSpace(stored)) return true;
+            return double.TryParse(stored, NumberStyles.Float, CultureInfo.InvariantCulture,
+                out double v) && Math.Abs(v - expected) < 0.001;
+        }
+
+        /// <summary>A curve as the card's control-point string: sixteen even
+        /// steps, plus the point at <paramref name="corner"/> where the curve
+        /// bends, so the card's spline keeps the bend.</summary>
+        private static string CurveFrom(Func<double, double> curve, double corner)
+        {
+            const int steps = 16;
+            var xs = new SortedSet<double>();
+            for (int i = 0; i <= steps; i++) xs.Add((double)i / steps);
+            if (corner > 0.0 && corner < 1.0) xs.Add(Math.Round(corner, 4));
+            var points = new List<(double X, double Y)>(xs.Count);
+            foreach (double x in xs) points.Add((x, Math.Clamp(curve(x), 0.0, 1.0)));
+            return Common.CurveLut.Serialize(points);
+        }
+
+        /// <summary>y = x^exponent as the card's control-point string.
+        /// Explicit points rather than the legacy single number, which the
+        /// card would read on its own 4^(-v/100) scale and get wrong.</summary>
+        private static string CurveFromExponent(double exponent)
+        {
+            const int steps = 8;
+            var points = new List<(double X, double Y)>(steps + 1);
+            for (int i = 0; i <= steps; i++)
+            {
+                double x = (double)i / steps;
+                points.Add((x, Math.Clamp(Math.Pow(x, exponent), 0.0, 1.0)));
+            }
+            return Common.CurveLut.Serialize(points);
+        }
+    }
+}

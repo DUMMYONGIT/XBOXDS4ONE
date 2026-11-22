@@ -10,7 +10,7 @@
     name for everything on the tab so the lookup can be written against what is
     really there instead of what was assumed.
 
-    PadForge must already be running with macros in its settings.
+    XBOXDS4ONE must already be running with macros in its settings.
 #>
 
 Set-StrictMode -Version Latest
@@ -38,8 +38,8 @@ public class PW {
 [PW]::SetProcessDPIAware() | Out-Null
 
 $TD = [System.Windows.Automation.TreeScope]::Descendants
-$proc = Get-Process PadForge -ErrorAction SilentlyContinue | Select-Object -First 1
-if (-not $proc -or $proc.MainWindowHandle -eq [IntPtr]::Zero) { Write-Host "PadForge is not running"; exit 1 }
+$proc = Get-Process XBOXDS4ONE -ErrorAction SilentlyContinue | Select-Object -First 1
+if (-not $proc -or $proc.MainWindowHandle -eq [IntPtr]::Zero) { Write-Host "XBOXDS4ONE is not running"; exit 1 }
 $hwnd = $proc.MainWindowHandle
 $win = [System.Windows.Automation.AutomationElement]::FromHandle($hwnd)
 [PW]::SetForegroundWindow($hwnd) | Out-Null
@@ -54,7 +54,7 @@ function Get-Rect($el) {
     return $r
 }
 
-# Clicks an element's center, after bringing PadForge to the front. A click
+# Clicks an element's center, after bringing XBOXDS4ONE to the front. A click
 # while another program's window is in front goes to that window, so none is
 # made then.
 function Click-Element($el, [string]$what) {

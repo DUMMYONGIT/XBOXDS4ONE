@@ -1,0 +1,1614 @@
+using System;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using XBOXDS4ONE.Resources.Strings;
+
+namespace XBOXDS4ONE.ViewModels
+{
+    /// <summary>
+    /// One source row within a multi-source <see cref="MappingItem"/>.
+    /// Phase 2C — represents a single <c>Engine.Data.MappingSource</c> in
+    /// the Mappings UI. Bound by the (forthcoming) RowDetailsTemplate
+    /// inside the Mappings DataGrid.
+    /// </summary>
+    public partial class MappingSourceItem : FiniteObservableObject
+    {
+        private string _kind = "Direct";
+        private string _deviceGuid = "";
+        private string _descriptor = "";
+        private bool _invertOutput;
+        private bool _invert;
+        private bool _halfAxis;
+        private bool _bidirectional;
+        private int _deadZone = 50;
+        private string _paramUp = "";
+        private string _paramDown = "";
+        private double _paramRate = 0.5;
+        private bool _paramSticky = true;
+        private double _paramMin;
+        private double _paramMax = 1;
+        private string _paramModifier = "";
+        // The controller each key reads (MappingSource.ParamUpDeviceGuid and
+        // its siblings): a device guid, empty for any controller, null for a
+        // key saved before keys carried one.
+        private string _paramUpDeviceGuid;
+        private string _paramDownDeviceGuid;
+        private string _paramModifierDeviceGuid;
+        private double _gyroSensitivity = 1.0;
+        private double _paramAccel;
+        private double _mouseCursorSensitivity = 1.0;
+        private double _paramAttackTime = 0.30;
+        private double _paramReleaseTime = 0.30;
+        private bool _paramAutocenter = true;
+        private double _paramReverseMultiplier = 4.0;
+        private int _paramRapidTriggerDistance = Engine.Data.MappingSource.DefaultRapidTriggerDistance;
+
+        public string Kind
+        {
+            get => _kind;
+            set
+            {
+                bool fromKeyKind = UsesUpDownKeys;
+                if (SetProperty(ref _kind, value ?? "Direct"))
+                {
+                    OnPropertyChanged(nameof(IsIncrementalKind));
+                    OnPropertyChanged(nameof(IsInvertOnHoldKind));
+                    OnPropertyChanged(nameof(IsRampedKind));
+                    OnPropertyChanged(nameof(IsToggleKind));
+                    OnPropertyChanged(nameof(IsRapidTriggerKind));
+                    // A trigger row shows the deadzone only for Rapid Trigger.
+                    OnPropertyChanged(nameof(IsDeadZoneApplicable));
+                    OnPropertyChanged(nameof(UsesUpDownKeys));
+                    OnPropertyChanged(nameof(IsKindDescriptorless));
+                    OnPropertyChanged(nameof(IsKeyInvertShown));
+                    OnPropertyChanged(nameof(ParamUpInputChoice));
+                    OnPropertyChanged(nameof(ParamDownInputChoice));
+                    OnPropertyChanged(nameof(ParamModifierInputChoice));
+                    // A kind that reads the Up and Down keys puts the source
+                    // on the controller they share. The keys outlast a trip
+                    // to another kind, so the source follows them on the way
+                    // back. A kind that reads the Descriptor puts it back on
+                    // the Descriptor's. A load moves nothing: it sets the
+                    // kind before the keys (FromDomain) or under LoadingKeys,
+                    // and the saved device stands.
+                    if (UsesUpDownKeys)
+                    {
+                        if (!LoadingKeys)
+                        {
+                            // A key kind offers no Invert, so a source that
+                            // comes to one from a kind that is none leaves
+                            // its Invert behind. Carried in, it turned the
+                            // keys' output around with nothing on the row to
+                            // show why (SourceEvaluator applies it). A load
+                            // keeps a saved one, which lands after the kind
+                            // (FromDomain) or under LoadingKeys: that row has
+                            // run turned around all along, and shows a
+                            // checkbox for it (IsKeyInvertShown). So does a
+                            // switch between the two key kinds: the flag
+                            // there is that saved one, with its checkbox
+                            // showing and checked, and dropping it turned
+                            // an axis row around on a change of kind.
+                            if (!fromKeyKind) Invert = false;
+                            FollowKeysDevice();
+                        }
+                    }
+                    else if (!IsKindDescriptorless) RestoreDescriptorController();
+                    else if (IsInvertOnHoldKind && !LoadingKeys)
+                    {
+                        // Invert on Hold reads its modifier alone, so the
+                        // source goes to the controller that key names, as
+                        // a kind with Up and Down keys goes to theirs. Left
+                        // where its kept input or its old keys had put it,
+                        // it was deleted with that controller while its
+                        // modifier was still on the slot. A load moves
+                        // nothing here either.
+                        FollowKeysDevice();
+                    }
+                }
+            }
+        }
+
+        // The controller the kept Descriptor was picked on and the name
+        // shown under it, remembered when the source follows its keys away
+        // from it (FollowKeysDevice), and the Descriptor then. Null when
+        // nothing is remembered. The controller is saved with the source
+        // while the source sits on another one
+        // (MappingSource.DescriptorDeviceGuid), so a key kind saved and loaded
+        // again still goes back to it. The name is not: the loader resolves
+        // it again (NameDescriptorController).
+        private string _descriptorController;
+        private string _descriptorControllerLabel;
+        private string _descriptorFollowedAway;
+
+        /// <summary>What <see cref="ToDomain"/> saves as the controller of
+        /// the kept Descriptor: the remembered one while the source's kind
+        /// leaves the Descriptor unread and the source sits on another
+        /// device, null otherwise. A source still on the controller its
+        /// input was picked on saves as it did before the field existed. It
+        /// changes only where the device or the Descriptor does (a kind
+        /// change moves it by moving the device), and both setters raise
+        /// it, so the hook that marks the settings file dirty hears it like
+        /// any saved field.</summary>
+        public string DescriptorDeviceGuid =>
+            _descriptorController != null
+            && IsKindDescriptorless
+            && !string.IsNullOrEmpty(_descriptor)
+            && string.Equals(_descriptor, _descriptorFollowedAway, StringComparison.Ordinal)
+            && !string.Equals(_descriptorController, _deviceGuid ?? "", StringComparison.OrdinalIgnoreCase)
+                ? _descriptorController
+                : null;
+
+        /// <summary>Takes the saved controller of the kept Descriptor on a
+        /// load (<see cref="FromDomain"/>), where the kind leaves the
+        /// Descriptor unread. In a kind that reads it, the Descriptor reads
+        /// the source's own device and a saved value is no memory.</summary>
+        private void RememberSavedDescriptorController(string controller)
+        {
+            if (controller == null || !IsKindDescriptorless || string.IsNullOrEmpty(_descriptor)) return;
+            _descriptorController = controller;
+            _descriptorControllerLabel = null;
+            _descriptorFollowedAway = _descriptor;
+        }
+
+        /// <summary>Names the remembered controller where a load left it
+        /// unnamed. The loader passes the resolver it names the source's own
+        /// device with, so a controller the row's list does not carry comes
+        /// back under its device's name all the same
+        /// (<see cref="RestoreDescriptorController"/>).</summary>
+        internal void NameDescriptorController(Func<string, string> nameOf)
+        {
+            if (_descriptorController != null && _descriptorControllerLabel == null && nameOf != null)
+                _descriptorControllerLabel = nameOf(_descriptorController);
+        }
+
+        /// <summary>Puts the source back on the controller its Descriptor
+        /// was picked on, when it left that controller to follow its keys
+        /// and the Descriptor is the one it kept. A kind change keeps the
+        /// Descriptor, and without this a Direct source switched to
+        /// Incremental with keys on two controllers and back read its input
+        /// on every controller on the slot. The controller's name comes back
+        /// with it. It lands first, so the row, which resolves the name from
+        /// its list when the controller changes, has the last word, and a
+        /// controller the list does not carry keeps the name it had.</summary>
+        private void RestoreDescriptorController()
+        {
+            string controller = _descriptorController;
+            string label = _descriptorControllerLabel;
+            bool sameInput = string.Equals(_descriptor, _descriptorFollowedAway, StringComparison.Ordinal);
+            ForgetDescriptorController();
+            if (controller == null || !sameInput) return;
+            DeviceLabel = label;
+            DeviceGuid = controller;
+        }
+
+        private void ForgetDescriptorController()
+        {
+            _descriptorController = null;
+            _descriptorControllerLabel = null;
+            _descriptorFollowedAway = null;
+        }
+
+        public bool IsIncrementalKind => string.Equals(_kind, "Incremental", StringComparison.Ordinal);
+        public bool IsInvertOnHoldKind => string.Equals(_kind, "InvertOnHold", StringComparison.Ordinal);
+        public bool IsRampedKind => string.Equals(_kind, "Ramped", StringComparison.Ordinal);
+        public bool IsToggleKind => string.Equals(_kind, "Toggle", StringComparison.Ordinal);
+        public bool IsRapidTriggerKind => string.Equals(_kind, "RapidTrigger", StringComparison.Ordinal);
+
+        /// <summary>The kind this source saves as when it is a row's primary,
+        /// whose input lives in the row's own descriptor: Toggle and Rapid
+        /// Trigger keep their kind, anything else saves as Direct. One answer
+        /// for every place that rebuilds a primary into a source.</summary>
+        internal string DescriptorKind => IsToggleKind || IsRapidTriggerKind ? _kind : "Direct";
+
+        /// <summary>True for the kinds authored via a positive (Up) and negative
+        /// (Down) key pair: Incremental and Ramped. Drives the inline Up/Down
+        /// pickers' visibility in the primary cell and the secondary rows.</summary>
+        public bool UsesUpDownKeys => IsIncrementalKind || IsRampedKind;
+
+        /// <summary>True for kinds that leave the source's main Descriptor,
+        /// HalfAxis and DeadZone fields unread (Incremental and Ramp author
+        /// via Up/Down + Param*, and InvertOnHold acts as a row-level modifier
+        /// that only uses ParamModifier). Used by the XAML to collapse the
+        /// redundant primary controls so the user only sees the
+        /// kind-specific row below. Invert is collapsed with them and is
+        /// not unread: the engine applies it to an Incremental source and
+        /// to a Ramp source on an axis (SourceEvaluator), so a source that
+        /// comes to one of those two kinds from any other drops it in the
+        /// editor (<see cref="Kind"/>), and one saved with it shows it
+        /// (<see cref="IsKeyInvertShown"/>).</summary>
+        public bool IsKindDescriptorless => IsIncrementalKind || IsInvertOnHoldKind || IsRampedKind;
+
+        /// <summary>True for an Incremental or Ramp source whose Invert is
+        /// on, which shows a checkbox for it. Only a source saved that way
+        /// has it, from before the editor dropped Invert on the way into
+        /// the kind. The engine has turned that row's output around all
+        /// along, so the flag stays, and the checkbox is the control that
+        /// turns it off. Unchecked, the checkbox goes with it.</summary>
+        public bool IsKeyInvertShown => UsesUpDownKeys && _invert;
+
+        /// <summary>Whether any input actually feeds this source, per kind.
+        /// Mirrors the engine's dispatch (the collect-descriptors switch in
+        /// InputService): Incremental and Ramped read the Up/Down keys,
+        /// InvertOnHold reads only its modifier key, since the Descriptor it
+        /// kept from its source is no input, and every other kind reads the
+        /// Descriptor.</summary>
+        public bool HasAnyBoundFeed
+        {
+            get
+            {
+                if (UsesUpDownKeys)
+                    return !string.IsNullOrEmpty(ParamUp) || !string.IsNullOrEmpty(ParamDown);
+                if (IsInvertOnHoldKind)
+                    return !string.IsNullOrEmpty(ParamModifier);
+                return !string.IsNullOrEmpty(Descriptor);
+            }
+        }
+
+        /// <summary>One entry in the user-facing Kind dropdown. <see cref="Value"/>
+        /// is the schema/engine identifier ("Direct" / "Incremental" / "InvertOnHold")
+        /// that round-trips through XML; <see cref="Name"/> is the space-separated
+        /// label the user actually sees. Keeps backend identifiers out of the UI.</summary>
+        public sealed class KindChoice
+        {
+            public string Value { get; init; }
+            public string Name  { get; init; }
+            // Equal by Value: a box finds its pick in a list made again (for a new language, or on a read)
+            // by Equals, and an item equal only to itself made the box write null and drop the pick.
+            public override bool Equals(object obj) => obj is KindChoice o && string.Equals(o.Value, Value, System.StringComparison.Ordinal);
+            public override int GetHashCode() => Value?.GetHashCode(System.StringComparison.Ordinal) ?? 0;
+        }
+
+        // Cached once per culture so the WPF Kind ComboBox bindings
+        // don't reallocate three KindChoice objects + run three
+        // ResourceManager lookups every time the list is re-read by
+        // per-row binding refresh / virtualization. Invalidates on
+        // culture change so language switches still take effect.
+        private static KindChoice[] _kindOptionsCache;
+        private static string _kindOptionsCacheCulture;
+        public static System.Collections.Generic.IReadOnlyList<KindChoice> KindOptions
+        {
+            get
+            {
+                string currentCulture = System.Globalization.CultureInfo.CurrentUICulture.Name;
+                var cached = _kindOptionsCache;
+                if (cached != null && _kindOptionsCacheCulture == currentCulture)
+                    return cached;
+                var arr = new[]
+                {
+                    new KindChoice { Value = "Direct",       Name = Strings.Instance.Pad_Mapping_Kind_Direct },
+                    new KindChoice { Value = "Toggle",       Name = Strings.Instance.Pad_Mapping_Kind_Toggle },
+                    new KindChoice { Value = "RapidTrigger", Name = Strings.Instance.Pad_Mapping_Kind_RapidTrigger },
+                    new KindChoice { Value = "Incremental",  Name = Strings.Instance.Pad_Mapping_Kind_Incremental },
+                    new KindChoice { Value = "InvertOnHold", Name = Strings.Instance.Pad_Mapping_Kind_InvertOnHold },
+                    new KindChoice { Value = "Ramped",       Name = Strings.Instance.Pad_Mapping_Kind_Ramped },
+                };
+                _kindOptionsCache = arr;
+                _kindOptionsCacheCulture = currentCulture;
+                return arr;
+            }
+        }
+
+        /// <summary>True for a mode the Mode picker lists (<see cref="KindOptions"/>).</summary>
+        internal static bool IsEditorKind(string kind) => kind is
+            "Direct" or "Toggle" or "RapidTrigger" or "Incremental" or "InvertOnHold" or "Ramped";
+
+        /// <summary>A stored source as the mapping editor holds it, a copy when
+        /// it differs. A mode the picker does not list loads as Direct, so the
+        /// picker never holds a mode it cannot show. The Sticks card's steering
+        /// stamps its mode onto every source of a stick row as the row saves
+        /// (SettingsService.ApplySteeringKindToRow), with the stick's X axis in
+        /// Descriptor and its Y axis in ParamYDescriptor. Such a source is the
+        /// row's own axis read Direct, the axis the stamp's revert puts back
+        /// (RevertSourceToDirect): Descriptor, or ParamYDescriptor for Angle to
+        /// Axis Y, which stamps the Y row. The next save stamps it again. The
+        /// older Motion Lean steering left the row's input in Descriptor. Any
+        /// other unlisted mode reads its Descriptor as Direct, as the engine
+        /// reads it (SourceEvaluator's default case).</summary>
+        internal static Engine.Data.MappingSource AsEditorSource(Engine.Data.MappingSource src)
+        {
+            if (src == null || IsEditorKind(src.Kind)) return src;
+            var copy = src.Clone();
+            if (string.Equals(src.Kind, "AngleToAxisY", StringComparison.Ordinal)
+                && !string.IsNullOrEmpty(src.ParamYDescriptor))
+                copy.Descriptor = src.ParamYDescriptor;
+            copy.Kind = "Direct";
+            return copy;
+        }
+
+        /// <summary>Instance accessor over <see cref="KindOptions"/> for the
+        /// extra-source row template. The XAML previously bound the static
+        /// list via x:Static, which WPF evaluates exactly once, so a live
+        /// language change left the Kind dropdown in the old language even
+        /// though the getter itself is culture-aware. Rapid Trigger (#482)
+        /// is listed only where it can act (<see cref="IsRapidTriggerOffered"/>).</summary>
+        public System.Collections.Generic.IReadOnlyList<KindChoice> KindChoices =>
+            IsRapidTriggerOffered ? KindOptions : KindOptionsWithoutRapidTrigger(KindOptions);
+
+        private static System.Collections.Generic.IReadOnlyList<KindChoice> _withoutRapidSource;
+        private static KindChoice[] _withoutRapidCache;
+
+        /// <summary><paramref name="all"/> without Rapid Trigger, cached against
+        /// the culture's list it was built from.</summary>
+        internal static System.Collections.Generic.IReadOnlyList<KindChoice> KindOptionsWithoutRapidTrigger(
+            System.Collections.Generic.IReadOnlyList<KindChoice> all)
+        {
+            var cached = _withoutRapidCache;
+            if (cached != null && ReferenceEquals(_withoutRapidSource, all)) return cached;
+            var list = new System.Collections.Generic.List<KindChoice>(all.Count);
+            foreach (var k in all)
+                if (!string.Equals(k.Value, "RapidTrigger", StringComparison.Ordinal))
+                    list.Add(k);
+            cached = list.ToArray();
+            _withoutRapidCache = cached;
+            _withoutRapidSource = all;
+            return cached;
+        }
+
+        /// <summary>True when Rapid Trigger (#482) can act on this source: its
+        /// input has press depth, or none is picked yet, and its row's output
+        /// is a press (<see cref="ParentTargetTakesRapidTrigger"/>).</summary>
+        public bool IsRapidTriggerOffered =>
+            _parentTargetTakesRapidTrigger
+            && (string.IsNullOrEmpty(_descriptor)
+                || XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.IsRapidTriggerSource(StripFlagPrefix(_descriptor)));
+
+        /// <summary>Drops a Rapid Trigger kind the row cannot use. The parent
+        /// row runs this once it has pushed the target flags, and the
+        /// descriptor setter covers a newly picked input.</summary>
+        internal void EnforceRapidTriggerGate()
+        {
+            if (IsRapidTriggerKind && !IsRapidTriggerOffered) Kind = "Direct";
+        }
+
+        /// <summary>The descriptor without a legacy I / H flag prefix, the
+        /// strip <see cref="IsDeadZoneApplicable"/> applies.</summary>
+        private static string StripFlagPrefix(string desc)
+        {
+            int start = 0;
+            if (start < desc.Length && (desc[start] == 'I' || desc[start] == 'i')) start++;
+            if (start < desc.Length && (desc[start] == 'H' || desc[start] == 'h')) start++;
+            return start == 0 ? desc : desc.Substring(start);
+        }
+
+        /// <summary>Called by the owning MappingItem's culture handler.</summary>
+        internal void RefreshCulture()
+        {
+            OnPropertyChanged(nameof(KindChoices));
+            OnPropertyChanged(nameof(KindLabel));
+            OnPropertyChanged(nameof(RecordButtonText));
+        }
+
+        private MappingItem _parentMappingItem;
+
+        /// <summary>The row the source is one of. What the source's line
+        /// reads through the row follows a change of it.</summary>
+        internal MappingItem ParentMappingItem
+        {
+            get => _parentMappingItem;
+            set
+            {
+                if (ReferenceEquals(_parentMappingItem, value)) return;
+                _parentMappingItem = value;
+                RaiseLineFacts();
+            }
+        }
+
+        /// <summary>The picker entry a key shows. A key that carries its
+        /// controller shows the entry for that pair, its controller's own
+        /// entry for an abstract "Gamepad ..." name included
+        /// (MappingDisplayResolver.FindChoiceOnDevice, the rule every
+        /// input-and-controller picker follows). A key saved before keys
+        /// carried a controller shows <see cref="ResolveLegacyParamChoice"/>.</summary>
+        private InputChoice ResolveParamChoice(string descriptor, string keyDeviceGuid)
+        {
+            if (ParentMappingItem == null || string.IsNullOrEmpty(descriptor)) return null;
+            return keyDeviceGuid != null
+                ? XBOXDS4ONE.Common.MappingDisplayResolver.FindChoiceOnDevice(
+                    ParentMappingItem.ParamInputs, descriptor, keyDeviceGuid)
+                : ResolveLegacyParamChoice(descriptor);
+        }
+
+        /// <summary>The entry a key saved before keys carried a controller
+        /// shows: the one on this source's device, that device's own entry
+        /// for an abstract "Gamepad ..." name, else the first entry with the
+        /// descriptor, and none while the list does not carry this source's
+        /// own controller (<see cref="ListCarriesOwnController"/>).
+        /// <see cref="AdoptLegacyKeyDevices"/> gives the key that entry's
+        /// controller, so it reads the device shown under it.</summary>
+        private InputChoice ResolveLegacyParamChoice(string descriptor)
+        {
+            if (ParentMappingItem == null || string.IsNullOrEmpty(descriptor)) return null;
+            // A list that does not carry this source's own controller is no
+            // list to judge the key by: its device is gone or not listed yet,
+            // so the key reads where it did, and the picker shows no
+            // controller it does not read.
+            if (!ListCarriesOwnController()) return null;
+            string wantGuid = (_deviceGuid ?? "").ToLowerInvariant();
+            string pinnedCanonical = XBOXDS4ONE.Common.MappingDisplayResolver.PinnedAliasCanonical(descriptor, wantGuid);
+            InputChoice canonicalMatch = null;
+            InputChoice descriptorOnlyMatch = null;
+            foreach (var c in ParentMappingItem.ParamInputs)
+            {
+                if (c == null) continue;
+                bool onDevice = string.Equals(c.DeviceGuid ?? "", wantGuid, StringComparison.OrdinalIgnoreCase);
+                if (pinnedCanonical != null && canonicalMatch == null && onDevice
+                    && string.Equals(c.Descriptor, pinnedCanonical, StringComparison.Ordinal))
+                    canonicalMatch = c;
+                if (!string.Equals(c.Descriptor, descriptor, StringComparison.Ordinal))
+                    continue;
+                descriptorOnlyMatch ??= c;
+                if (onDevice) return c;
+            }
+            return canonicalMatch ?? descriptorOnlyMatch;
+        }
+
+        /// <summary>True when the row's list carries an entry of the
+        /// controller this source names, or the source names none. A
+        /// controller whose record has no inputs yet, or a list still built
+        /// for the slot's previous controllers, does not carry it.</summary>
+        private bool ListCarriesOwnController()
+        {
+            if (string.IsNullOrEmpty(_deviceGuid)) return true;
+            foreach (var c in ParentMappingItem.ParamInputs)
+                if (c != null && string.Equals(c.DeviceGuid ?? "", _deviceGuid, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            return false;
+        }
+
+        /// <summary>Sets a key and the controller it reads, the pair a pick or
+        /// a recording lands. A cleared key keeps no controller. Both fields
+        /// land before anything is raised, so no listener reads the new input
+        /// on the old controller. A source whose kind reads the key then
+        /// follows it (<see cref="FollowKeysDevice"/>).</summary>
+        internal void SetParamKey(ParamRecordTarget which, string descriptor, string deviceGuid)
+        {
+            descriptor ??= "";
+            if (descriptor.Length == 0) deviceGuid = null;
+            switch (which)
+            {
+                case ParamRecordTarget.Up:
+                    if (StoreKey(ref _paramUp, ref _paramUpDeviceGuid, descriptor, deviceGuid))
+                        RaiseKeyChanged(nameof(ParamUp), nameof(ParamUpDeviceGuid),
+                            nameof(ParamUpInputChoice), nameof(ParamUpDeviceLabel));
+                    break;
+                case ParamRecordTarget.Down:
+                    if (StoreKey(ref _paramDown, ref _paramDownDeviceGuid, descriptor, deviceGuid))
+                        RaiseKeyChanged(nameof(ParamDown), nameof(ParamDownDeviceGuid),
+                            nameof(ParamDownInputChoice), nameof(ParamDownDeviceLabel));
+                    break;
+                case ParamRecordTarget.Modifier:
+                    if (StoreKey(ref _paramModifier, ref _paramModifierDeviceGuid, descriptor, deviceGuid))
+                        RaiseKeyChanged(nameof(ParamModifier), nameof(ParamModifierDeviceGuid),
+                            nameof(ParamModifierInputChoice), nameof(ParamModifierDeviceLabel));
+                    break;
+            }
+            FollowKeysDevice();
+        }
+
+        private static bool StoreKey(ref string key, ref string device, string newKey, string newDevice)
+        {
+            if (string.Equals(key, newKey, StringComparison.Ordinal)
+                && string.Equals(device, newDevice, StringComparison.Ordinal))
+                return false;
+            key = newKey;
+            device = newDevice;
+            return true;
+        }
+
+        private void RaiseKeyChanged(params string[] names)
+        {
+            foreach (string name in names) OnPropertyChanged(name);
+        }
+
+        /// <summary>A source whose kind reads keys belongs to the controller
+        /// those keys name. An Incremental or Ramp source belongs to the one
+        /// its Up and Down keys share, and to none (empty) when they read
+        /// different controllers or any controller. An Invert on Hold source
+        /// reads its modifier alone and belongs to the one that key names.
+        /// It is put there when a key lands, when a key saved before keys
+        /// carried a controller takes one, and when its kind becomes one of
+        /// the three with its keys already in, as on the way back from
+        /// Direct. With no key of its kind it stays where it is. Step 3
+        /// reads an Incremental or Ramp source on its own device's pass, or
+        /// on the slot's passes when it names none, and each key reads its
+        /// own controller wherever the source is read
+        /// (SourceKindRuntime.ReadKey, and InputManager.IsInvertOnHoldActive
+        /// for the modifier), so one key still works while the other key's
+        /// controller is off. The device cleanup judges a source by its own
+        /// controller (SettingsService.StripDeviceFromSlot, and
+        /// MergeMappingSetsFromLegacy for one that has left the slot), so an
+        /// Invert on Hold source that stayed on another controller was
+        /// deleted with it while its modifier was still on the slot. A key
+        /// saved before keys carried a controller reads the source's, so
+        /// each one, the keys this kind leaves unread too, is first given
+        /// it and keeps reading there. The controller the kept Descriptor
+        /// was picked on is remembered when the source first follows its
+        /// keys away from it, and a switch back to a kind that reads the
+        /// Descriptor restores it
+        /// (<see cref="RestoreDescriptorController"/>).</summary>
+        private void FollowKeysDevice()
+        {
+            bool up = !string.IsNullOrEmpty(_paramUp);
+            bool down = !string.IsNullOrEmpty(_paramDown);
+            bool modifier = !string.IsNullOrEmpty(_paramModifier);
+            string shared, sharedKey;
+            if (UsesUpDownKeys)
+            {
+                if (!up && !down) return;
+                string upDevice = up ? _paramUpDeviceGuid ?? _deviceGuid ?? "" : null;
+                string downDevice = down ? _paramDownDeviceGuid ?? _deviceGuid ?? "" : null;
+                shared = upDevice == null ? downDevice
+                    : downDevice == null || string.Equals(upDevice, downDevice, StringComparison.OrdinalIgnoreCase) ? upDevice
+                    : "";
+                sharedKey = up ? _paramUp : _paramDown;
+            }
+            else if (IsInvertOnHoldKind)
+            {
+                if (!modifier) return;
+                shared = _paramModifierDeviceGuid ?? _deviceGuid ?? "";
+                sharedKey = _paramModifier;
+            }
+            else return;
+            if (string.Equals(shared, _deviceGuid ?? "", StringComparison.OrdinalIgnoreCase)) return;
+            if (up && _paramUpDeviceGuid == null) ParamUpDeviceGuid = _deviceGuid ?? "";
+            if (down && _paramDownDeviceGuid == null) ParamDownDeviceGuid = _deviceGuid ?? "";
+            if (modifier && _paramModifierDeviceGuid == null) ParamModifierDeviceGuid = _deviceGuid ?? "";
+            if (_descriptorController == null && !string.IsNullOrEmpty(_descriptor))
+            {
+                _descriptorController = _deviceGuid ?? "";
+                _descriptorControllerLabel = _deviceLabel;
+                _descriptorFollowedAway = _descriptor;
+            }
+            DeviceGuid = shared;
+            DeviceLabel = shared.Length == 0
+                ? Strings.Instance.Mapping_AnyDevice
+                : ResolveParamChoice(sharedKey, shared)?.DeviceLabel ?? DeviceLabel;
+        }
+
+        /// <summary>Gives each key saved before keys carried a controller the
+        /// controller of the entry its picker shows
+        /// (<see cref="ResolveLegacyParamChoice"/>), so the key reads the
+        /// device named under it. The row calls this once its input list is
+        /// in (MappingItem.RefreshExtraSourceInputs), and not while a load
+        /// fills the row, when the list can still be the one built for the
+        /// slot's previous controllers. A key no listed controller offers,
+        /// or a source whose own controller the list does not carry (the
+        /// picker then shows nothing), keeps reading on the source's
+        /// controller: the choice is stored, so it is made only from a list
+        /// the source's controller is on.</summary>
+        internal void AdoptLegacyKeyDevices()
+        {
+            if (ParentMappingItem == null || LoadingKeys) return;
+            bool adopted = false;
+            if (_paramUpDeviceGuid == null && ResolveLegacyParamChoice(_paramUp) is { } up)
+            {
+                ParamUpDeviceGuid = up.DeviceGuid ?? "";
+                adopted = true;
+            }
+            if (_paramDownDeviceGuid == null && ResolveLegacyParamChoice(_paramDown) is { } down)
+            {
+                ParamDownDeviceGuid = down.DeviceGuid ?? "";
+                adopted = true;
+            }
+            if (_paramModifierDeviceGuid == null && ResolveLegacyParamChoice(_paramModifier) is { } modifier)
+            {
+                ParamModifierDeviceGuid = modifier.DeviceGuid ?? "";
+                adopted = true;
+            }
+            if (adopted) FollowKeysDevice();
+        }
+
+        /// <summary>True while a load fills this source one field at a time
+        /// (MappingItem.LoadPrimaryKind). Its device lands before its keys, and
+        /// a key adopted then took a controller from the keys of the row
+        /// loaded before. The load adopts once, at the end, or leaves it to
+        /// the list built after the rows when it runs inside a row's load
+        /// bracket (MappingItem.BeginLoadRow). Its kind lands last, with the
+        /// keys in, and leaves the source on the device it was saved
+        /// on.</summary>
+        internal bool LoadingKeys { get; set; }
+
+        /// <summary>True when <paramref name="choice"/> is the key already
+        /// stored: the same input on the same controller. A key saved before
+        /// keys carried a controller is never current, so the entry its picker
+        /// writes back lands as a pick.</summary>
+        private static bool IsStoredKey(InputChoice choice, string descriptor, string deviceGuid)
+            => deviceGuid != null
+               && string.Equals(descriptor, choice.Descriptor ?? "", StringComparison.Ordinal)
+               && string.Equals(deviceGuid, choice.DeviceGuid ?? "", StringComparison.OrdinalIgnoreCase);
+
+        public InputChoice ParamUpInputChoice
+        {
+            get => ResolveParamChoice(_paramUp, _paramUpDeviceGuid);
+            set
+            {
+                // A null write means the picker's current InputChoice could not be
+                // resolved against the row's AvailableInputs (e.g. a keyboard key on
+                // an axis row, or a transient list rebuild on navigation). WPF's
+                // TwoWay ComboBox writes null back when its selected item leaves the
+                // ItemsSource -- treating that as a clear silently wiped the stored
+                // Up/Down key on every refresh (#160). Preserve the descriptor; only
+                // a real choice (incl. an explicit empty-descriptor "none") changes it.
+                if (value == null || IsStoredKey(value, _paramUp, _paramUpDeviceGuid)) return;
+                SetParamKey(ParamRecordTarget.Up, value.Descriptor, value.DeviceGuid ?? "");
+            }
+        }
+
+        public InputChoice ParamDownInputChoice
+        {
+            get => ResolveParamChoice(_paramDown, _paramDownDeviceGuid);
+            set
+            {
+                // See ParamUpInputChoice: don't let an unresolved picker wipe the key (#160).
+                if (value == null || IsStoredKey(value, _paramDown, _paramDownDeviceGuid)) return;
+                SetParamKey(ParamRecordTarget.Down, value.Descriptor, value.DeviceGuid ?? "");
+            }
+        }
+
+        public InputChoice ParamModifierInputChoice
+        {
+            get => ResolveParamChoice(_paramModifier, _paramModifierDeviceGuid);
+            set
+            {
+                // See ParamUpInputChoice: don't let an unresolved picker wipe the key (#160).
+                if (value == null || IsStoredKey(value, _paramModifier, _paramModifierDeviceGuid)) return;
+                SetParamKey(ParamRecordTarget.Modifier, value.Descriptor, value.DeviceGuid ?? "");
+            }
+        }
+
+        public void RefreshParamPickerChoices()
+        {
+            OnPropertyChanged(nameof(ParamUpInputChoice));
+            OnPropertyChanged(nameof(ParamDownInputChoice));
+            OnPropertyChanged(nameof(ParamModifierInputChoice));
+            OnPropertyChanged(nameof(ParamUpDeviceLabel));
+            OnPropertyChanged(nameof(ParamDownDeviceLabel));
+            OnPropertyChanged(nameof(ParamModifierDeviceLabel));
+        }
+
+        /// <summary>Device label of the device whose button is currently
+        /// stored in the corresponding Param field. Resolved against the
+        /// parent MappingItem's AvailableInputs via the InputChoice picker
+        /// bridge. Returns empty when no matching InputChoice is found
+        /// (typical for empty Param fields).</summary>
+        public string ParamUpDeviceLabel       => ParamUpInputChoice?.DeviceLabel ?? "";
+        public string ParamDownDeviceLabel     => ParamDownInputChoice?.DeviceLabel ?? "";
+        public string ParamModifierDeviceLabel => ParamModifierInputChoice?.DeviceLabel ?? "";
+
+        /// <summary>The controller each key reads, the engine's rule
+        /// (SourceKindRuntime.KeyDevice): its own, else this source's, empty
+        /// for any controller.</summary>
+        public string ParamUpReadDevice       => _paramUpDeviceGuid ?? _deviceGuid ?? "";
+        public string ParamDownReadDevice     => _paramDownDeviceGuid ?? _deviceGuid ?? "";
+        public string ParamModifierReadDevice => _paramModifierDeviceGuid ?? _deviceGuid ?? "";
+        public string DeviceGuid
+        {
+            get => _deviceGuid;
+            set
+            {
+                if (SetProperty(ref _deviceGuid, value ?? ""))
+                {
+                    OnPropertyChanged(nameof(DeviceLabel));
+                    OnPropertyChanged(nameof(DescriptorDeviceGuid));
+                }
+            }
+        }
+
+        private string _deviceLabel = "";
+        /// <summary>Friendly name of the device this source reads from
+        /// (e.g. "DualSense Edge"). Surfaced inline below the per-source
+        /// picker so users can tell at a glance which device each
+        /// ExtraSource is bound to. Set by the parent MappingItem when
+        /// the source is hydrated / synced; setting directly via the
+        /// SelectedInput picker also updates it via the InputChoice's
+        /// DeviceLabel field.</summary>
+        public string DeviceLabel
+        {
+            get => _deviceLabel;
+            set => SetProperty(ref _deviceLabel, value ?? "");
+        }
+
+        /// <summary>Device label to DISPLAY for this source, honoring the
+        /// "(Any device)" contract. For a concrete-guid source the picker's
+        /// resolved choice wins (recovers the friendly name when the stored
+        /// <see cref="DeviceLabel"/> was not hydrated). For an empty-guid
+        /// ("any device") source the source's own label is used, never a
+        /// concrete device borrowed from a descriptor-only picker fallback.
+        /// Mirrors the primary row's PrimarySourceDeviceLabel, which resolves
+        /// straight from its own guid. Read by the annotation overlays and the
+        /// pipeline-chip tooltip so every device readout stays consistent with
+        /// the per-source picker subtitle.</summary>
+        public string DisplayDeviceLabel =>
+            string.IsNullOrEmpty(_deviceGuid)
+                ? _deviceLabel
+                : (SelectedInput?.DeviceLabel ?? _deviceLabel);
+        public string Descriptor
+        {
+            get => _descriptor;
+            set
+            {
+                if (SetProperty(ref _descriptor, value ?? ""))
+                {
+                    OnPropertyChanged(nameof(IsButtonClassDescriptor));
+                    OnPropertyChanged(nameof(DirectionBadge));
+                    OnPropertyChanged(nameof(IsDeadZoneApplicable));
+                    OnPropertyChanged(nameof(IsHalfAxisApplicable));
+                    OnPropertyChanged(nameof(IsInvertOutputApplicable));
+                    OnPropertyChanged(nameof(IsGyroSource));
+                    OnPropertyChanged(nameof(IsGyroLeanSource));
+                    OnPropertyChanged(nameof(IsParamAccelApplicable));
+                    OnPropertyChanged(nameof(IsShapingShown));
+                    OnPropertyChanged(nameof(IsMouseCursorSource));
+                    OnPropertyChanged(nameof(IsIrPointerSource));
+                    OnPropertyChanged(nameof(IsMouseMotionSource));
+                    OnPropertyChanged(nameof(IsRapidTriggerOffered));
+                    OnPropertyChanged(nameof(KindChoices));
+                    OnPropertyChanged(nameof(DescriptorDeviceGuid));
+                    // A picked input with no press depth cannot carry Rapid
+                    // Trigger (#482). An empty descriptor keeps it, so the
+                    // mode can be chosen before the input is recorded.
+                    if (IsRapidTriggerKind && !string.IsNullOrEmpty(_descriptor)
+                        && !XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.IsRapidTriggerSource(StripFlagPrefix(_descriptor)))
+                        Kind = "Direct";
+                }
+            }
+        }
+
+        /// <summary>True when this source's descriptor names a gyro RATE
+        /// axis ("Gyro Pitch" / "Gyro Yaw" / "Gyro Roll" and the L/R/blend
+        /// spellings). Drives the per-row gyro-sensitivity slider's
+        /// visibility so it only renders when it's actually meaningful.
+        /// The gravity-lean pair shares the "Gyro " prefix but reads the
+        /// accelerometer and scales by the GENERIC Sensitivity field, so it
+        /// is sorted out first, the same precedence every engine site uses
+        /// (#292: the unsorted predicate showed lean rows a dial bound to
+        /// GyroSensitivity, which ReadGyroLean never reads).</summary>
+        public bool IsGyroSource => _descriptor != null
+            && _descriptor.StartsWith("Gyro ", StringComparison.Ordinal)
+            && !XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.IsGravityTiltFamilyDescriptor(_descriptor);
+
+        /// <summary>True for the gravity-lean pair ("Gyro Lean X/Y").
+        /// Gates the lean row's Sensitivity dial, which binds
+        /// <see cref="Sensitivity"/>, the field ReadGyroLean scales by
+        /// (#292).</summary>
+        public bool IsGyroLeanSource =>
+            XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.IsGyroLeanDescriptor(_descriptor);
+
+        /// <summary>Gates the per-source Acceleration slider (#292). The
+        /// continuous-source family (IsHalfAxisApplicable) is the base, but
+        /// the gravity-tilt pairs are POSITION reads whose engine path
+        /// applies only the curve/range channel, never ParamAccel, so the
+        /// slider would be a dead control there. Gyro Tilt's gain is its
+        /// range card; Gyro Lean's is its Sensitivity dial.</summary>
+        public bool IsParamAccelApplicable => IsHalfAxisApplicable
+            && !XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.IsGravityTiltFamilyDescriptor(_descriptor);
+
+        /// <summary>True when this source's descriptor is an absolute cursor axis
+        /// ("Mouse Position X" / "Mouse Position Y", issue #107). Drives the
+        /// per-source Mouse Cursor Sensitivity slider's visibility.</summary>
+        public bool IsMouseCursorSource => _descriptor != null
+            && _descriptor.StartsWith("Mouse Position ", StringComparison.Ordinal);
+
+        /// <summary>True when this source's descriptor is a Wii IR pointer axis
+        /// ("IR Pointer X" / "IR Pointer Y", issue #146). Drives the per-source IR
+        /// Pointer Sensitivity slider's visibility.</summary>
+        public bool IsIrPointerSource => _descriptor != null
+            && _descriptor.StartsWith("IR Pointer ", StringComparison.Ordinal);
+
+        /// <summary>True for "Mouse Motion X/Y" (issue #154). Drives the
+        /// per-source sensitivity slider's visibility, which shares the
+        /// stored field with the IR pointer's slider (both scale their
+        /// family's read in SourceCoercion).</summary>
+        public bool IsMouseMotionSource => _descriptor != null
+            && _descriptor.StartsWith("Mouse Motion ", StringComparison.Ordinal);
+
+        public bool Invert
+        {
+            get => _invert;
+            set
+            {
+                if (SetProperty(ref _invert, value))
+                {
+                    OnPropertyChanged(nameof(DirectionBadge));
+                    OnPropertyChanged(nameof(IsKeyInvertShown));
+                }
+            }
+        }
+
+        /// <summary>True when the descriptor is button-class (button,
+        /// POV direction, or touchpad click) — bool-yielding sources for
+        /// which a direction badge on a bipolar-axis target makes sense.
+        /// Axis / Slider sources encode their own sign so they get no
+        /// direction badge.</summary>
+        public bool IsButtonClassDescriptor => IsButtonClass(_descriptor);
+
+        /// <summary>"→ +" or "← −" for button-class sources, depending
+        /// on the Invert flag. Empty for non-button-class sources. The
+        /// XAML-level visibility check still gates this on the parent
+        /// MappingItem.IsBipolarAxisTarget so the badge only renders on
+        /// stick-axis rows.</summary>
+        public string DirectionBadge
+        {
+            get
+            {
+                if (!IsButtonClassDescriptor) return "";
+                return _invert ? DirectionNegative : DirectionPositive;
+            }
+        }
+        public bool HalfAxis
+        {
+            get => _halfAxis;
+            set
+            {
+                if (SetProperty(ref _halfAxis, value))
+                {
+                    OnPropertyChanged(nameof(IsInvertApplicable));
+                    OnPropertyChanged(nameof(IsInvertOutputApplicable));
+                }
+            }
+        }
+
+        /// <summary>Whether the Invert checkbox actually does anything in
+        /// the current combination (round eight, R15): with Half + Either
+        /// both on, the engine reads absolute deflection and Invert is
+        /// documented inert. Mirrors MappingItem.IsInvertApplicable on
+        /// the grid-row twin.</summary>
+        public bool IsInvertApplicable => !(_halfAxis && _bidirectional);
+
+        /// <summary><para>Output flip for a source whose Invert flag is spoken
+        /// for. On a half-axis read of a centered axis the engine consumes
+        /// Invert INSIDE the read as the half selector, so the output flip
+        /// rides this field instead: it is how a source can select a half AND
+        /// still invert.</para>
+        /// <para>User-authorable now. It used to be written only by the
+        /// Workshop translator and the legacy migrator and carried across
+        /// saves by a capture-and-reapply net, which meant an imported flip
+        /// was invisible, uneditable, and impossible to turn off: the net
+        /// re-stamped the captured value over any change.</para></summary>
+        public bool InvertOutput
+        {
+            get => _invertOutput;
+            set => SetProperty(ref _invertOutput, value);
+        }
+
+        /// <summary>True when the engine would actually read
+        /// <see cref="InvertOutput"/> for this source. Asks the engine's own
+        /// predicate rather than re-deriving the family rules: that predicate
+        /// is documented as the ONE definition of "Invert is spoken for on
+        /// this source", and a drifting copy here is exactly the failure it
+        /// warns about.</summary>
+        public bool IsInvertOutputApplicable =>
+            XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.InvertConsumedByHalfAxisRead(
+                new XBOXDS4ONE.Engine.Data.MappingSource
+                {
+                    Descriptor = _descriptor ?? "",
+                    HalfAxis = _halfAxis,
+                });
+
+        /// <summary>True when the Half checkbox (and the dependent Either)
+        /// is meaningful for this source. Half-axis only applies to
+        /// continuous-range sources: Axis, Slider, Touchpad X/Y/Pressure,
+        /// and Gyro Pitch/Yaw/Roll. Discrete sources (Button, POV
+        /// direction, Touchpad Click / Finger Down) have no upper or
+        /// lower half to pick.</summary>
+        public bool IsHalfAxisApplicable
+        {
+            get
+            {
+                var d = _descriptor?.Trim() ?? "";
+                if (d.Length == 0) return false;
+
+                // Gyro is always axis-like.
+                if (d.StartsWith("Gyro ", System.StringComparison.Ordinal))
+                    return true;
+
+                // Joy-Con 2 mouse motion is a signed velocity: Half picks ONE
+                // direction and Invert chooses which (right/down vs left/up),
+                // which is how issue #154's four-way "weapon wheel" is built.
+                if (d.StartsWith("Mouse Motion ", System.StringComparison.Ordinal))
+                    return true;
+
+                // Touchpad: X / Y / Pressure (whole-pad or the #9 B-1
+                // half-windowed X/Y variants) are continuous; Click and
+                // Finger Down (windowed included) are discrete. The finger
+                // predicate covers the axis spellings, halves included,
+                // and never matches the bool forms.
+                if (d.StartsWith("Touchpad ", System.StringComparison.Ordinal))
+                {
+                    return XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion
+                            .IsTouchpadFingerAxisDescriptor(d)
+                        || d.EndsWith(" Pressure", System.StringComparison.Ordinal);
+                }
+
+                // Strip leading I / H prefix flags before checking the type
+                // token. Both cases, matching IsDeadZoneApplicable below and
+                // the engine's OrdinalIgnoreCase prefix parse
+                // (TryGetEngineOwnedSource), so a hand-edited lowercase
+                // prefix that evaluates fine doesn't hide the checkbox.
+                int start = 0;
+                if (start < d.Length && (d[start] == 'I' || d[start] == 'i')) start++;
+                if (start < d.Length && (d[start] == 'H' || d[start] == 'h')) start++;
+                // "Axis N" / "Slider N" plus the abstract Gamepad sticks /
+                // triggers that canonicalize to one (#9).
+                return XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion
+                    .IsGenericSensitivityDescriptor(d.Substring(start));
+            }
+        }
+
+        /// <summary>When <c>true</c> AND <see cref="HalfAxis"/> is also on,
+        /// the axis-to-button check fires on absolute deflection past the
+        /// deadzone — either side of center counts. <see cref="Invert"/>
+        /// has no effect in this mode.</summary>
+        public bool Bidirectional
+        {
+            get => _bidirectional;
+            set
+            {
+                if (SetProperty(ref _bidirectional, value))
+                    OnPropertyChanged(nameof(IsInvertApplicable));
+            }
+        }
+        public int DeadZone
+        {
+            // Minimum 1: a 0% axis-to-button deadzone is disallowed. The engine
+            // and load/save paths treat DeadZone == 0 as "unset" and fall back to
+            // the default, so a user-set 0 silently reverted to 50%. Clamping at 1
+            // keeps every value meaningful.
+            get => _deadZone;
+            set => SetProperty(ref _deadZone, System.Math.Clamp(value, 1, 100));
+        }
+
+        /// <summary>True when the per-source deadzone column is
+        /// applicable for this source: the descriptor is an axis or
+        /// slider AND the parent target is a discrete (button-type)
+        /// output. The parent <see cref="MappingItem"/> is the only
+        /// place that knows the target type, so the parent passes it
+        /// down via <see cref="ParentTargetIsDiscrete"/>.</summary>
+        public bool IsDeadZoneApplicable
+        {
+            get
+            {
+                var desc = _descriptor ?? "";
+                if (string.IsNullOrEmpty(desc)) return false;
+
+                // Engine-owned continuous families whose button-thresholding
+                // reads the per-source DeadZone (SourceCoercion's button
+                // branches use "src.DeadZone > 0 ? src.DeadZone : global").
+                // Without this the column was hidden and the per-row
+                // threshold those branches honor was never user-settable
+                // (issue #154's "small deadzone" wheel, and retroactively
+                // the IR / Balance rows shipped with #146/#151).
+                if (desc.StartsWith("Mouse Motion ", System.StringComparison.Ordinal)
+                    || desc.StartsWith("IR Pointer ", System.StringComparison.Ordinal)
+                    || desc.StartsWith("IR Brightness", System.StringComparison.Ordinal)
+                    || desc.StartsWith("Balance ", System.StringComparison.Ordinal)
+                    || desc.StartsWith("Gyro ", System.StringComparison.Ordinal)
+                    || desc.StartsWith("Mouse Position ", System.StringComparison.Ordinal))
+                    return TakesThreshold(desc);
+
+                // MIDI CC as a button thresholds on the per-source DeadZone
+                // ("Midi CC N", absolute value only; the " Up"/" Down"
+                // encoder pulses are edge-fired and read no threshold).
+                if (desc.StartsWith("Midi CC ", System.StringComparison.Ordinal)
+                    && !desc.EndsWith(" Up", System.StringComparison.Ordinal)
+                    && !desc.EndsWith(" Down", System.StringComparison.Ordinal))
+                    return TakesThreshold(desc);
+
+                // Touchpad-gesture CONTINUOUS axes (PinchAxis / RotateAxis /
+                // StickX / StickY) threshold on the per-source DeadZone when
+                // driving a button target; one-shot gesture fires ignore it.
+                if (XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.IsTouchpadGestureDescriptor(desc)
+                    && XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.TryParseTouchpadGesture(desc, out _, out string gestureName)
+                    && XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.IsTouchpadGestureAxis(gestureName))
+                    return TakesThreshold(desc);
+
+                // Absolute pointer (#9 B-15): continuous position whose
+                // button coercion thresholds on the per-source DeadZone
+                // exactly like the IR pointer above, so the knob must be
+                // visible (the retroactive #146/#151 lesson this getter's
+                // header documents). Checked before the blanket Touchpad
+                // exclusion below.
+                if (XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.IsTouchpadPointerDescriptor(desc))
+                    return TakesThreshold(desc);
+                // Pressure (#239): the bool coercion thresholds on the
+                // per-source DeadZone, so it opts in like the pointer.
+                if (XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.IsTouchpadPressureDescriptor(desc))
+                    return TakesThreshold(desc);
+                // Rings, shake, lean, pitch bend and rumble read the
+                // per-source DeadZone too, the primary row's twin rule.
+                if (XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.IsThresholdedButtonFamily(desc))
+                    return TakesThreshold(desc);
+
+                int start = 0;
+                if (start < desc.Length && (desc[start] == 'I' || desc[start] == 'i')) start++;
+                if (start < desc.Length && (desc[start] == 'H' || desc[start] == 'h')) start++;
+                // Touchpad finger X/Y joined the generic Sensitivity family
+                // (#9 B-13) but have no axis-to-button threshold read
+                // (ReadAsBool's touchpad branch reads Click / "Finger M
+                // Down" / Ring / Pressure only, and Pressure opted in
+                // above), so every remaining touchpad descriptor keeps
+                // the pre-widening hidden deadzone. The gesture CONTINUOUS
+                // axes above already opted in explicitly. Tested on the
+                // same stripped body the predicate below receives.
+                if (desc.AsSpan(start).StartsWith("Touchpad ", System.StringComparison.Ordinal))
+                    return false;
+                // "Axis N" / "Slider N" plus the abstract Gamepad sticks /
+                // triggers that canonicalize to one (#9).
+                if (!XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion
+                        .IsGenericSensitivityDescriptor(desc.Substring(start)))
+                    return false;
+                return TakesThreshold(desc.Substring(start));
+            }
+        }
+
+        /// <summary>Whether the source's deadzone acts on this row: any
+        /// button-class target, or a virtual trigger in Rapid Trigger (#482),
+        /// where the deadzone is the actuation point.</summary>
+        private bool TakesThreshold(string desc)
+            => _parentTargetIsDiscrete
+            || (_parentTargetIsTrigger && IsRapidTriggerKind
+                && XBOXDS4ONE.Engine.Common.Mapping.SourceCoercion.IsRapidTriggerSource(StripFlagPrefix(desc)));
+
+        private bool _parentTargetIsDiscrete;
+        /// <summary>Set by the parent <see cref="MappingItem"/> at
+        /// hydration time so <see cref="IsDeadZoneApplicable"/> can
+        /// know whether the row's target is a button-class output.
+        /// Stored on the source rather than walked up the tree so the
+        /// XAML can bind directly without a RelativeSource hop.</summary>
+        public bool ParentTargetIsDiscrete
+        {
+            get => _parentTargetIsDiscrete;
+            set
+            {
+                if (SetProperty(ref _parentTargetIsDiscrete, value))
+                    OnPropertyChanged(nameof(IsDeadZoneApplicable));
+            }
+        }
+
+        private bool _parentTargetIsTrigger;
+        /// <summary>Set by the parent <see cref="MappingItem"/> beside
+        /// <see cref="ParentTargetIsDiscrete"/>: true on a virtual trigger
+        /// row, where Rapid Trigger (#482) sends a full pull and the deadzone
+        /// is its actuation point.</summary>
+        public bool ParentTargetIsTrigger
+        {
+            get => _parentTargetIsTrigger;
+            set
+            {
+                if (SetProperty(ref _parentTargetIsTrigger, value))
+                    OnPropertyChanged(nameof(IsDeadZoneApplicable));
+            }
+        }
+
+        private bool _parentTargetTakesRapidTrigger;
+        /// <summary>Set by the parent <see cref="MappingItem"/> from its
+        /// <see cref="MappingItem.IsRapidTriggerTarget"/>, so an extra source
+        /// offers Rapid Trigger on exactly the rows whose primary does.</summary>
+        public bool ParentTargetTakesRapidTrigger
+        {
+            get => _parentTargetTakesRapidTrigger;
+            set
+            {
+                if (SetProperty(ref _parentTargetTakesRapidTrigger, value))
+                {
+                    OnPropertyChanged(nameof(IsRapidTriggerOffered));
+                    OnPropertyChanged(nameof(KindChoices));
+                }
+            }
+        }
+
+        public string ParamUp
+        {
+            get => _paramUp;
+            set
+            {
+                if (SetProperty(ref _paramUp, value ?? ""))
+                {
+                    OnPropertyChanged(nameof(ParamUpInputChoice));
+                    OnPropertyChanged(nameof(ParamUpDeviceLabel));
+                }
+            }
+        }
+        public string ParamDown
+        {
+            get => _paramDown;
+            set
+            {
+                if (SetProperty(ref _paramDown, value ?? ""))
+                {
+                    OnPropertyChanged(nameof(ParamDownInputChoice));
+                    OnPropertyChanged(nameof(ParamDownDeviceLabel));
+                }
+            }
+        }
+        // The three unclamped numbers take finite values only: infinity
+        // passes the NaN-refusing overload, and an infinite range or step
+        // turns the accumulator NaN on the next opposite press.
+        public double ParamRate { get => _paramRate; set { if (double.IsFinite(value)) SetProperty(ref _paramRate, value); } }
+
+        /// <summary>Per-source gyro sensitivity multiplier. Only applied
+        /// for Gyro descriptors (see <see cref="IsGyroSource"/>). UI shows
+        /// the slider gated on that predicate. Default 1.0 = the engine's
+        /// 500°/s → ±1 deflection scale.</summary>
+        public double GyroSensitivity
+        {
+            get => _gyroSensitivity;
+            set => SetProperty(ref _gyroSensitivity, System.Math.Clamp(value, 0.1, 10.0));
+        }
+
+        /// <summary><para>Per-source rate-dependent gain
+        /// (MappingSource.ParamAccel): fast motion on this input is
+        /// amplified, slow passes through, as v x (1 + a x |v|) with a
+        /// symmetric clamp. 0 = off, a flat response.</para>
+        /// <para>Range 0..5 = the Workshop translator's maximum
+        /// (Steam's 0..10 x 0.5), so any importable value is expressible.
+        /// User-authorable now: it used to ride an invisible capture net,
+        /// and on stick-hosted mouse rows the engine did not even read it,
+        /// so a wild import's acceleration was stamped and dead.</para></summary>
+        public double ParamAccel
+        {
+            get => _paramAccel;
+            set => SetProperty(ref _paramAccel, System.Math.Clamp(value, 0.0, 5.0));
+        }
+
+        /// <summary>Per-source mouse-cursor sensitivity (issue #107). Only applied
+        /// for "Mouse Position X/Y" descriptors (see <see cref="IsMouseCursorSource"/>).
+        /// Default 1.0 = full deflection at 10% of screen width from center.</summary>
+        public double MouseCursorSensitivity
+        {
+            get => _mouseCursorSensitivity;
+            set => SetProperty(ref _mouseCursorSensitivity, System.Math.Clamp(value, 0.1, 5.0));
+        }
+
+        private double _irPointerSensitivity = 1.0;
+        /// <summary>Per-source Wii IR-pointer sensitivity (issue #146). Only applied
+        /// for "IR Pointer X/Y" descriptors. Default 1.0 = full deflection at the
+        /// edge of the camera's field of view.</summary>
+        public double IrPointerSensitivity
+        {
+            get => _irPointerSensitivity;
+            set => SetProperty(ref _irPointerSensitivity, System.Math.Clamp(value, 0.1, 5.0));
+        }
+
+        private double _sensitivity = 1.0;
+        /// <summary>Generic per-source sensitivity (issue #9), applied only for
+        /// plain analog sources: "Axis N" / "Slider N" and the abstract Gamepad
+        /// sticks / triggers that canonicalize to them
+        /// (SourceCoercion.IsGenericSensitivityDescriptor). Default 1.0 =
+        /// unchanged. The mapping grid has shown no knob for it since
+        /// 2026-07-27: the knob moved to the Sticks group as a per-stick
+        /// multiplier, because per-row the scale was folded in before the
+        /// row's own readout (making its raw and out columns agree) and its
+        /// slider sat in a grid column too narrow to show. Do not re-add a
+        /// grid slider for it. The importers still set it, as below.</summary>
+        public double Sensitivity
+        {
+            get => _sensitivity;
+            // The floor is the import's: a rotated stick's row carries the
+            // rotation's sine or cosine, which falls under a tenth within
+            // about 6 degrees of none or a quarter turn, and the importers
+            // drop a leg only under 0.001.
+            set => SetProperty(ref _sensitivity, System.Math.Clamp(value, 0.001, 5.0));
+        }
+        public bool ParamSticky { get => _paramSticky; set => SetProperty(ref _paramSticky, value); }
+        public double ParamMin { get => _paramMin; set { if (double.IsFinite(value)) SetProperty(ref _paramMin, value); } }
+        public double ParamMax { get => _paramMax; set { if (double.IsFinite(value)) SetProperty(ref _paramMax, value); } }
+
+        /// <summary>Ramped attack time in seconds (issue #111). 0 to 5, the
+        /// slider's range too. Time for the axis to travel 0 to ±1 while the
+        /// matching key is held. Only meaningful when <see cref="IsRampedKind"/>.</summary>
+        public double ParamAttackTime
+        {
+            get => _paramAttackTime;
+            set => SetProperty(ref _paramAttackTime, System.Math.Clamp(value, 0, 5));
+        }
+
+        /// <summary>Ramped release time in seconds (issue #111). 0 to 5. Time for the
+        /// axis to travel ±1 back to 0 after release.</summary>
+        public double ParamReleaseTime
+        {
+            get => _paramReleaseTime;
+            set => SetProperty(ref _paramReleaseTime, System.Math.Clamp(value, 0, 5));
+        }
+
+        /// <summary>Ramped autocenter (issue #111). True = release ramps back to zero;
+        /// false = the axis cruises (holds its last value). Gates the reverse speed-up.</summary>
+        public bool ParamAutocenter
+        {
+            get => _paramAutocenter;
+            set => SetProperty(ref _paramAutocenter, value);
+        }
+
+        /// <summary>Ramped reverse speed-up multiplier (issue #111). 1 to 10. Applied
+        /// to the toward-zero step when switching directions while still on the
+        /// original side. 1 disables the speed-up.</summary>
+        public double ParamReverseMultiplier
+        {
+            get => _paramReverseMultiplier;
+            set => SetProperty(ref _paramReverseMultiplier, System.Math.Clamp(value, 1, 10));
+        }
+
+        /// <summary>Rapid Trigger distance (#482), percent of full travel: how
+        /// far the input must rise to release, or push back down to press
+        /// again. 1 to 50, default 10. Only meaningful when
+        /// <see cref="IsRapidTriggerKind"/>.</summary>
+        public int ParamRapidTriggerDistance
+        {
+            get => _paramRapidTriggerDistance;
+            set => SetProperty(ref _paramRapidTriggerDistance,
+                System.Math.Clamp(value, 1, Engine.Data.MappingSource.MaxRapidTriggerDistance));
+        }
+        public string ParamModifier
+        {
+            get => _paramModifier;
+            set
+            {
+                if (SetProperty(ref _paramModifier, value ?? ""))
+                {
+                    OnPropertyChanged(nameof(ParamModifierInputChoice));
+                    OnPropertyChanged(nameof(ParamModifierDeviceLabel));
+                }
+            }
+        }
+
+        /// <summary>The controller <see cref="ParamUp"/> reads
+        /// (MappingSource.ParamUpDeviceGuid): a device guid, empty for any
+        /// controller, null for a key saved before keys carried one.</summary>
+        public string ParamUpDeviceGuid
+        {
+            get => _paramUpDeviceGuid;
+            set
+            {
+                if (SetProperty(ref _paramUpDeviceGuid, value))
+                {
+                    OnPropertyChanged(nameof(ParamUpInputChoice));
+                    OnPropertyChanged(nameof(ParamUpDeviceLabel));
+                }
+            }
+        }
+
+        /// <summary>The controller <see cref="ParamDown"/> reads, as
+        /// <see cref="ParamUpDeviceGuid"/>.</summary>
+        public string ParamDownDeviceGuid
+        {
+            get => _paramDownDeviceGuid;
+            set
+            {
+                if (SetProperty(ref _paramDownDeviceGuid, value))
+                {
+                    OnPropertyChanged(nameof(ParamDownInputChoice));
+                    OnPropertyChanged(nameof(ParamDownDeviceLabel));
+                }
+            }
+        }
+
+        /// <summary>The controller <see cref="ParamModifier"/> reads, as
+        /// <see cref="ParamUpDeviceGuid"/>.</summary>
+        public string ParamModifierDeviceGuid
+        {
+            get => _paramModifierDeviceGuid;
+            set
+            {
+                if (SetProperty(ref _paramModifierDeviceGuid, value))
+                {
+                    OnPropertyChanged(nameof(ParamModifierInputChoice));
+                    OnPropertyChanged(nameof(ParamModifierDeviceLabel));
+                }
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        //  Cross-device picker bridge
+        // ─────────────────────────────────────────────
+
+        private InputChoice _selectedInput;
+        private bool _suppressSelectionSync;
+
+        /// <summary>The currently picked <see cref="InputChoice"/> from
+        /// the parent MappingItem's grouped cross-device picker. Setting
+        /// this writes both <see cref="DeviceGuid"/> and
+        /// <see cref="Descriptor"/> in one shot — mirrors
+        /// <see cref="MappingItem.SelectedInput"/>'s behavior so a single
+        /// dropdown selection lands two fields.</summary>
+        public InputChoice SelectedInput
+        {
+            get => _selectedInput;
+            set
+            {
+                if (_suppressSelectionSync) return;
+                if (SetProperty(ref _selectedInput, value) && value != null)
+                {
+                    // A pick names the input and its controller afresh.
+                    ForgetDescriptorController();
+                    DeviceGuid = value.DeviceGuid ?? "";
+                    DeviceLabel = value.DeviceLabel ?? "";
+                    Descriptor = value.Descriptor ?? "";
+                }
+            }
+        }
+
+        /// <summary>Sync the dropdown selection from the current
+        /// <see cref="DeviceGuid"/>+<see cref="Descriptor"/> pair
+        /// against the parent row's cross-device choice list. Match
+        /// is on (DeviceGuid, Descriptor) with a descriptor-only
+        /// fallback. Called by the parent MappingItem after the row's
+        /// load or after its AvailableInputs list is rebuilt.</summary>
+        public void SyncSelectedInputFromState(System.Collections.Generic.IEnumerable<InputChoice> choices)
+        {
+            _suppressSelectionSync = true;
+            try
+            {
+                if (string.IsNullOrEmpty(_descriptor) && string.IsNullOrEmpty(_deviceGuid))
+                {
+                    _selectedInput = null;
+                    OnPropertyChanged(nameof(SelectedInput));
+                    return;
+                }
+                if (choices == null)
+                {
+                    _selectedInput = null;
+                    OnPropertyChanged(nameof(SelectedInput));
+                    return;
+                }
+                string wantGuid = (_deviceGuid ?? "").ToLowerInvariant();
+                // An abstract "Gamepad ..." name stored with a concrete device
+                // selects that device's own entry for the same read, ahead of
+                // the "(Any device)" copy of the name.
+                string pinnedCanonical = XBOXDS4ONE.Common.MappingDisplayResolver.PinnedAliasCanonical(_descriptor, wantGuid);
+                InputChoice match = null;
+                InputChoice canonicalMatch = null;
+                InputChoice descriptorOnlyMatch = null;
+                foreach (var choice in choices)
+                {
+                    if (pinnedCanonical != null && canonicalMatch == null
+                        && string.Equals(choice.Descriptor, pinnedCanonical, StringComparison.OrdinalIgnoreCase)
+                        && string.Equals(choice.DeviceGuid ?? "", wantGuid, StringComparison.OrdinalIgnoreCase))
+                        canonicalMatch = choice;
+                    if (!string.Equals(choice.Descriptor, _descriptor, StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    if (descriptorOnlyMatch == null) descriptorOnlyMatch = choice;
+                    // Straight guid equality, INCLUDING the empty guid: an
+                    // empty-guid ("any device") source genuinely matches
+                    // the picker's empty-guid "(Any device)" entry (whose
+                    // label is the same "(Any device)" sentinel the load
+                    // path stamps), never a concrete device's entry.
+                    if (string.Equals(choice.DeviceGuid ?? "", wantGuid, StringComparison.OrdinalIgnoreCase))
+                    {
+                        match = choice;
+                        break;
+                    }
+                }
+                var onDevice = match ?? canonicalMatch;
+                var picked = onDevice ?? descriptorOnlyMatch;
+                _selectedInput = picked;
+                // Only adopt a device label when the picked choice matched on
+                // GUID. A descriptor-only fallback (empty guid = "any device",
+                // or a concrete guid whose device is offline) must NOT borrow
+                // the fallback device's name. Doing so made empty-guid secondary
+                // sources from a Workshop import display the slot's first
+                // concrete controller instead of "(Any device)". The primary row
+                // resolves its label straight from its own guid and never did
+                // this, so gating here unifies the two paths.
+                if (onDevice != null && !string.IsNullOrEmpty(onDevice.DeviceLabel))
+                    DeviceLabel = onDevice.DeviceLabel;
+                OnPropertyChanged(nameof(SelectedInput));
+            }
+            finally
+            {
+                _suppressSelectionSync = false;
+            }
+        }
+
+        // ─────────────────────────────────────────────
+        //  Recording (per-source)
+        // ─────────────────────────────────────────────
+
+        private bool _isRecording;
+        public bool IsRecording
+        {
+            get => _isRecording;
+            set
+            {
+                if (SetProperty(ref _isRecording, value))
+                {
+                    OnPropertyChanged(nameof(RecordButtonText));
+                    OnPropertyChanged(nameof(RecordButtonIcon));
+                }
+            }
+        }
+
+        public string RecordButtonText => IsRecording ? Strings.Instance.Common_Recording : Strings.Instance.Common_Record;
+        public string RecordButtonIcon => IsRecording ? "" : ""; // Stop : Record
+
+        private RelayCommand _toggleRecordCommand;
+        public RelayCommand ToggleRecordCommand =>
+            _toggleRecordCommand ??= new RelayCommand(() =>
+            {
+                if (IsRecording)
+                    StopRecordingRequested?.Invoke(this, EventArgs.Empty);
+                else
+                    StartRecordingRequested?.Invoke(this, EventArgs.Empty);
+            });
+
+        public event EventHandler StartRecordingRequested;
+        public event EventHandler StopRecordingRequested;
+
+        /// <summary>Identifies which Param field a record request is for
+        /// (ParamUp / ParamDown / ParamModifier). The Mappings page's
+        /// handler reads this on the event payload and routes to
+        /// <c>RecorderService.StartRecordingExtraSourceParam</c>.</summary>
+        public enum ParamRecordTarget { Up, Down, Modifier }
+        public sealed class ParamRecordEventArgs : EventArgs
+        {
+            public ParamRecordTarget Target { get; }
+            public ParamRecordEventArgs(ParamRecordTarget t) { Target = t; }
+        }
+        public event EventHandler<ParamRecordEventArgs> StartParamRecordingRequested;
+
+        /// <summary>A key's Record: a click on the key's tag in a list
+        /// cell, and the line's one Record taking the mode's keys in turn.
+        /// A second click stops it, as the main ToggleRecordCommand does.</summary>
+        private RelayCommand _recordParamUpCommand;
+        public RelayCommand RecordParamUpCommand =>
+            _recordParamUpCommand ??= new RelayCommand(() => StartParamRecord(ParamRecordTarget.Up));
+
+        private RelayCommand _recordParamDownCommand;
+        public RelayCommand RecordParamDownCommand =>
+            _recordParamDownCommand ??= new RelayCommand(() => StartParamRecord(ParamRecordTarget.Down));
+
+        private RelayCommand _recordParamModifierCommand;
+        public RelayCommand RecordParamModifierCommand =>
+            _recordParamModifierCommand ??= new RelayCommand(() => StartParamRecord(ParamRecordTarget.Modifier));
+
+        private void StartParamRecord(ParamRecordTarget target)
+        {
+            if (IsRecording) { StopRecordingRequested?.Invoke(this, EventArgs.Empty); return; }
+            StartParamRecordingRequested?.Invoke(this, new ParamRecordEventArgs(target));
+        }
+
+        private RelayCommand _clearCommand;
+        /// <summary>Mirrors <see cref="MappingItem.ClearCommand"/>:
+        /// resets descriptor + flags + deadzone to defaults but keeps
+        /// the row in <c>ExtraSources</c>. Use the parent's
+        /// RemoveExtraSourceCommand when the row should disappear
+        /// entirely.</summary>
+        public RelayCommand ClearCommand =>
+            _clearCommand ??= new RelayCommand(() =>
+            {
+                Descriptor = "";
+                DeviceGuid = "";
+                DeviceLabel = "";
+                Invert = false;
+                HalfAxis = false;
+                Bidirectional = false;
+                DeadZone = 50;
+                _selectedInput = null;
+                OnPropertyChanged(nameof(SelectedInput));
+            });
+
+        private RelayCommand _resetDeadZoneCommand;
+        public RelayCommand ResetDeadZoneCommand =>
+            _resetDeadZoneCommand ??= new RelayCommand(() => DeadZone = 50);
+
+        private RelayCommand _resetMouseCursorSensitivityCommand;
+        public RelayCommand ResetMouseCursorSensitivityCommand =>
+            _resetMouseCursorSensitivityCommand ??= new RelayCommand(() => MouseCursorSensitivity = 1.0);
+        private RelayCommand _resetIrPointerSensitivityCommand;
+        public RelayCommand ResetIrPointerSensitivityCommand =>
+            _resetIrPointerSensitivityCommand ??= new RelayCommand(() => IrPointerSensitivity = 1.0);
+
+        private RelayCommand _resetGyroSensitivityCommand;
+        public RelayCommand ResetGyroSensitivityCommand =>
+            _resetGyroSensitivityCommand ??= new RelayCommand(() => GyroSensitivity = 1.0);
+
+        private RelayCommand _resetParamAccelCommand;
+        public RelayCommand ResetParamAccelCommand =>
+            _resetParamAccelCommand ??= new RelayCommand(() => ParamAccel = 0.0);
+
+        private RelayCommand _resetSensitivityCommand;
+        public RelayCommand ResetSensitivityCommand =>
+            _resetSensitivityCommand ??= new RelayCommand(() => Sensitivity = 1.0);
+
+        /// <summary>Converts this VM to a domain
+        /// <see cref="Engine.Data.MappingSource"/>. NoInherit is NOT
+        /// round-tripped here (it lives on the row, not the source), and the
+        /// touchpad pointer-region params ride a post-rebuild re-stamp
+        /// (ApplyTouchpadPointerParamsToRow) because no control here authors
+        /// them. Everything user-selectable must be added to BOTH ToDomain and
+        /// FromDomain, or carried by a post-rebuild re-stamp, or it drops
+        /// silently through the VM round-trip. InvertOutput graduated from the
+        /// re-stamp to a real field here the day it got a checkbox: the
+        /// re-stamp preserved values but also resurrected them over an
+        /// uncheck, so an authorable field cannot ride it.</summary>
+        public Engine.Data.MappingSource ToDomain()
+        {
+            var src = ToDomainFields();
+            StoreShapingAndGates(src);
+            return src;
+        }
+
+        private Engine.Data.MappingSource ToDomainFields() => new()
+        {
+            Kind = _kind ?? "Direct",
+            DeviceGuid = _deviceGuid ?? "",
+            Descriptor = _descriptor ?? "",
+            DescriptorDeviceGuid = DescriptorDeviceGuid,
+            Invert = _invert,
+            HalfAxis = _halfAxis,
+            Bidirectional = _bidirectional,
+            InvertOutput = _invertOutput,
+            ParamAccel = _paramAccel,
+            DeadZone = _deadZone,
+            ParamUp = _paramUp ?? "",
+            ParamDown = _paramDown ?? "",
+            ParamUpDeviceGuid = string.IsNullOrEmpty(_paramUp) ? null : _paramUpDeviceGuid,
+            ParamDownDeviceGuid = string.IsNullOrEmpty(_paramDown) ? null : _paramDownDeviceGuid,
+            ParamRate = _paramRate,
+            ParamSticky = _paramSticky,
+            ParamMin = _paramMin,
+            ParamMax = _paramMax,
+            ParamModifier = _paramModifier ?? "",
+            ParamModifierDeviceGuid = string.IsNullOrEmpty(_paramModifier) ? null : _paramModifierDeviceGuid,
+            GyroSensitivity = _gyroSensitivity,
+            MouseCursorSensitivity = _mouseCursorSensitivity,
+            IrPointerSensitivity = _irPointerSensitivity,
+            Sensitivity = _sensitivity,
+            ParamAttackTime = _paramAttackTime,
+            ParamReleaseTime = _paramReleaseTime,
+            ParamAutocenter = _paramAutocenter,
+            ParamReverseMultiplier = _paramReverseMultiplier,
+            ParamRapidTriggerDistance = _paramRapidTriggerDistance,
+        };
+
+        /// <summary>Populates this VM from a domain
+        /// <see cref="Engine.Data.MappingSource"/>.</summary>
+        public static MappingSourceItem FromDomain(Engine.Data.MappingSource src)
+        {
+            if (src == null) return new MappingSourceItem();
+            src = AsEditorSource(src);
+            var item = new MappingSourceItem
+            {
+                // First, before any key: a kind set with keys in follows
+                // them, and a load keeps the saved device.
+                Kind = src.Kind ?? "Direct",
+                DeviceGuid = src.DeviceGuid ?? "",
+                Descriptor = src.Descriptor ?? "",
+                Invert = src.Invert,
+                HalfAxis = src.HalfAxis,
+                Bidirectional = src.Bidirectional,
+                InvertOutput = src.InvertOutput,
+                ParamAccel = src.ParamAccel,
+                // The editable range starts at one, so a legacy row's zero
+                // landed on one and turned a row that INHERITED the global
+                // threshold into a one percent hair trigger on the next save.
+                // Fifty is the engine's neutral sentinel (it reads zero and
+                // fifty identically), and it is what the primary's own
+                // hydration already stamps.
+                DeadZone = src.DeadZone > 0 ? src.DeadZone : 50,
+                ParamUp = src.ParamUp ?? "",
+                ParamDown = src.ParamDown ?? "",
+                ParamUpDeviceGuid = src.ParamUpDeviceGuid,
+                ParamDownDeviceGuid = src.ParamDownDeviceGuid,
+                ParamRate = src.ParamRate,
+                ParamSticky = src.ParamSticky,
+                ParamMin = src.ParamMin,
+                ParamMax = src.ParamMax,
+                ParamModifier = src.ParamModifier ?? "",
+                ParamModifierDeviceGuid = src.ParamModifierDeviceGuid,
+                GyroSensitivity = src.GyroSensitivity > 0 ? src.GyroSensitivity : 1.0,
+                MouseCursorSensitivity = src.MouseCursorSensitivity > 0 ? src.MouseCursorSensitivity : 1.0,
+                IrPointerSensitivity = src.IrPointerSensitivity > 0 ? src.IrPointerSensitivity : 1.0,
+                Sensitivity = src.Sensitivity > 0 ? src.Sensitivity : 1.0,
+                ParamAttackTime = src.ParamAttackTime,
+                ParamReleaseTime = src.ParamReleaseTime,
+                ParamAutocenter = src.ParamAutocenter,
+                ParamReverseMultiplier = src.ParamReverseMultiplier >= 1 ? src.ParamReverseMultiplier : 4.0,
+                ParamRapidTriggerDistance = Engine.Data.MappingSource.EffectiveRapidTriggerDistance(src.ParamRapidTriggerDistance),
+            };
+            item.LoadShapingAndGates(src);
+            // Last, with the kind and the Descriptor in.
+            item.RememberSavedDescriptorController(src.DescriptorDeviceGuid);
+            return item;
+        }
+    }
+}

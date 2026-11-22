@@ -1,0 +1,101 @@
+<views:DialogWindow AutomationProperties.IsDialog="True" x:Class="XBOXDS4ONE.Views.MapKeyLightsDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:strings="clr-namespace:XBOXDS4ONE.Resources.Strings"
+        xmlns:controls="clr-namespace:XBOXDS4ONE.Controls"
+        xmlns:common="clr-namespace:XBOXDS4ONE.Common"
+        xmlns:views="clr-namespace:XBOXDS4ONE.Views"
+        Width="820"
+        Title="{Binding MapKeyLights_Title, Source={x:Static strings:Strings.Instance}}"
+        Subtitle="{Binding MapKeyLights_Intro, Source={x:Static strings:Strings.Instance}}">
+
+    <!-- Map Key Lights (#557, #574), as the Dialogs-Screens board draws it:
+         the device and how many of its key lights have a name, the picture
+         with the lit light, Start and what steps through the lights, and
+         under them what to do now. The foot exports, imports or forgets the
+         model's names. While it listens, every key pressed names the lit
+         light, Escape and Tab too. Ctrl+Tab stops, as it leaves the Key
+         Colors card's picture. -->
+    <views:DialogWindow.Foot>
+        <controls:FlexLinePanel Style="{StaticResource DialogFootPanel}">
+            <Button Style="{StaticResource DialogQuietButton}" Click="ExportButton_Click"
+                    Content="{Binding MapKeyLights_Export, Source={x:Static strings:Strings.Instance}}"/>
+            <Button Style="{StaticResource DialogQuietButton}" Click="ImportButton_Click"
+                    Content="{Binding MapKeyLights_Import, Source={x:Static strings:Strings.Instance}}"/>
+            <Button Style="{StaticResource DialogQuietDangerButton}" Click="ForgetAllButton_Click"
+                    Content="{Binding MapKeyLights_ForgetAll, Source={x:Static strings:Strings.Instance}}"
+                    ToolTip="{Binding MapKeyLights_ForgetAll_Tooltip, Source={x:Static strings:Strings.Instance}}"/>
+            <Button Style="{StaticResource DialogButton}" IsCancel="True" Click="CloseButton_Click"
+                    Content="{Binding Common_Close, Source={x:Static strings:Strings.Instance}}"/>
+        </controls:FlexLinePanel>
+    </views:DialogWindow.Foot>
+
+    <StackPanel>
+        <!-- The device, then how many of its key lights have a name. The
+             two numbers stand in tabular figures, and a screen reader
+             reads the line whole. -->
+        <controls:FlexLinePanel Gap="16" LineGap="8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Margin="0,0,4,0" VerticalAlignment="Center"
+                           Text="{Binding MapKeyLights_DeviceLabel, Source={x:Static strings:Strings.Instance}}"/>
+                <TextBlock Grid.Column="1" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                           Text="{Binding DeviceName}"/>
+            </Grid>
+            <TextBlock x:Name="ProgressText" Style="{StaticResource DialogNote}" TextWrapping="NoWrap" VerticalAlignment="Center"
+                       AutomationProperties.Name="{Binding Progress, TargetNullValue='', FallbackValue=''}"><Run Text="{Binding ProgressLead, Mode=OneWay}"/><Run Text="{Binding ProgressFirst, Mode=OneWay}" Typography.NumeralAlignment="Tabular"/><Run Text="{Binding ProgressMiddle, Mode=OneWay}"/><Run Text="{Binding ProgressSecond, Mode=OneWay}" Typography.NumeralAlignment="Tabular"/><Run Text="{Binding ProgressTail, Mode=OneWay}"/></TextBlock>
+        </controls:FlexLinePanel>
+
+        <!-- The keyboard's lights, the lit one in white. A click on a key
+             light asks about it next. -->
+        <Border x:Name="PictureBox" Margin="0,12,0,0" Padding="14" CornerRadius="8"
+                Background="{DynamicResource SteelFieldBrush}"
+                BorderBrush="{DynamicResource SteelLineSoftBrush}" BorderThickness="1">
+            <views:KeyLightsView Source="{Binding}" HorizontalAlignment="Center"
+                                 AutomationProperties.Name="{Binding MapKeyLights_Title, Source={x:Static strings:Strings.Instance}}"/>
+        </Border>
+
+        <controls:FlexLinePanel x:Name="StepButtons" Gap="10" LineGap="8" MinLineHeight="44" Margin="0,10,0,0">
+            <Button x:Name="StartBtn" Style="{StaticResource DialogPrimaryButton}" Click="StartButton_Click"
+                    IsEnabled="{Binding CanLearn}"
+                    Content="{Binding MapKeyLights_Start, Source={x:Static strings:Strings.Instance}}"/>
+            <Button Style="{StaticResource DialogButton}" Click="BackButton_Click" IsEnabled="{Binding IsListening}"
+                    Content="{Binding MapKeyLights_Back, Source={x:Static strings:Strings.Instance}}"/>
+            <Button Style="{StaticResource DialogButton}" Click="SkipButton_Click" IsEnabled="{Binding IsListening}"
+                    Content="{Binding MapKeyLights_Skip, Source={x:Static strings:Strings.Instance}}"
+                    ToolTip="{Binding MapKeyLights_Skip_Tooltip, Source={x:Static strings:Strings.Instance}}"/>
+            <Button Style="{StaticResource DialogButton}" Click="ForgetButton_Click" IsEnabled="{Binding IsListening}"
+                    Content="{Binding MapKeyLights_Forget, Source={x:Static strings:Strings.Instance}}"
+                    ToolTip="{Binding MapKeyLights_Forget_Tooltip, Source={x:Static strings:Strings.Instance}}"/>
+            <Button Style="{StaticResource DialogButton}" Click="StopButton_Click" IsEnabled="{Binding IsListening}"
+                    Content="{Binding MapKeyLights_Stop, Source={x:Static strings:Strings.Instance}}"/>
+        </controls:FlexLinePanel>
+
+        <!-- What to do now, ember while the dialog listens. A live region:
+             the dialog is driven by key presses, and a screen reader hears
+             the next light to name without leaving the keyboard. Naming a
+             light moves the count beside the device and this line together,
+             so the count is not announced as well. -->
+        <TextBlock Text="{Binding Status}" common:LiveText.Polite="True" TextWrapping="Wrap" FontSize="13" Margin="0,2,0,0">
+            <TextBlock.Style>
+                <Style TargetType="TextBlock">
+                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsListening}" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource EmberHotBrush}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </TextBlock.Style>
+        </TextBlock>
+        <TextBlock Style="{StaticResource DialogNote}" Margin="0,2,0,0"
+                   Text="{Binding MapKeyLights_NoLightHint, Source={x:Static strings:Strings.Instance}}"/>
+        <!-- What an export or an import did. -->
+        <TextBlock x:Name="NoteText" TextWrapping="Wrap" FontSize="13" Margin="0,6,0,0" Visibility="Collapsed"
+                   common:LiveText.Polite="True"
+                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+    </StackPanel>
+</views:DialogWindow>

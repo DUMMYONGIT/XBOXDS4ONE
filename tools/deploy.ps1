@@ -1,36 +1,36 @@
-# Deploy PadForge.exe to C:\PadForge\
+# Deploy XBOXDS4ONE.exe to C:\XBOXDS4ONE\
 #
 # The source path used to point at a repo-root `publish\` folder that the build
 # has not written to for a long time, so every run of this script killed a
-# working PadForge, failed the copy, and returned without relaunching it. The
+# working XBOXDS4ONE, failed the copy, and returned without relaunching it. The
 # path now comes off the script's own location and matches where the publish
 # step actually puts the single-file exe.
 $repo = Split-Path -Parent $PSScriptRoot
 # The framework folder comes from the project file, so a .NET upgrade moves
 # this path with it instead of leaving it on the last build's exe.
 $project = New-Object System.Xml.XmlDocument
-$project.Load((Join-Path $repo 'PadForge.App\PadForge.App.csproj'))
+$project.Load((Join-Path $repo 'XBOXDS4ONE.App\XBOXDS4ONE.App.csproj'))
 $tfm = $project.Project.PropertyGroup |
     ForEach-Object { $_.TargetFramework } | Where-Object { $_ } | Select-Object -First 1
-$src = Join-Path $repo "PadForge.App\bin\Release\$tfm\win-x64\publish\PadForge.exe"
-$dst = 'C:\PadForge\PadForge.exe'
+$src = Join-Path $repo "XBOXDS4ONE.App\bin\Release\$tfm\win-x64\publish\XBOXDS4ONE.exe"
+$dst = 'C:\XBOXDS4ONE\XBOXDS4ONE.exe'
 
 # Check the source BEFORE stopping anything. Killing the running app and only
 # then discovering there is nothing to deploy leaves the machine with no
-# PadForge at all, which is worse than not having run the script.
+# XBOXDS4ONE at all, which is worse than not having run the script.
 if (-not (Test-Path -LiteralPath $src)) {
     Write-Host "FAILED: no published exe at $src"
-    Write-Host "Run the publish step first. PadForge was left running."
+    Write-Host "Run the publish step first. XBOXDS4ONE was left running."
     exit 1
 }
 
-# Kill any running PadForge
-$procs = Get-Process -Name PadForge -ErrorAction SilentlyContinue
+# Kill any running XBOXDS4ONE
+$procs = Get-Process -Name XBOXDS4ONE -ErrorAction SilentlyContinue
 if ($procs) {
     $procs | Stop-Process -Force
     for ($i = 0; $i -lt 15; $i++) {
         Start-Sleep -Seconds 1
-        if (-not (Get-Process -Name PadForge -ErrorAction SilentlyContinue)) { break }
+        if (-not (Get-Process -Name XBOXDS4ONE -ErrorAction SilentlyContinue)) { break }
     }
 }
 
@@ -43,10 +43,10 @@ try {
     # The app is already stopped here, so say so rather than leaving the
     # operator to guess whether it is still up.
     Write-Host "FAILED to copy: $($_.Exception.Message)"
-    Write-Host "PadForge is stopped. Relaunch $dst by hand or re-run after publishing."
+    Write-Host "XBOXDS4ONE is stopped. Relaunch $dst by hand or re-run after publishing."
     exit 1
 }
 
 Write-Host "Deployed successfully"
 Start-Process $dst
-Write-Host "PadForge launched"
+Write-Host "XBOXDS4ONE launched"

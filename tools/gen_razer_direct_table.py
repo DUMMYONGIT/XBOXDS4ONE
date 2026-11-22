@@ -1,7 +1,7 @@
 """The Razer direct-lighting product table, from the research table of #494.
 
 WHAT IT READS. razer-direct-table.json, one entry for each of the 235 Razer
-product IDs PadForge lists (PeripheralProductIds.RazerMice and
+product IDs XBOXDS4ONE lists (PeripheralProductIds.RazerMice and
 RazerKeyboards). The research extraction built it from the openrazer drivers
 and from OpenRGB's RazerController, #557 added the Basilisk V4 Pro and the
 Mouse Dock Pro from OpenRGB c6fc8016 (each entry's cites name its revision),
@@ -9,7 +9,7 @@ and it spells every report a product is sent as text: "0F/02 [00 04 01 00 00 01 
 tools/data/razer-direct-table.json, which is read unless --json names
 another.
 
-WHAT IT WRITES. PadForge.App/Common/Input/Peripherals/RazerDirectTable.cs, one
+WHAT IT WRITES. XBOXDS4ONE.App/Common/Input/Peripherals/RazerDirectTable.cs, one
 row per product ID: the family that paints it, its transaction ID and the
 other IDs to try, its LEDs or its frame size, the read that opens a claim and
 the ID that read goes out under first where openrazer sends it under one that
@@ -49,7 +49,7 @@ import re
 import sys
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "RazerDirectTable.cs")
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "RazerDirectTable.cs")
 RESEARCH = os.path.join(PROJ_ROOT, "tools", "data", "razer-direct-table.json")
 
 # The color the digests are computed with. Every byte differs from the others
@@ -541,7 +541,7 @@ def emit(rows, meta):
     add("")
     add("using System.Collections.Generic;")
     add("")
-    add("namespace PadForge.Common.Input.Peripherals")
+    add("namespace XBOXDS4ONE.Common.Input.Peripherals")
     add("{")
     add("    internal static class RazerDirectTable")
     add("    {")

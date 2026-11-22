@@ -378,11 +378,11 @@ P0
 p4io-mdxfdrv
 p4ken
 P5
-PadForge
-PadForge.App
-PadForge.Control
-PadForge.exe
-PadForge.xml
+XBOXDS4ONE
+XBOXDS4ONE.App
+XBOXDS4ONE.Control
+XBOXDS4ONE.exe
+XBOXDS4ONE.xml
 PashOK7
 PC/SC
 PCars2UdpNet

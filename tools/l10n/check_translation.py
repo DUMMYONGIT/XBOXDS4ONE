@@ -3,7 +3,7 @@
 usage: python tools/l10n/check_translation.py TAG [TAG...]
        python tools/l10n/check_translation.py --all
 
-Reads PadForge.App/Resources/Strings/Strings.<tag>.resx beside Strings.resx and the
+Reads XBOXDS4ONE.App/Resources/Strings/Strings.<tag>.resx beside Strings.resx and the
 language table, prints every problem with the key it is in, and exits 1 when there is any.
 A key a translation leaves out is not a problem: that string shows in English.
 """

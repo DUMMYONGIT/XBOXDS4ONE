@@ -1,0 +1,186 @@
+using System;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace XBOXDS4ONE.Common.Input
+{
+    /// <summary>
+    /// Removes XBOXDS4ONE MIDI endpoint devnodes that Windows MIDI Services
+    /// stranded past their owner's death. The service deletes a virtual
+    /// endpoint's devnodes only on the device-side disconnect, and a
+    /// failed removal bails before the bookkeeping is erased (MIDI
+    /// reference: MidiEndpointTable.cpp OnDeviceDisconnected). A stranded
+    /// devnode is worse than clutter: the next create with the same
+    /// unique id ADOPTS the corpse (MidiDeviceManager.cpp
+    /// ERROR_ALREADY_EXISTS path), which is how MIDI slot creation went
+    /// nondeterministic on this bench. XBOXDS4ONE now uses per-creation
+    /// unique ids so adoption can't happen, and this janitor removes the
+    /// corpses so they stop appearing in Device Manager and stop feeding
+    /// the input scanner.
+    ///
+    /// Elevation: XBOXDS4ONE always runs elevated, which devnode removal
+    /// requires. Corpses are identified by the PADFORGE_MIDI id family
+    /// under the MIDISRV software-device enumerator and are skipped when
+    /// a live MidiVirtualController in this process claims them.
+    /// </summary>
+    internal static class MidiEndpointJanitor
+    {
+        private const int CR_SUCCESS = 0;
+        private const uint CM_GETIDLIST_FILTER_ENUMERATOR = 0x00000001;
+        private const uint CM_LOCATE_DEVNODE_NORMAL = 0x00000000;
+        private const uint CM_LOCATE_DEVNODE_PHANTOM = 0x00000001;
+        private const uint CM_REMOVE_UI_NOT_OK = 0x00000002;
+        private const uint CM_REMOVE_NO_RESTART = 0x00000004;
+
+        // Both enumerators that carry XBOXDS4ONE endpoint devnodes: the
+        // service's own SWD tree (APPDEV + APPPUB) and the MMDEVAPI tree
+        // where the service projects WinMM-compat MIDI 1.0 ports for each
+        // client-visible endpoint (observed live 2026-07-23: a healthy
+        // endpoint is one APPDEV + one APPPUB + two MMDEVAPI ports, all
+        // embedding the same unique id).
+        private static readonly string[] Enumerators = { "SWD\\MIDISRV", "SWD\\MMDEVAPI" };
+
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)]
+        private static extern int CM_Get_Device_ID_List_SizeW(out uint length, string filter, uint flags);
+
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)]
+        private static extern int CM_Get_Device_ID_ListW(string filter, char[] buffer, uint bufferLength, uint flags);
+
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)]
+        private static extern int CM_Locate_DevNodeW(out uint devInst, string deviceId, uint flags);
+
+        // Mirrors DsHidMini ControlApp SetupApiWrapper.cs (null-veto overload).
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)]
+        private static extern int CM_Query_And_Remove_SubTreeW(uint ancestor, IntPtr vetoType, IntPtr vetoName, uint nameLength, uint flags);
+
+        [DllImport("cfgmgr32.dll", CharSet = CharSet.Unicode)]
+        private static extern int CM_Uninstall_DevNode(uint devInst, uint flags);
+
+        /// <summary>The XBOXDS4ONE endpoint id family. Matches both the
+        /// device-side (MIDIU_APPDEV_) and client-visible (MIDIU_APPPUB_)
+        /// forms, legacy fixed ids and the newer per-creation ids alike,
+        /// in devnode-instance-id or endpoint-interface-id spelling.</summary>
+        internal static bool IsXBOXDS4ONEEndpointId(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return false;
+            return id.IndexOf("MIDIU_APPDEV_PADFORGE_MIDI", StringComparison.OrdinalIgnoreCase) >= 0
+                || id.IndexOf("MIDIU_APPPUB_PADFORGE_MIDI", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// <summary>True when the devnode should be removed: XBOXDS4ONE's id
+        /// family, and no live controller in this process claims it.</summary>
+        internal static bool IsSweepCandidate(string deviceInstanceId)
+            => IsXBOXDS4ONEEndpointId(deviceInstanceId)
+               && !MidiVirtualController.IsLiveEndpointInstance(deviceInstanceId);
+
+        private static readonly object _sweepLock = new();
+        private static long _sweepDueTick = long.MaxValue;
+        private static bool _sweepWorkerRunning;
+
+        /// <summary>Test seam (InternalsVisibleTo XBOXDS4ONE.Tests): tests that
+        /// drive MidiVirtualController against a fake backend set this so no
+        /// sweep runs. A test process knows none of a running XBOXDS4ONE's live
+        /// endpoints, so a real sweep from it would remove them as
+        /// corpses.</summary>
+        internal static volatile bool SweepDisabledForTest;
+
+        /// <summary>Test seam: set by the test assembly for the life of its
+        /// process, where <see cref="SweepDisabledForTest"/> is set and
+        /// cleared by each MIDI test class and stands open between two of
+        /// them. No sweep is scheduled or run in the test host then, whoever
+        /// asks: an engine a test of another area starts asks for one, and a
+        /// sweep from a process that knows none of a running XBOXDS4ONE's
+        /// endpoints removes them all. False in production, where nothing
+        /// sets it.</summary>
+        internal static bool OffLimitsForTest;
+
+        /// <summary>Coalesced background sweep. Safe from any thread; CM
+        /// calls talk to PnP, not to the (possibly wedged) MIDI service.
+        /// Requests coalesce on the EARLIEST due time, so a short-delay
+        /// teardown sweep is never parked behind a pending long-delay
+        /// abandonment sweep, and a request landing mid-sweep gets its
+        /// own pass afterward.</summary>
+        public static void ScheduleSweep(int delayMs)
+        {
+            if (SweepDisabledForTest || OffLimitsForTest) return;
+            long due = Environment.TickCount64 + Math.Max(0, delayMs);
+            lock (_sweepLock)
+            {
+                if (due < _sweepDueTick) _sweepDueTick = due;
+                if (_sweepWorkerRunning) return;
+                _sweepWorkerRunning = true;
+            }
+            Task.Run(async () =>
+            {
+                while (true)
+                {
+                    long wait;
+                    lock (_sweepLock)
+                    {
+                        if (_sweepDueTick == long.MaxValue) { _sweepWorkerRunning = false; return; }
+                        wait = _sweepDueTick - Environment.TickCount64;
+                        if (wait <= 0) _sweepDueTick = long.MaxValue;
+                    }
+                    if (wait > 0)
+                    {
+                        try { await Task.Delay((int)Math.Min(wait, 60_000)).ConfigureAwait(false); } catch { }
+                        continue;
+                    }
+                    try { Sweep(); } catch { /* best effort */ }
+                }
+            });
+        }
+
+        /// <summary>Enumerates MIDISRV software devices and removes every
+        /// sweep candidate. Returns the number removed.</summary>
+        internal static int Sweep()
+        {
+            int removed = 0;
+            if (SweepDisabledForTest || OffLimitsForTest) return removed;
+            try
+            {
+                // Expired abandoned claims stop protecting their devnodes.
+                MidiVirtualController.PruneExpiredEndpointClaims();
+
+                foreach (var enumerator in Enumerators)
+                {
+                    if (CM_Get_Device_ID_List_SizeW(out uint length, enumerator, CM_GETIDLIST_FILTER_ENUMERATOR) != CR_SUCCESS
+                        || length == 0)
+                        continue;
+
+                    var buffer = new char[length];
+                    if (CM_Get_Device_ID_ListW(enumerator, buffer, length, CM_GETIDLIST_FILTER_ENUMERATOR) != CR_SUCCESS)
+                        continue;
+
+                    foreach (var id in new string(buffer).Split('\0', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        if (!IsSweepCandidate(id)) continue;
+
+                        bool phantom = false;
+                        if (CM_Locate_DevNodeW(out uint devInst, id, CM_LOCATE_DEVNODE_NORMAL) != CR_SUCCESS)
+                        {
+                            if (CM_Locate_DevNodeW(out devInst, id, CM_LOCATE_DEVNODE_PHANTOM) != CR_SUCCESS)
+                                continue;
+                            phantom = true;
+                        }
+
+                        if (!phantom)
+                            CM_Query_And_Remove_SubTreeW(devInst, IntPtr.Zero, IntPtr.Zero, 0,
+                                CM_REMOVE_UI_NOT_OK | CM_REMOVE_NO_RESTART);
+
+                        // Best effort: clear the registry trace too, so the
+                        // devnode doesn't linger as a phantom.
+                        if (CM_Locate_DevNodeW(out uint phantomInst, id, CM_LOCATE_DEVNODE_PHANTOM) == CR_SUCCESS)
+                            CM_Uninstall_DevNode(phantomInst, 0);
+
+                        removed++;
+                        XBOXDS4ONE.Engine.SdlDiagLog.WriteLine($"MIDIJANITOR removed stranded endpoint devnode {id}");
+                    }
+                }
+            }
+            catch { /* best effort */ }
+            return removed;
+        }
+    }
+}

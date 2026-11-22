@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Mass wild-corpus regression sweep for the Workshop config translator.
-       Standalone (not in PadForge.sln), same as SteamWorkshopSmoke. Harvests the
+       Standalone (not in XBOXDS4ONE.sln), same as SteamWorkshopSmoke. Harvests the
        live top-by-vote configs for every game in games.csv over the anonymous
        QueryFiles client, caches the VDFs (gitignored), commits a manifest of ids
        and hashes, translates everything, and reports every report line whose
@@ -15,14 +15,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\PadForge.SteamWorkshop\PadForge.SteamWorkshop.csproj" />
+    <ProjectReference Include="..\..\XBOXDS4ONE.SteamWorkshop\XBOXDS4ONE.SteamWorkshop.csproj" />
   </ItemGroup>
 
   <!-- Single sources of truth shared with the test suite: the
        lockdown-approved reason set and the manifest DTO. -->
   <ItemGroup>
-    <Compile Include="..\..\PadForge.SteamWorkshop.Tests\ApprovedReasonLockdown.cs" Link="ApprovedReasonLockdown.cs" />
-    <Compile Include="..\..\PadForge.SteamWorkshop.Tests\SweepManifest.cs" Link="SweepManifest.cs" />
+    <Compile Include="..\..\XBOXDS4ONE.SteamWorkshop.Tests\ApprovedReasonLockdown.cs" Link="ApprovedReasonLockdown.cs" />
+    <Compile Include="..\..\XBOXDS4ONE.SteamWorkshop.Tests\SweepManifest.cs" Link="SweepManifest.cs" />
   </ItemGroup>
 
 </Project>

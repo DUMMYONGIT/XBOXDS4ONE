@@ -7,7 +7,7 @@ name, a detector function and, for a HID device, the vendor and product IDs,
 the interface, the usage page and the usage it answers to. This script reads
 every registration of the 54 families issue #557 ports at an OpenRGB commit,
 and of OpenRGB's families for other lit peripherals (PERIPHERAL_FAMILIES),
-and writes PadForge.App/Common/Input/Peripherals/HidFamilies/OpenRgbRegistrations.g.cs.
+and writes XBOXDS4ONE.App/Common/Input/Peripherals/HidFamilies/OpenRgbRegistrations.g.cs.
 
 How a registration is read, as the compiler would:
 - Only the files OpenRGB's Windows build compiles: a file whose name carries
@@ -29,10 +29,10 @@ function opens: a serial port, WMI or HID. A dynamic detector, which only
 registers others, is Other.
 
 Skipped: HIDLampArrayController, LogitechController, RazerController and
-SteelSeriesController, which PadForge lights its own way.
+SteelSeriesController, which XBOXDS4ONE lights its own way.
 
 Every other folder of OpenRGB's Controllers has a decision here: a family
-PadForge lights another way (LIT_ANOTHER_WAY), one no Windows build compiles
+XBOXDS4ONE lights another way (LIT_ANOTHER_WAY), one no Windows build compiles
 (NOT_ON_WINDOWS), or one #557's coverage table left out at OpenRGB c6fc8016
 (DECIDED_IN_557: parts inside a PC, lights on the network, code for Linux or
 testing, and the rest of that table's rows). A ported family of which only some
@@ -55,7 +55,7 @@ import openrgb_cpp as oc
 from openrgb_cpp import CppError, Expr
 
 PROJ_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUTPUT = os.path.join(PROJ_ROOT, "PadForge.App", "Common", "Input", "Peripherals", "HidFamilies",
+OUTPUT = os.path.join(PROJ_ROOT, "XBOXDS4ONE.App", "Common", "Input", "Peripherals", "HidFamilies",
                       "OpenRgbRegistrations.g.cs")
 
 # The families issue #557's coverage table marks "new" (C:/tmp/pf555/rgb538/
@@ -100,12 +100,12 @@ PERIPHERAL_FAMILIES = [
 
 ALL_FAMILIES = FAMILIES + PERIPHERAL_FAMILIES
 
-# The families PadForge lights another way, each with how.
+# The families XBOXDS4ONE lights another way, each with how.
 LIT_ANOTHER_WAY = {
     "HIDLampArrayController": "any HID LampArray, through LampArrayBackend",
-    "LogitechController": "PadForge's Logitech families",
-    "RazerController": "PadForge's Razer tables",
-    "SteelSeriesController": "PadForge's SteelSeries families",
+    "LogitechController": "XBOXDS4ONE's Logitech families",
+    "RazerController": "XBOXDS4ONE's Razer tables",
+    "SteelSeriesController": "XBOXDS4ONE's SteelSeries families",
     # Added after c6fc8016. Its lamps are a HID LampArray on interface 5
     # (KLIPSCH_LUMINA_LAMPARRAY_IFACE, KlipschLuminaControllerDetect.cpp:27-28), which
     # LampArrayBackend lights as it lights any LampArray. OpenRGB writes the vendor
@@ -480,7 +480,7 @@ def write_cs(commit, regs):
     w("//     %s (the detector registrations of the families #557 ports," % commit[:10])
     w("//     decoded from DetectionManager.h). Do not edit by hand.")
     w("// </auto-generated>")
-    w("namespace PadForge.Common.Input.Peripherals.HidFamilies")
+    w("namespace XBOXDS4ONE.Common.Input.Peripherals.HidFamilies")
     w("{")
     w("    internal static partial class OpenRgbRegistrations")
     w("    {")
